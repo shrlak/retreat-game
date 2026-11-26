@@ -5,8 +5,8 @@
   --bg0: #070a1c;
   --bg1: #0d1330;
   --bg2: #161d45;
-  --panel: rgba(22, 29, 69, 0.72);
-  --panel-strong: rgba(28, 36, 84, 0.92);
+  --panel: rgba(20, 24, 56, 0.9);
+  --panel-strong: rgba(24, 30, 70, 0.98);
   --line: rgba(255, 227, 163, 0.18);
   --line-strong: rgba(255, 227, 163, 0.42);
   --text: #f6f1e4;
@@ -59,8 +59,8 @@ img { -webkit-user-drag: none; user-select: none; }
 .ux-screen { flex: 1; display: flex; flex-direction: column; padding: calc(12px + var(--safe-top)) 16px calc(20px + var(--safe-bot)); gap: 14px; }
 .ux-screen.enter { animation: screenIn .55s var(--ease-out) both; }
 .ux-screen.leave { position: absolute; inset: 0; animation: screenOut .35s ease both; pointer-events: none; }
-@keyframes screenIn { from { opacity: 0; transform: translateY(18px) scale(.985); filter: blur(6px); } to { opacity: 1; transform: none; filter: none; } }
-@keyframes screenOut { to { opacity: 0; transform: translateY(-10px) scale(.99); filter: blur(4px); } }
+@keyframes screenIn { from { opacity: 0; transform: translateY(18px) scale(.985); } to { opacity: 1; transform: none; } }
+@keyframes screenOut { to { opacity: 0; transform: translateY(-10px) scale(.99); } }
 
 /* ---------- Top bar ---------- */
 .ux-top { display: flex; align-items: center; gap: 8px; min-height: 40px; }
@@ -86,7 +86,24 @@ img { -webkit-user-drag: none; user-select: none; }
 .ux-muted { color: var(--text-mute); font-size: 12px; }
 
 /* ---------- Panels ---------- */
-.ux-panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); box-shadow: 0 10px 40px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06); }
+.ux-panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06), inset 0 0 0 4px rgba(7,10,28,.5), inset 0 0 0 5px rgba(244,201,107,.12); position: relative; }
+/* gold-leaf corner ornaments (manuscript style) */
+.ux-panel::before, .ux-panel::after { content: ''; position: absolute; width: 22px; height: 22px; pointer-events: none; border: 2px solid rgba(244,201,107,.55); }
+.ux-panel::before { top: 6px; left: 6px; border-right: 0; border-bottom: 0; border-top-left-radius: 10px; }
+.ux-panel::after { bottom: 6px; right: 6px; border-left: 0; border-top: 0; border-bottom-right-radius: 10px; }
+.ux-panel.plain::before, .ux-panel.plain::after { display: none; }
+.ux-verse { font-family: var(--font-display); font-size: 13px; line-height: 1.6; color: rgba(255,231,168,.72); text-align: center; padding: 0 8px; }
+.ux-verse cite { display: block; font-style: normal; font-size: 11px; color: var(--text-mute); margin-top: 2px; letter-spacing: .08em; }
+.ux-ornament { display: flex; align-items: center; justify-content: center; gap: 10px; color: var(--gold); opacity: .7; font-size: 12px; }
+.ux-ornament::before, .ux-ornament::after { content: ''; width: 54px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold)); }
+.ux-ornament::after { transform: scaleX(-1); }
+/* stained-glass rose window (pure CSS, GPU friendly: only rotates) */
+.ux-rose { position: absolute; width: 260px; height: 260px; left: 50%; top: 50%; margin: -130px 0 0 -130px; border-radius: 50%; opacity: .55; pointer-events: none;
+  background: radial-gradient(circle, transparent 18%, rgba(7,10,28,.9) 19%, transparent 20%, transparent 44%, rgba(7,10,28,.9) 45%, transparent 46%),
+    repeating-conic-gradient(from 0deg, rgba(224,72,110,.55) 0 15deg, rgba(244,201,107,.6) 15deg 30deg, rgba(90,140,230,.55) 30deg 45deg, rgba(111,227,166,.4) 45deg 60deg);
+  -webkit-mask: radial-gradient(circle, #000 66%, transparent 68%); mask: radial-gradient(circle, #000 66%, transparent 68%);
+  animation: spin 60s linear infinite; will-change: transform; }
+.ux-rose::after { content: ''; position: absolute; inset: 0; border-radius: 50%; background: repeating-conic-gradient(from 7.5deg, rgba(7,10,28,.95) 0 1.2deg, transparent 1.2deg 15deg); }
 .ux-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
 
 /* ---------- Buttons ---------- */
@@ -117,7 +134,7 @@ img { -webkit-user-drag: none; user-select: none; }
 .ux-home-hero { display: flex; flex-direction: column; align-items: center; gap: 10px; padding-top: 4vh; }
 .ux-emblem { position: relative; width: 148px; height: 148px; display: grid; place-items: center; }
 .ux-emblem::before { content: ''; position: absolute; inset: -30px; border-radius: 50%; background: radial-gradient(circle, rgba(255,215,122,.45), transparent 62%); animation: breathe 3.6s ease-in-out infinite; }
-.ux-emblem svg { position: relative; width: 100%; height: 100%; filter: drop-shadow(0 0 24px rgba(255, 210, 120, .6)); }
+.ux-emblem svg { position: relative; width: 100%; height: 100%; }
 .ux-flame { transform-origin: 50% 85%; animation: flicker 1.8s ease-in-out infinite; }
 @keyframes flicker { 0%,100% { transform: scale(1, 1) rotate(0); } 25% { transform: scale(.96, 1.05) rotate(-2deg); } 50% { transform: scale(1.03, .97) rotate(1.5deg); } 75% { transform: scale(.98, 1.03) rotate(-1deg); } }
 @keyframes breathe { 0%, 100% { transform: scale(.92); opacity: .75; } 50% { transform: scale(1.06); opacity: 1; } }
@@ -307,11 +324,11 @@ img { -webkit-user-drag: none; user-select: none; }
 .ux-overlay .inner { width: 100%; max-width: 440px; display: flex; flex-direction: column; align-items: center; gap: 16px; }
 .ux-cine-title { font-family: var(--font-display); font-weight: 700; font-size: 26px; color: var(--gold-hi); text-align: center; text-shadow: 0 0 22px rgba(244,201,107,.5); animation: titleIn .8s var(--ease-out) both; }
 .ux-cine-sub { color: var(--text-dim); font-size: 14px; text-align: center; animation: titleIn .8s .15s var(--ease-out) both; }
-@keyframes titleIn { from { opacity: 0; transform: translateY(14px); letter-spacing: .2em; } to { opacity: 1; transform: none; } }
+@keyframes titleIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 .ux-banner { font-family: var(--font-display); font-weight: 700; font-size: 34px; text-align: center; padding: 8px 18px; animation: bannerIn 1s var(--ease-spring) both; }
 .ux-banner.good { color: var(--gold-hi); text-shadow: 0 0 30px var(--good-glow), 0 0 60px var(--good-glow); }
 .ux-banner.evil { color: #ffb3c4; text-shadow: 0 0 30px var(--evil-glow), 0 0 60px var(--evil-glow); }
-@keyframes bannerIn { 0% { opacity: 0; transform: scale(.6); filter: blur(10px); } 100% { opacity: 1; transform: none; filter: none; } }
+@keyframes bannerIn { 0% { opacity: 0; transform: scale(.6); } 100% { opacity: 1; transform: none; } }
 .ux-skip { position: fixed; top: calc(12px + var(--safe-top)); right: 14px; z-index: 51; font-size: 13px; color: var(--text-mute); padding: 8px 12px; border-radius: 999px; background: rgba(255,255,255,.06); }
 
 /* vote reveal grid */
@@ -384,7 +401,7 @@ img { -webkit-user-drag: none; user-select: none; }
 
 /* history sheet & modal */
 .ux-sheet-bg { position: fixed; inset: 0; z-index: 40; background: rgba(0,0,0,.55); animation: fadeIn .25s both; }
-.ux-sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 41; max-width: 480px; margin: 0 auto; max-height: 82dvh; overflow-y: auto; border-radius: 22px 22px 0 0; background: var(--panel-strong); border: 1px solid var(--line); border-bottom: 0; padding: 10px 16px calc(20px + var(--safe-bot)); animation: sheetUp .45s var(--ease-out) both; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+.ux-sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 41; max-width: 480px; margin: 0 auto; max-height: 82dvh; overflow-y: auto; border-radius: 22px 22px 0 0; background: var(--panel-strong); border: 1px solid var(--line); border-bottom: 0; padding: 10px 16px calc(20px + var(--safe-bot)); animation: sheetUp .45s var(--ease-out) both; }
 .ux-sheet.out { animation: sheetDown .3s ease both; }
 .ux-sheet-bg.out { animation: fadeOut .3s both; }
 @keyframes sheetUp { from { transform: translateY(100%); } to { transform: none; } }

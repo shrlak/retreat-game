@@ -134,6 +134,9 @@ export function joinPlayer(state, name, token, ctx = {}) {
   const same = state.players.find((p) => p.name === n);
   if (state.phase !== "lobby") {
     if (!same) return err("이미 시작된 게임이에요. 처음 쓴 이름 그대로 입력하면 다시 들어갈 수 있어요");
+    // name-only rejoin is allowed only for a seat whose phone has been gone a while,
+    // so nobody can take over (and peek at) an active player's seat.
+    if (now - same.lastSeen < ONLINE_MS) return err("그 이름은 지금 접속 중이에요. 원래 폰에서 다시 열어 주세요");
     same.token = randId(rng, 20); // rejoin from another device: old device is signed out
     same.lastSeen = now;
     return { player: same, changed: true };
@@ -427,6 +430,7 @@ export function applyAction(state, msg, ctx = {}) {
         if (g.assassinId !== me.id) return err("정탐꾼만 지목할 수 있어요");
         const t = P(state, msg.targetId);
         if (!t) return err("없는 참가자예요");
+        if (t.id === me.id) return err("자기 자신은 지목할 수 없어요");
         g.assassinTargetId = t.id;
         if (g.roleOf[t.id] === "merlin") endGame(state, "evil", "assassinHit");
         else endGame(state, "good", "assassinFailed");

@@ -1,7 +1,7 @@
 // window.Net — talks to the mist-game function, listens on Supabase Realtime, polls as fallback.
 (function () {
   const B = window.BACKEND;
-  const LS = "mist.session";
+  const LS = "mist.session" + (new URLSearchParams(location.search).get("slot") || "");
   let session = null; // {code, playerId, token, name}
   let listeners = [];
   let lastV = -1, lastView = null;

@@ -35,12 +35,16 @@ STYLE_ANIM = """
   .glow{animation:gl 3.4s ease-in-out infinite}
   .drift{animation:dr 14s ease-in-out infinite alternate}
   .bob{transform-box:fill-box;transform-origin:50% 50%;animation:bob 5s ease-in-out infinite}
+  .shim{animation:sh 7s ease-in-out infinite 1s}
+  .spin{transform-box:fill-box;transform-origin:50% 50%;animation:spin 40s linear infinite}
   @keyframes tw{0%,100%{opacity:1}50%{opacity:.35}}
   @keyframes fl{0%,100%{transform:scale(1,1) rotate(0)}30%{transform:scale(.94,1.07) rotate(-2deg)}65%{transform:scale(1.04,.95) rotate(2deg)}}
   @keyframes gl{0%,100%{opacity:.95}50%{opacity:.7}}
   @keyframes dr{from{transform:translateX(-18px)}to{transform:translateX(18px)}}
   @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-  @media (prefers-reduced-motion:reduce){.tw,.tw2,.tw3,.fl,.glow,.drift,.bob{animation:none}}
+  @keyframes sh{0%{transform:translateX(0) skewX(-18deg)}28%,100%{transform:translateX(1000px) skewX(-18deg)}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion:reduce){.tw,.tw2,.tw3,.fl,.glow,.drift,.bob,.shim,.spin{animation:none}.shim{opacity:0}}
 </style>"""
 
 
@@ -133,7 +137,7 @@ def sheep(x, y, s, wool="#FFFFFF", face="#3D3A4A", cls=""):
              (14, 22, 26), (-14, 22, 26), (-40, 16, 22), (0, 0, 32)]
     wool_svg = "".join(f'<circle cx="{px}" cy="{py}" r="{pr}"/>' for px, py, pr in puffs)
     return (
-        f'<g transform="translate({x},{y}) scale({s})" class="{cls}">'
+        f'<g transform="translate({x},{y}) scale({s})"><g class="{cls}">'
         f'<g fill="{face}"><rect x="-30" y="26" width="9" height="34" rx="4"/><rect x="-10" y="30" width="9" height="32" rx="4"/>'
         f'<rect x="14" y="30" width="9" height="32" rx="4"/><rect x="32" y="26" width="9" height="34" rx="4"/></g>'
         f'<g fill="{wool}">{wool_svg}</g>'
@@ -145,7 +149,7 @@ def sheep(x, y, s, wool="#FFFFFF", face="#3D3A4A", cls=""):
         f'<circle cx="55" cy="-8" r="3.6" fill="#fff"/><circle cx="69" cy="-8" r="3.6" fill="#fff"/>'
         f'<circle cx="55.6" cy="-7.4" r="1.9" fill="#222"/><circle cx="69.6" cy="-7.4" r="1.9" fill="#222"/>'
         f'<path d="M57,6 Q62,10 67,6" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/>'
-        f'</g>'
+        f'</g></g>'
     )
 
 
@@ -285,43 +289,98 @@ ART = (30, 30, 540, 650)          # x, y, w, h of the art window
 PLATE = (46, 700, 508, 104)       # blank nameplate where the UI renders the role name
 
 
+ARCH_D = "M30,680 L30,176 C30,86 150,30 300,30 C450,30 570,86 570,176 L570,680 Z"
+
+
+def _mosaic(p, colors, lead, seed):
+    """Stained-glass triangles filling the two spandrels above the arch."""
+    rnd = random.Random(seed)
+    out = []
+    size, hgt = 44, 38
+    for row in range(6):
+        y0 = 12 + row * hgt
+        for col in range(-1, 15):
+            x0 = 12 + col * size + (size / 2 if row % 2 else 0)
+            for tri in (
+                ((x0, y0), (x0 + size, y0), (x0 + size / 2, y0 + hgt)),
+                ((x0 + size / 2, y0 + hgt), (x0 + size, y0), (x0 + size * 1.5, y0 + hgt)),
+            ):
+                c = rnd.choice(colors)
+                pts = " ".join(f"{x:.0f},{y:.0f}" for x, y in tri)
+                cls = ' class="tw2"' if rnd.random() < 0.035 else ""
+                out.append(f'<polygon points="{pts}" fill="{c}"{cls}/>')
+    return (f'<g clip-path="url(#{p}spd)" stroke="{lead}" stroke-width="3" stroke-linejoin="round">'
+            + "".join(out) + "</g>")
+
+
 def card(p, team, scene, scene_defs=""):
+    """Arched stained-glass card. Art window = ART (top corners arched),
+    blank scroll nameplate = PLATE for the UI to write the role name."""
     good = team == "good"
     if good:
-        f1, f2, f3 = "#FBE3A0", "#E2A945", "#A86E22"
-        edge, line = "#7A4D16", "#FFF4D2"
-        plate1, plate2, plate_edge = "#FFF8EA", "#F3E1BC", "#C9973E"
+        f1, f2, f3 = "#FFEDB3", "#E2A945", "#9C6420"
+        edge, line = "#5E3A12", "#FFF4D2"
+        plate1, plate2, plate_edge, roll = "#FFF8EA", "#F1DDB2", "#B9832A", "#E3C58C"
+        glass = ["#F6C453", "#F4A259", "#8EC5E8", "#7FB07A", "#FFE6A3", "#E58F6B", "#5E9ECF"]
     else:
-        f1, f2, f3 = "#CDB6EA", "#7E57A6", "#3A2550"
-        edge, line = "#26173A", "#EFE4FB"
-        plate1, plate2, plate_edge = "#F6F0FC", "#E2D3F2", "#8F6CB8"
+        f1, f2, f3 = "#DCC8F2", "#7E57A6", "#2E1C44"
+        edge, line = "#1E1230", "#EFE4FB"
+        plate1, plate2, plate_edge, roll = "#F7F1FD", "#DDCBF0", "#7E57A6", "#C9B2E6"
+        glass = ["#7E57A6", "#B48CE0", "#3C5A8A", "#5B3A7A", "#2C8C8C", "#C06C9E", "#4B6BB0"]
     x, y, w, h = ART
     px, py, pw, ph = PLATE
     defs = (
         lin(f"{p}fr", [(0, f1), (0.5, f2), (1, f3)], 0, 0, 1, 1)
         + lin(f"{p}pl", [(0, plate1), (1, plate2)])
-        + f'<clipPath id="{p}clip"><rect x="{x}" y="{y}" width="{w}" height="{h}" rx="24"/></clipPath>'
-        + lin(f"{p}vig", [(0, "#000", 0), (0.7, "#000", 0), (1, "#000", 0.22)])
+        + lin(f"{p}rl", [(0, plate2), (0.5, plate1), (1, roll)], 0, 0, 1, 0)
+        + f'<clipPath id="{p}clip"><path d="{ARCH_D}"/></clipPath>'
+        + f'<clipPath id="{p}card"><rect width="600" height="840" rx="36"/></clipPath>'
+        + f'<clipPath id="{p}spd"><path clip-rule="evenodd" d="M14,14 H586 V214 H14Z M30,214 L30,176 C30,86 150,30 300,30 C450,30 570,86 570,176 L570,214Z"/></clipPath>'
+        + lin(f"{p}vig", [(0, "#000", 0), (0.72, "#000", 0), (1, "#000", 0.25)])
+        + lin(f"{p}sh", [(0, "#FFFFFF", 0), (0.5, "#FFFFFF", 0.38), (1, "#FFFFFF", 0)], 0, 0, 1, 0)
         + scene_defs
     )
-    gem = sun_gem(300, 30, 26, p) if good else moon_gem(300, 30, 26, p)
+    gem = sun_gem(300, 32, 26, p) if good else moon_gem(300, 32, 26, p)
+    pearls = []
+    import math as _m
+    # pearls along the arch
+    for i in range(1, 22):
+        t = i / 22
+        # cubic bezier halves of the arch
+        if t < 0.5:
+            u = t * 2
+            P0, P1, P2, P3 = (30, 176), (30, 86), (150, 30), (300, 30)
+        else:
+            u = (t - 0.5) * 2
+            P0, P1, P2, P3 = (300, 30), (450, 30), (570, 86), (570, 176)
+        bx = (1-u)**3*P0[0] + 3*(1-u)**2*u*P1[0] + 3*(1-u)*u**2*P2[0] + u**3*P3[0]
+        by_ = (1-u)**3*P0[1] + 3*(1-u)**2*u*P1[1] + 3*(1-u)*u**2*P2[1] + u**3*P3[1]
+        if abs(bx - 300) < 40:
+            continue
+        pearls.append(f'<circle cx="{bx:.1f}" cy="{by_:.1f}" r="3.4"/>')
     corners = "".join(
         f'<circle cx="{cx_}" cy="{cy_}" r="5" fill="{line}" opacity=".85"/>'
-        for cx_, cy_ in [(22, 22), (578, 22), (22, 818), (578, 818)]
+        for cx_, cy_ in [(24, 820), (576, 820)]
     )
-    plate_orn = (
-        f'<path d="M{px+22},{py+ph/2} l12,-12 l12,12 l-12,12z" fill="{plate_edge}" opacity=".85"/>'
-        f'<path d="M{px+pw-22},{py+ph/2} l-12,-12 l-12,12 l12,12z" fill="{plate_edge}" opacity=".85"/>'
-        f'<path d="M{px+60},{py+10} H{px+pw-60} M{px+60},{py+ph-10} H{px+pw-60}" stroke="{plate_edge}" stroke-width="2" opacity=".45"/>'
+    # rolled scroll nameplate
+    plate = (
+        f'<rect x="{px+14}" y="{py}" width="{pw-28}" height="{ph}" rx="8" fill="url(#{p}pl)" stroke="{plate_edge}" stroke-width="3"/>'
+        f'<rect x="{px}" y="{py-6}" width="24" height="{ph+12}" rx="12" fill="url(#{p}rl)" stroke="{plate_edge}" stroke-width="3"/>'
+        f'<rect x="{px+pw-24}" y="{py-6}" width="24" height="{ph+12}" rx="12" fill="url(#{p}rl)" stroke="{plate_edge}" stroke-width="3"/>'
+        f'<path d="M{px+60},{py+12} H{px+pw-60} M{px+60},{py+ph-12} H{px+pw-60}" stroke="{plate_edge}" stroke-width="2" opacity=".4"/>'
+        f'<path d="M{px+44},{py+ph/2} l9,-9 l9,9 l-9,9z M{px+pw-44},{py+ph/2} l-9,-9 l-9,9 l9,9z" fill="{plate_edge}" opacity=".8"/>'
     )
     body = (
         f'<rect width="600" height="840" rx="36" fill="url(#{p}fr)"/>'
+        f'{_mosaic(p, glass, edge, 7 if good else 9)}'
         f'<rect x="10" y="10" width="580" height="820" rx="28" fill="none" stroke="{line}" stroke-width="3" opacity=".75"/>'
-        f'<rect x="{x-6}" y="{y-6}" width="{w+12}" height="{h+12}" rx="28" fill="{edge}"/>'
+        f'<path d="{ARCH_D}" fill="none" stroke="{edge}" stroke-width="14" stroke-linejoin="round"/>'
         f'<g clip-path="url(#{p}clip)">{scene}<rect x="{x}" y="{y}" width="{w}" height="{h}" fill="url(#{p}vig)"/></g>'
-        f'<rect x="{x+3}" y="{y+3}" width="{w-6}" height="{h-6}" rx="22" fill="none" stroke="{line}" stroke-width="2" opacity=".55"/>'
-        f'<rect x="{px}" y="{py}" width="{pw}" height="{ph}" rx="20" fill="url(#{p}pl)" stroke="{plate_edge}" stroke-width="4"/>'
-        f"{plate_orn}{corners}{gem}"
+        f'<path d="{ARCH_D}" fill="none" stroke="{f1}" stroke-width="4" stroke-linejoin="round"/>'
+        f'<path d="M36,674 L36,177 C36,92 154,37 300,37 C446,37 564,92 564,177 L564,674" fill="none" stroke="{line}" stroke-width="1.5" opacity=".6"/>'
+        f'<g fill="{line}">{"".join(pearls)}</g>'
+        f'{plate}{corners}{gem}'
+        f'<g clip-path="url(#{p}card)" opacity=".9"><rect class="shim" x="-260" y="-100" width="200" height="1100" fill="url(#{p}sh)" transform-origin="0 0"/></g>'
     )
     return svg(CARD_W, CARD_H, body, defs)
 

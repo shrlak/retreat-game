@@ -20,3 +20,4 @@ git -c user.name="Claude" -c user.email="noreply@anthropic.com" commit -q -m "$M
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 git push -u origin HEAD:main 2>&1 | tail -2
+git push -f origin HEAD:gh-pages 2>&1 | tail -1
