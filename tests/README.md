@@ -4,8 +4,8 @@ Run from `avalon-game/`:
 
 | 명령 | 내용 | 시간 |
 |---|---|---|
-| `node --test tests/*.test.mjs` | 규칙 단위 테스트(26) + 확장 규칙 단위 테스트(13, 랜슬롯·엑스칼리버) + 서버 코드(handler.js) 테스트 + 동시 탭 테스트 | ~5분 |
-| `node tests/run-matrix.mjs` | 봇 전체 게임: 5~10명 × 선택 역할 32조합 × 등불 on/off × (기본 + 랜슬롯 1·2 × 엑스칼리버) | ~40초 |
+| `node --test tests/*.test.mjs` | 규칙 단위 테스트(26) + 확장 규칙 단위 테스트(빌드 9 + 테스트 스레드 rules-expansions, 랜슬롯 변형 1·2·3·엑스칼리버) + 서버 코드(handler.js) 테스트 + 동시 탭 테스트 | ~5분 |
+| `node tests/run-matrix.mjs` | 봇 전체 게임: 5~10명 × 선택 역할 32조합 × 등불 on/off × (기본 + 랜슬롯 1·2·3 × 엑스칼리버) | ~40초 |
 | `node tests/run-matrix.mjs --games 30` | 같은 매트릭스, 기본 30판·확장 15판씩 | ~10분 |
 | `node tests/run-matrix.mjs --no-expansions` | 확장 없이 기본 규칙만 | |
 | `node tests/stress.mjs` | 인원별(5~10명) 1만 판씩 연습게임, 가능한 모든 설정(역할·등불·랜슬롯·엑스칼리버·밸런스)을 돌아가며, 4개 병렬. 실패 시 재현 명령 출력 | ~6분 |
