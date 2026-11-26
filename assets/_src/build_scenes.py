@@ -234,19 +234,13 @@ def build_home():
     b.append(wins)
     # olive grove around the town
     for (x, base, s) in [(205, 1046, 0.42), (540, 1028, 0.5), (580, 1036, 0.36)]:
-        b.append(olive_tree(x, base, s, "#241C3E", "#34405E", "#3F4E6C"))
+        b.append(olive_tree(x, base, s, "#241C3E", "#34405E", "#43547A", hi="#7A8AB0"))
     # shepherds' field (foreground)
     field = smooth([(-20, 1080), (110, 1062), (260, 1078), (420, 1060), (620, 1075)], 1320)
     b.append(f'<path d="{field}" fill="url(#{p}field)"/>')
     b.append(f'<path d="{smooth([(-20, 1080), (110, 1062), (260, 1078), (420, 1060), (620, 1075)])}" fill="none" stroke="#5A4C8A" stroke-width="2" opacity=".6"/>')
-    b.append(olive_tree(40, 1150, 1.25, "#14102A", "#1C2240", "#232B4C"))
-    b.append(olive_tree(570, 1140, 1.1, "#14102A", "#1C2240", "#232B4C"))
-    # stone sheepfold wall
-    wall = []
-    for i in range(14):
-        wall.append(f'<rect x="{360 + i * 17}" y="{1112 + (i % 2) * 2}" width="16" height="12" rx="4"/>')
-        wall.append(f'<rect x="{368 + i * 17}" y="{1101 + (i % 2) * 1}" width="15" height="11" rx="4"/>')
-    b.append(f'<g fill="#2C2850">{"".join(wall)}</g>')
+    b.append(olive_tree(40, 1150, 1.25, "#14102A", "#1C2240", "#26304F", hi="#4A5A7A"))
+    b.append(olive_tree(570, 1140, 1.1, "#14102A", "#1C2240", "#26304F", hi="#4A5A7A"))
     # sheep (moonlit wool)
     b.append(sheep(140, 1122, 0.36, wool="#E9E3F3", face="#2A2440"))
     b.append(sheep(470, 1150, 0.4, wool="#E9E3F3", face="#2A2440", cls="bob"))
@@ -275,20 +269,22 @@ def build_game():
     p = "gm"
     defs = (
         lin(f"{p}sky", [(0, "#0C1128"), (0.55, "#131A33"), (1, "#1C2646")])
-        + rad(f"{p}warm", [(0, "#F4A259", 0.5), (0.35, "#D9813A", 0.2), (0.7, "#5B3A7A", 0.07), (1, "#5B3A7A", 0)])
+        + rad(f"{p}warm", [(0, "#F4A259", 0.62), (0.35, "#D9813A", 0.26), (0.7, "#5B3A7A", 0.07), (1, "#5B3A7A", 0)])
         + rad(f"{p}vig", [(0, "#000", 0), (0.62, "#000", 0), (1, "#000", 0.5)], r=0.75)
     )
     b = [f'<rect width="{W}" height="{H}" fill="url(#{p}sky)"/>']
     b.append(f'<g opacity=".55">{starfield(41, 60, (8, 8, 592, 620), rmin=0.6, rmax=1.6, sparkle=0.05, groups=("tw2", "tw3"))}</g>')
     b.append(f'<g opacity=".7">{sparkle_star(452, 140, 9, "#FFF1C4")}</g>')
-    b.append(f'<ellipse cx="300" cy="1340" rx="580" ry="540" fill="url(#{p}warm)" class="glow"/>')
+    b.append(f'<ellipse cx="300" cy="1300" rx="600" ry="560" fill="url(#{p}warm)" class="glow"/>')
     b.append(f'<path d="{smooth([(-20, 1110), (100, 1088), (230, 1104), (360, 1090), (480, 1108), (620, 1092)], 1320)}" fill="#11162C"/>')
-    b.append(f'<path d="M150,1098 h26 v-18 h20 v-10 h14 v28 h18 v-14 h16 v14Z" fill="#11162C"/>')
+    gh = [(140, 1100, 26, 18, "flat"), (164, 1094, 22, 26, "dome"), (184, 1092, 26, 20, "flat"), (208, 1096, 22, 14, "flat")]
+    gb, gw = town(gh, "#131A33", "#10162C", "#1A2242", "#C9874A", dome_col="#161D38")
+    b.append(gb + f'<g opacity=".7">{gw}</g>')
     b.append(olive_tree(30, 1170, 1.15, "#0B0F20", "#101629", "#141B31"))
     b.append(olive_tree(575, 1160, 1.0, "#0B0F20", "#101629", "#141B31"))
     for x, y, r in [(128, 1240, -10), (472, 1240, 10), (300, 1280, 0)]:
         b.append(f'<g transform="rotate({r} {x} {y})"><rect x="{x-52}" y="{y-10}" width="104" height="20" rx="10" fill="#120F1E"/></g>')
-    b.append(f'<ellipse cx="300" cy="1218" rx="68" ry="12" fill="#F4A259" opacity=".22"/>')
+    b.append(f'<ellipse cx="300" cy="1220" rx="60" ry="10" fill="#F4A259" opacity=".14"/>')
     b.append(flame(300, 1216, 0.7, outer="#E0884A", mid="#F6B860", core="#FFE7B0"))
     rnd = random.Random(42)
     ember = "".join(f'<circle cx="{rnd.uniform(230, 370):.1f}" cy="{rnd.uniform(1030, 1180):.1f}" r="{rnd.uniform(1, 2):.1f}"/>' for _ in range(10))
@@ -327,10 +323,9 @@ def build_victory_good():
     # cloud bank with gold-lit undersides and a gap over the light
     cl = []
     for (cx, cy, s) in [(70, 420, 1.3), (200, 395, 1.05), (420, 390, 1.1), (560, 420, 1.35), (110, 480, 0.9), (500, 485, 0.95)]:
-        cl.append(cloud(cx, cy, s, f"url(#{p}cl)"))
+        cl.append(cloud(cx, cy + 7 * s, s, "#FFD58A") + cloud(cx, cy, s, f"url(#{p}cl)"))
     b.append(f'<g class="drift">{"".join(cl[:3])}</g><g>{"".join(cl[3:])}</g>')
-    b.append(f'<path d="M150,500 Q300,540 450,500" fill="none" stroke="#FFE9A8" stroke-width="5" stroke-linecap="round" opacity=".7"/>')
-    b.append(cloud(300, 300, 0.75, "#F6EEF4", 0.55))
+    b.append(cloud(300, 306, 0.75, "#FFD58A", 0.6) + cloud(300, 300, 0.75, "#FBF1F4", 0.85))
     # Judean hills with a sunlit stone town far away
     b.append(f'<path d="{smooth([(-20, 960), (120, 930), (260, 950), (390, 920), (520, 945), (620, 930)], 1320)}" fill="url(#{p}h1)"/>')
     houses = [(330, 935, 30, 22, "flat"), (356, 928, 26, 30, "dome"), (378, 924, 30, 24, "flat"),
@@ -366,9 +361,9 @@ def build_victory_evil():
     p = "ve"
     defs = (
         lin(f"{p}sky", [(0, "#0E0A22"), (0.35, "#21163C"), (0.65, "#3A2560"), (1, "#56367A")])
-        + rad(f"{p}halo", [(0, "#E4D6F5", 0.5), (0.4, "#B48CE0", 0.18), (1, "#B48CE0", 0)])
+        + rad(f"{p}halo", [(0, "#F1E8FB", 0.75), (0.45, "#B48CE0", 0.32), (1, "#B48CE0", 0)])
         + rad(f"{p}moon", [(0, "#FFF8E6"), (0.7, "#F1E6CA"), (1, "#D6C6E6")], cx=0.42, cy=0.4, r=0.65)
-        + lin(f"{p}fog", [(0, "#C9B5E8", 0), (0.3, "#D9C9F0", 0.26), (0.7, "#D9C9F0", 0.26), (1, "#C9B5E8", 0)], 0, 0, 1, 0)
+        + rad(f"{p}fog", [(0, "#DCCDF2", 0.34), (0.55, "#C9B5E8", 0.14), (1, "#C9B5E8", 0)])
         + rad(f"{p}eye", [(0, "#F8DC8B", 0.85), (1, "#F8DC8B", 0)])
         + lin(f"{p}d1", [(0, "#4A2F6A"), (1, "#3A2550")])
         + lin(f"{p}d2", [(0, "#33204C"), (1, "#24163A")])
@@ -405,24 +400,26 @@ def build_victory_evil():
                      f'<path d="M{x+(ex-6)*s:.1f},{y-15*s:.1f} Q{x+ex*s:.1f},{y-19*s:.1f} {x+(ex+6)*s:.1f},{y-15*s:.1f}Z" fill="#1F1432"/>')
         g.append('</g>')
         return "".join(g)
-    b.append(peeker(92, 1088, 1.1, "tw2"))
+    b.append(peeker(96, 1136, 1.1, "tw2"))
     b.append(f'<path d="{smooth([(-20, 1170), (160, 1130), (340, 1180), (500, 1145), (620, 1160)], 1320)}" fill="url(#{p}d2)"/>')
-    b.append(peeker(400, 1196, 0.85, "tw3"))
+    b.append(peeker(392, 1242, 0.9, "tw3"))
     b.append(f'<path d="{smooth([(-20, 1250), (200, 1225), (420, 1255), (620, 1235)], 1320)}" fill="#160D28"/>')
     # drifting desert mist
-    b.append(f'<g class="drift"><rect x="-120" y="740" width="560" height="60" rx="30" fill="url(#{p}fog)"/>'
-             f'<rect x="240" y="1110" width="520" height="70" rx="35" fill="url(#{p}fog)"/></g>')
-    b.append(f'<g class="drift" style="animation-duration:19s"><rect x="160" y="900" width="560" height="56" rx="28" fill="url(#{p}fog)"/>'
-             f'<rect x="-160" y="1020" width="560" height="64" rx="32" fill="url(#{p}fog)"/></g>')
+    b.append(f'<g class="drift"><ellipse cx="150" cy="770" rx="330" ry="60" fill="url(#{p}fog)"/>'
+             f'<ellipse cx="480" cy="1140" rx="330" ry="70" fill="url(#{p}fog)"/></g>')
+    b.append(f'<g class="drift" style="animation-duration:19s"><ellipse cx="450" cy="925" rx="340" ry="58" fill="url(#{p}fog)"/>'
+             f'<ellipse cx="110" cy="1050" rx="340" ry="66" fill="url(#{p}fog)"/></g>')
 
     def mask(x, y, s, rot, cls):
         return (f'<g transform="translate({x},{y}) rotate({rot}) scale({s})" opacity=".78"><g class="{cls}">'
                 f'<path d="M-34,-6 Q-34,-18 -18,-18 Q-6,-18 0,-10 Q6,-18 18,-18 Q34,-18 34,-6 Q34,12 16,12 Q6,12 0,4 Q-6,12 -16,12 Q-34,12 -34,-6Z" fill="#B48CE0"/>'
                 f'<ellipse cx="-15" cy="-4" rx="7" ry="5" fill="#2A1A40"/><ellipse cx="15" cy="-4" rx="7" ry="5" fill="#2A1A40"/>'
                 f'<path d="M-30,-10 Q-18,-24 -4,-14" fill="none" stroke="#E4D6F5" stroke-width="2.5" stroke-linecap="round" opacity=".7"/>'
+                f'<path d="M-34,-6 Q-34,-18 -18,-18 Q-6,-18 0,-10 Q6,-18 18,-18 Q34,-18 34,-6" fill="none" stroke="#F8DC8B" stroke-width="2" opacity=".8"/>'
+                f'<path d="M34,-6 Q44,-2 48,8 M-34,-6 Q-44,-2 -48,8" fill="none" stroke="#E4D6F5" stroke-width="2" stroke-linecap="round" opacity=".6"/>'
                 f'</g></g>')
-    b.append(mask(100, 600, 1.0, -12, "bob"))
-    b.append(mask(505, 690, 0.8, 14, "bob"))
+    b.append(mask(104, 590, 1.35, -12, "bob"))
+    b.append(mask(500, 680, 1.05, 14, "bob"))
     b.append(f'<rect width="{W}" height="{H}" fill="url(#{p}vig)"/>')
     write("backgrounds/victory-evil.svg", svg(W, H, "".join(b), defs, extra_attr=BG_ATTR))
 
@@ -551,28 +548,26 @@ def pattern_body(overlay=False):
     # mosaic cells: centre diamond + corner diamond (made of 4 quarters) + 4 edge triangles via lattice
     cA = "#24345C"  # centre glass (blue)
     cB = "#2A2A55"  # corner glass (indigo-plum)
-    g.append(f'<g opacity="{0.55 if not overlay else 0.35}">'
+    g.append(f'<g opacity="{0.45 if not overlay else 0.3}">'
              f'<path d="M80,6 L154,80 L80,154 L6,80Z" fill="{cA}"/>'
              + wrap('<path d="M0,-74 L74,0 L0,74 L-74,0Z"/>', 0, 0, 74).replace("<g transform", f'<g fill="{cB}" transform')
              + '</g>')
     # medallion rings in each diamond
-    g.append(f'<circle cx="80" cy="80" r="34" fill="#2E4170" opacity="{0.6 if not overlay else 0.35}"/>')
-    g.append(wrap(f'<circle r="34" fill="#3A2F62" opacity="{0.6 if not overlay else 0.35}"/>', 0, 0, 34))
+    g.append(f'<circle cx="80" cy="80" r="34" fill="#2E4170" opacity="{0.45 if not overlay else 0.3}"/>')
+    g.append(wrap(f'<circle r="34" fill="#3A2F62" opacity="{0.45 if not overlay else 0.3}"/>', 0, 0, 34))
     # lead lines (lattice + medallion rims)
-    lat = ('<path d="M0,80 L80,0 L160,80 L80,160Z M80,0 L80,-4 M0,80 L-4,80" fill="none"/>')
     g.append(f'<g stroke="{lead}" stroke-width="3.2" fill="none" opacity="{op}">'
              f'<path d="M0,80 L80,0 L160,80 L80,160Z"/><circle cx="80" cy="80" r="34"/>'
              + wrap('<circle r="34"/>', 0, 0, 36) + '</g>')
     g.append(f'<g stroke="#E9B949" stroke-width=".9" fill="none" opacity=".35">'
              f'<path d="M0,80 L80,0 L160,80 L80,160Z"/><circle cx="80" cy="80" r="30"/>'
              + wrap('<circle r="30"/>', 0, 0, 32) + '</g>')
-    _ = lat
     # motifs
-    g.append(f'<g opacity=".55">{wrap(dove_item("#FFF6E5"), 80, 84, 22)}</g>')
-    g.append(f'<g opacity=".6">{wrap(lamp_item("#E9B949", "#FFD9A0"), 0, 2, 28)}</g>')
+    g.append(f'<g opacity=".34">{wrap(dove_item("#FFF6E5"), 80, 84, 22)}</g>')
+    g.append(f'<g opacity=".4">{wrap(lamp_item("#E9B949", "#FFD9A0"), -3, 3, 28)}</g>')
     # olive sprigs on the four edge cells (centres of the triangles)
     for (x, y, r) in [(36, 36, -45), (124, 36, 45), (36, 124, 45), (124, 124, -45)]:
-        g.append(f'<g opacity=".4" transform="translate({x},{y}) rotate({r})">{sprig_item("#9CC48A")}</g>')
+        g.append(f'<g opacity=".3" transform="translate({x},{y}) rotate({r})">{sprig_item("#9CC48A")}</g>')
     # gold stars at lattice vertices (edge midpoints) - wrapped
     st = sparkle_star(0, 0, 6, "#F8DC8B")
     g.append(f'<g opacity=".7">{wrap(st, 80, 0, 7)}{wrap(st, 0, 80, 7)}</g>')
@@ -675,10 +670,6 @@ def build_quest_board():
     for x, y in [(62, 38), (938, 38), (62, 202), (938, 202)]:
         b.append(f'<g fill="url(#{p}leaf)">{sparkle_star(x, y, 11, "#E9B949")}</g><circle cx="{x}" cy="{y}" r="3" fill="#FFF6E5"/>')
     # rolled ends with wooden rods and knobs
-    for x0, side in [(18, 1), (982, -1)]:
-        rx = x0 - 4 if side > 0 else x0 - 36
-        b.append(f'<rect x="{min(x0, x0 - 40 * -side) if side < 0 else x0:.0f}" y="16" width="40" height="208" rx="18" fill="url(#{p}roll)"/>'
-                 if False else "")
     for (rx, rw) in [(14, 40), (946, 40)]:
         b.append(f'<rect x="{rx}" y="14" width="{rw}" height="212" rx="20" fill="url(#{p}roll)"/>'
                  f'<path d="M{rx+8},24 V216" stroke="#FFFBF0" stroke-width="3" opacity=".6" stroke-linecap="round"/>'
@@ -739,15 +730,16 @@ def build_vote_marker():
     defs = (glow_def(f"{p}g", "#F8DC8B", 0.85)
             + lin(f"{p}clay", [(0, "#F0B37E"), (0.5, "#D98B5F"), (1, "#8E4A2C")])
             + lin(f"{p}leaf", [(0, "#FFF1C4"), (1, "#B9832A")]))
-    lamp = ('M14,70 Q14,90 46,90 Q70,90 82,74 L92,66 Q80,62 72,68 Q56,56 32,58 Q14,60 14,70Z')
-    b = [f'<circle cx="62" cy="46" r="46" fill="url(#{p}g)" class="glow"/>',
-         f'<ellipse cx="48" cy="92" rx="30" ry="5" fill="#000" opacity=".25"/>',
+    # small clay oil lamp (body centre ~x46,y76) with its flame at the spout
+    lamp = "M16,74 Q16,90 42,90 Q62,90 72,78 L80,72 Q70,68 64,73 Q50,63 32,64 Q16,66 16,74Z"
+    b = [f'<circle cx="58" cy="52" r="40" fill="url(#{p}g)" class="glow"/>',
+         f'<ellipse cx="46" cy="92" rx="26" ry="4.5" fill="#000" opacity=".25"/>',
          f'<path d="{lamp}" fill="url(#{p}clay)"/>',
-         f'<path d="M14,70 Q2,66 6,54 Q10,62 20,62Z" fill="url(#{p}clay)"/>',
-         f'<ellipse cx="42" cy="64" rx="12" ry="3.6" fill="#4A2A1A"/>',
-         f'<path d="M20,78 Q46,86 76,74" fill="none" stroke="url(#{p}leaf)" stroke-width="3" stroke-linecap="round"/>',
-         f'<circle cx="34" cy="80" r="1.8" fill="#FFF1C4"/><circle cx="48" cy="82" r="1.8" fill="#FFF1C4"/><circle cx="62" cy="80" r="1.8" fill="#FFF1C4"/>',
-         flame(86, 66, 0.72, outer="#F6A04D", mid="#FFD36E", core="#FFF6D8")]
+         f'<path d="M16,74 Q6,70 9,60 Q12,67 21,67Z" fill="url(#{p}clay)"/>',
+         f'<ellipse cx="40" cy="69" rx="10" ry="3.2" fill="#4A2A1A"/>',
+         f'<path d="M21,80 Q44,88 70,78" fill="none" stroke="url(#{p}leaf)" stroke-width="3" stroke-linecap="round"/>',
+         f'<circle cx="32" cy="83" r="1.7" fill="#FFF1C4"/><circle cx="45" cy="85" r="1.7" fill="#FFF1C4"/><circle cx="58" cy="83" r="1.7" fill="#FFF1C4"/>',
+         flame(76, 71, 0.6, outer="#F6A04D", mid="#FFD36E", core="#FFF6D8")]
     write("track/vote-marker.svg", svg(100, 100, "".join(b), defs))
 
 

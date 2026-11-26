@@ -34,7 +34,7 @@
     const s = document.createElement('style'); s.id = 'bd-style';
     s.textContent = `
 .bd-root { position: relative; z-index: 0; }
-.bd-root > .bd-veil { position: fixed; inset: 0; z-index: -1; }
+.bd-veil-slot > .bd-veil { position: fixed; inset: 0; z-index: -1; }
 .bd-top .grow { padding-right: 2px; }
 .bd-top .ux-top-sub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .bd-top .ux-icon-btn { width: 36px; height: 36px; border-radius: 11px; font-size: 16px; }
@@ -261,13 +261,13 @@
         P.head = '<div class="bd-tag"><span class="ux-phase-tag">' + K.tokenImg('leader', 'bd-ti') + ' 이번 ' + e(W.leader()) + '</span></div>' +
           '<h3 class="ux-action-title">' + e(jo(W.team(), '을', '를')) + ' 꾸려 주세요</h3>' +
           '<p class="ux-action-sub">' + e(W.quest()) + ' ' + ((v.round || 0) + 1) + '에 함께 갈 <b>' + size + '명</b>을 위 자리에서 골라요.<br>나도 포함할 수 있어요.</p>' +
-          twoNote(v) + hintLine('propose', 'leader', { size });
+          twoNote(v);
         P.ctl = '<div class="bd-count" data-bd="count"><b data-bd="k">0</b> / ' + size + '명 선택</div>' +
           '<button type="button" class="ux-btn ux-btn-gold" data-act="bd-propose" data-bd="go" disabled>이 ' + e(ro(W.team())) + ' 제안하기</button>' + nextLeaders(v);
       } else {
         P.head = '<h3 class="ux-action-title">' + e(W.leader()) + ' ' + nm(v, v.leaderId) + '님이 고르는 중</h3>' +
           '<p class="ux-action-sub">' + e(W.quest()) + ' ' + ((v.round || 0) + 1) + '에 갈 ' + e(W.team()) + ' <b>' + size + '명</b>을 정하고 있어요.<br>누구를 보내면 좋을지 함께 이야기해 보세요.</p>' +
-          twoNote(v) + hintLine('propose', 'others', { leaderName: K.pname(v, v.leaderId) });
+          twoNote(v);
         P.ctl = waiting(K.tokenImg('leader')) + nextLeaders(v);
       }
     } else if (ph === 'vote') {
@@ -277,11 +277,10 @@
       if (me.myVote == null) {
         P.mood = 'turn';
         P.ctl = (last ? '<div class="bd-warn" style="margin:0 0 12px">이번에 ' + e(jo(W.reject(), '이', '가')) + ' 많으면 <b>' + e(jo(K.teamName('evil'), '이', '가')) + ' 바로 승리</b>해요</div>' : '') +
-          hintLine('vote', 'all') +
           choiceCards({ cls: 'approve', tok: 'approve', label: W.approve(), small: '이대로 출발' }, { cls: 'reject', tok: 'reject', label: W.reject(), small: '다시 꾸리기' }) +
           '<button type="button" class="ux-btn ux-btn-gold" data-act="bd-vote" data-bd="go" disabled>투표하기</button>';
       } else {
-        P.ctl = doneSeal('투표 완료') + hintLine('vote', 'voted') + '<p class="ux-muted ux-center">모두 투표하면 결과가 함께 공개돼요</p>';
+        P.ctl = doneSeal('투표 완료') + '<p class="ux-muted ux-center">모두 투표하면 결과가 함께 공개돼요</p>';
       }
       P.live = progress('투표한 사람', (v.votedIds || []).length, n);
     } else if (ph === 'quest') {
@@ -289,7 +288,7 @@
       if (mine && !me.myQuestPlayed) {
         P.mood = 'turn';
         P.head = '<h3 class="ux-action-title">' + e(W.quest()) + ' 카드를 내 주세요</h3>' +
-          '<p class="ux-action-sub">몰래 한 장을 골라요. 누가 무엇을 냈는지는 아무도 몰라요.</p>' + teamChips(v) + twoNote(v) + hintLine('quest', 'onTeam');
+          '<p class="ux-action-sub">몰래 한 장을 골라요. 누가 무엇을 냈는지는 아무도 몰라요.</p>' + teamChips(v) + twoNote(v);
         // Both cards look identical for everyone (a neighbour must not learn my team). Good players get a toast on fail.
         P.ctl = choiceCards({ cls: 'success', tok: 'success', label: W.success() }, { cls: 'fail', tok: 'fail', label: W.fail() }) +
           '<button type="button" class="ux-btn ux-btn-gold" data-act="bd-quest" data-bd="go" disabled>제출하기</button>';
@@ -298,7 +297,7 @@
         P.ctl = doneSeal('제출 완료') + hintLine('quest', 'played');
       } else {
         P.head = '<h3 class="ux-action-title">' + e(jo(W.team(), '이', '가')) + ' ' + e(jo(W.quest(), '을', '를')) + ' 수행 중이에요</h3>' +
-          '<p class="ux-action-sub">카드가 모두 모이면 섞어서 공개돼요.</p>' + teamChips(v) + twoNote(v) + hintLine('quest', 'offTeam');
+          '<p class="ux-action-sub">카드가 모두 모이면 섞어서 공개돼요.</p>' + teamChips(v) + twoNote(v);
         P.ctl = waiting(K.tokenImg('success'));
       }
       P.live = progress('카드를 낸 사람', (v.questPlayedIds || []).length, team.length || K.teamSize(v));
@@ -307,12 +306,12 @@
         P.mood = 'turn';
         P.head = '<div class="bd-tag"><span class="ux-phase-tag">🪔 ' + e(W.lady()) + '</span></div>' +
           '<h3 class="ux-action-title">' + e(ro(W.lady())) + ' 한 사람을 비춰 보세요</h3>' +
-          '<p class="ux-action-sub">고른 사람이 어느 편인지 <b>나만</b> 알게 돼요.<br>' + e(jo(W.lady(), '을', '를')) + ' 가졌던 사람은 고를 수 없어요.</p>' + hintLine('lady', 'holder');
+          '<p class="ux-action-sub">고른 사람이 어느 편인지 <b>나만</b> 알게 돼요.<br>' + e(jo(W.lady(), '을', '를')) + ' 가졌던 사람은 고를 수 없어요.</p>' + '';
         P.ctl = '<div class="bd-pickname" data-bd="pick">위 자리에서 한 사람을 골라 주세요</div>' +
           '<button type="button" class="ux-btn ux-btn-gold" data-act="bd-lady" data-bd="go" disabled>' + e(ro(W.lady())) + ' 비춰보기</button>';
       } else {
         P.head = '<h3 class="ux-action-title">' + nm(v, v.ladyHolderId) + '님이 ' + e(jo(W.lady(), '을', '를')) + ' 비추는 중</h3>' +
-          '<p class="ux-action-sub">비춘 사람의 편은 ' + e(jo(W.lady(), '을', '를')) + ' 든 사람만 알게 돼요.</p>' + hintLine('lady', 'others', { holderName: K.pname(v, v.ladyHolderId) });
+          '<p class="ux-action-sub">비춘 사람의 편은 ' + e(jo(W.lady(), '을', '를')) + ' 든 사람만 알게 돼요.</p>';
         P.ctl = waiting(K.tokenImg('lady'));
       }
     } else if (ph === 'assassin') {
@@ -320,7 +319,7 @@
       const seer = K.roleName('merlin') || '선지자';
       if (v.assassinId && v.assassinId === me.id) {
         P.head = '<h3 class="ux-action-title">' + e(jo(seer, '을', '를')) + ' 찾아내세요</h3>' +
-          '<p class="ux-action-sub">맞히면 <b>' + e(jo(K.teamName('evil'), '이', '가')) + ' 승리</b>해요.<br>동료들과 의논한 뒤 신중하게 한 명을 고르세요.</p>' + hintLine('assassin', 'assassin');
+          '<p class="ux-action-sub">맞히면 <b>' + e(jo(K.teamName('evil'), '이', '가')) + ' 승리</b>해요.<br>동료들과 의논한 뒤 신중하게 한 명을 고르세요.</p>';
         P.ctl = '<div class="bd-pickname" data-bd="pick">위 자리에서 한 사람을 골라 주세요</div>' +
           '<button type="button" class="ux-btn ux-btn-evil" data-act="bd-assassin" data-bd="go" disabled>' + e(W.assassinate()) + '하기</button>';
       } else if (me.team === 'evil') {
@@ -328,7 +327,7 @@
           '<p class="ux-action-sub">누가 ' + e(seer) + '인지' + ' 함께 의논해 보세요.<br>최종 ' + e(jo(W.assassinate(), '은', '는')) + ' ' + nm(v, v.assassinId) + '님이 해요.</p>' + hintLine('assassin', 'others');
         P.ctl = waiting('');
       } else {
-        P.head = '<h3 class="ux-action-title">마지막 ' + e(W.assassinate()) + '을 기다리는 중</h3>' +
+        P.head = '<h3 class="ux-action-title">마지막 ' + e(jo(W.assassinate(), '을', '를')) + ' 기다리는 중</h3>' +
           '<p class="ux-action-sub">' + e(jo(K.teamName('evil'), '이', '가')) + ' 정체를 드러내고 의논하고 있어요.<br>숨을 고르고 조용히 기다려 주세요.</p>' + hintLine('assassin', 'others');
         P.ctl = waiting('');
       }

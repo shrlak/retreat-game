@@ -461,22 +461,24 @@ def favicon_svg():
     """64x64, bold lamp + flame on a navy rounded square. No <style>, no animation."""
     p = "fv-"
     defs = (rad(f"{p}bg", [(0, P["navy_l"]), (1, P["navy_d"])], 0.62, 0.3, 0.8)
-            + glow_def(f"{p}gl", "#FFD36E", 0.95)
+            + glow_def(f"{p}gl", "#FFD36E", 0.6)
             + lin(f"{p}clay", [(0, "#FFD488"), (0.6, "#F0A955"), (1, "#C9762F")]))
     body = (
         f'<rect width="64" height="64" rx="14" fill="url(#{p}bg)"/>'
         f'<rect x="2" y="2" width="60" height="60" rx="12" fill="none" stroke="{P["gold"]}" stroke-width="2.4"/>'
         f'<circle cx="48" cy="20" r="24" fill="url(#{p}gl)"/>'
-        # lamp
-        f'<path d="M5.5,37 C5.5,29.5 16,26.5 28,27.5 C36,28 41,29.5 45,31.5 L52,29.5 C55,28.8 56.5,31.6 54.5,33.4 L48,39 '
-        f'C43.5,45.5 35,48.5 27,48.5 C14,48.5 5.5,44.5 5.5,37Z" fill="url(#{p}clay)" stroke="{P["gold_dd"]}" stroke-width="1.6" stroke-linejoin="round"/>'
-        f'<ellipse cx="27" cy="50.5" rx="9" ry="3" fill="{P["gold_d"]}"/>'
-        f'<ellipse cx="24" cy="29.6" rx="6.5" ry="1.8" fill="{P["gold_dd"]}" opacity=".8"/>'
-        f'<path d="M10.5,35 C12,31.5 18,30 23,30" fill="none" stroke="#FFF6E5" stroke-width="2.2" stroke-linecap="round" opacity=".6"/>'
-        # flame
-        f'<path d="M52,28 C45,27.5 44,20 47.5,14.5 C49.5,11.5 51,8 51.5,4 C54,9 58.5,13 58.5,19.5 C58.5,24.5 56,28 52,28Z" fill="#F6A04D"/>'
-        f'<path d="M52,27 C48,26.5 47.5,21.5 49.5,18 C50.6,16 51.3,14 51.6,12 C53.4,15 55.6,17.6 55.6,21.6 C55.6,24.8 54.3,27 52,27Z" fill="#FFD36E"/>'
-        f'<ellipse cx="52" cy="23.5" rx="1.8" ry="3.2" fill="#FFF6D8"/>'
+        # lamp (no thin outlines: they muddy at 16 px)
+        '<g transform="translate(3.4,3.4) scale(0.9)">'
+        f'<path d="M4,38 C4,30 15,27 27,28 C35,28.5 40,30 44,32 L50,30.5 C53.5,29.8 55,33 52.6,35 L47,40 '
+        f'C42.5,46.5 34,49.5 26,49.5 C13,49.5 4,45.5 4,38Z" fill="url(#{p}clay)"/>'
+        f'<path d="M14,50 H38 L35,55 H17Z" fill="{P["gold_d"]}"/>'
+        f'<ellipse cx="22" cy="31" rx="7" ry="2.2" fill="{P["gold_dd"]}"/>'
+        f'<path d="M9,36 C11,33 16,32 20,32" fill="none" stroke="#FFF6E5" stroke-width="2.6" stroke-linecap="round" opacity=".7"/>'
+        # flame (big and bright so it survives at 16 px)
+        f'<path d="M50,30 C41,29.5 40,21 44,14 C46.5,10 48.5,7 49.5,2.5 C53,8 59.5,12.5 59.5,20.5 C59.5,26.5 56,30 50,30Z" fill="#FF9F43"/>'
+        f'<path d="M50,28.5 C45.5,28 45,22.5 47.5,18.5 C48.8,16.3 49.6,14 50,11.5 C52.2,15 55.6,17.8 55.6,22.4 C55.6,26 53.4,28.5 50,28.5Z" fill="#FFE08A"/>'
+        f'<ellipse cx="50" cy="24.5" rx="2.2" ry="3.4" fill="#FFFBEA"/>'
+        '</g>'
     )
     return svg(64, 64, body, defs, anim=False)
 
@@ -649,7 +651,7 @@ def avatar(i, a):
         acc += "".join(f'<circle cx="{x}" cy="{y}" r="1.3" fill="{P["ink_l"]}" opacity=".6"/>'
                        for x, y in [(73, 98), (78, 101), (76, 95), (122, 98), (127, 95), (124, 101)])
     if st == "shepherd":
-        acc += f'<g transform="translate(170,166) scale(-1,1)">{sheep(0, 0, 0.36, cls="")}</g>'
+        acc += f'<g transform="translate(158,150) scale(-1,1)">{sheep(0, 0, 0.42, cls="")}</g>'
     if a.get("net"):
         acc += ('<g fill="none" stroke="%s" stroke-width="1.6" opacity=".55">' % P["parch_d"]
                 + "".join(f'<path d="M{x},150 L{x+30},214"/><path d="M{x+30},150 L{x},214"/>' for x in (120, 136, 152))
@@ -690,7 +692,7 @@ AVATARS = [
          style="coins", face="happy", wrap="#C8553D", wrap2="#9C3B28"),
     # 8 traveller with mantle pulled over the head
     dict(bg="#3FA89B", bg2="#86D1C6", skin=P["skin1"], hair="#6B3F22", tunic=P["cream"], tunic2=P["parch_d"], stripe=P["pine"],
-         style="hood", face="kind", wrap="#7A5C46", wrap2="#5A4030"),
+         style="hood", face="kind", wrap=P["plum_l"], wrap2=P["lav"]),
     # 9 kind elder with a white beard and striped head-cloth
     dict(bg="#79AE6F", bg2="#B6D9A9", skin=P["skin2"], hair="#EDE6D8", tunic="#4A78B5", tunic2="#2F5A92", stripe=P["gold_l"],
          style="elder", face="calm", wrap=P["cream"], wrap2="#4A78B5", cord="#3B2A22"),

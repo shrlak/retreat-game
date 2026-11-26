@@ -20,6 +20,7 @@ export function teamSizes(n, settings) {
 export const GOOD_ROLES = ["merlin", "percival", "servant"];
 export const EVIL_ROLES = ["assassin", "morgana", "mordred", "oberon", "minion"];
 export const ONLINE_MS = 15000;
+export const TRANSITION_MS = 1800; // how long every phone plays a scene transition, started at phaseStartedAt
 
 export function teamOf(role) {
   return EVIL_ROLES.includes(role) ? "evil" : "good";
@@ -106,6 +107,9 @@ export function createState(code, hostName, ctx = {}) {
     players: [p],
     game: null,
     seqs: { vote: 0, quest: 0, lady: 0 },
+    phaseSeq: 1,
+    phaseStartedAt: now,
+    prevPhase: null,
   };
   return { state, player: p };
 }
@@ -283,6 +287,8 @@ export function applyAction(state, msg, ctx = {}) {
   const isHost = state.hostId === me.id;
   const g = state.game;
   const a = msg.action;
+  const before = state.phase + ":" + (state.game ? state.game.round + "/" + state.game.proposalNo : "");
+  const beforePhase = state.phase;
   const res = (() => {
     switch (a) {
       case "ready": {
@@ -450,7 +456,15 @@ export function applyAction(state, msg, ctx = {}) {
         return err("알 수 없는 동작이에요");
     }
   })();
-  if (!res.error && !res.noChange) state.v += 1;
+  if (!res.error && !res.noChange) {
+    state.v += 1;
+    const after = state.phase + ":" + (state.game ? state.game.round + "/" + state.game.proposalNo : "");
+    if (after !== before) {
+      state.phaseSeq = (state.phaseSeq || 0) + 1;
+      state.phaseStartedAt = now;
+      state.prevPhase = beforePhase;
+    }
+  }
   return res;
 }
 
@@ -479,6 +493,12 @@ export function viewFor(state, playerId, now = Date.now()) {
     teamSizes: teamSizes(n, state.settings),
     failsNeeded: n >= MIN_PLAYERS ? failsNeeded(n) : null,
     players,
+    // synced scene transitions: every phone starts the transition at phaseStartedAt (server ms clock)
+    phaseSeq: state.phaseSeq || 1,
+    phaseStartedAt: state.phaseStartedAt || state.createdAt,
+    prevPhase: state.prevPhase || null,
+    transitionMs: TRANSITION_MS,
+    serverNow: now,
   };
   const me = {
     id: meP.id,

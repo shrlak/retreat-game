@@ -82,9 +82,30 @@ m = {
         "reveal": path("backgrounds/reveal.svg"),
         "victoryGood": path("backgrounds/victory-good.svg"),
         "victoryEvil": path("backgrounds/victory-evil.svg"),
+        "propose": path("backgrounds/phase-propose.svg"),
+        "vote": path("backgrounds/phase-vote.svg"),
+        "mission": path("backgrounds/phase-mission.svg"),
+        "lady": path("backgrounds/phase-lady.svg"),
+        "assassin": path("backgrounds/phase-assassin.svg"),
+        "wait": path("backgrounds/phase-wait.svg"),
         "pattern": path("bg-pattern.svg"),
         "patternOverlay": path("bg-pattern-overlay.svg"),
         "css": "background-size: cover; background-position: center",
+    },
+    "phaseBackground": {
+        "lobby": "home", "reveal": "reveal", "propose": "propose", "vote": "vote",
+        "quest": "mission", "lady": "lady", "assassin": "assassin",
+        "end": {"good": "victoryGood", "evil": "victoryEvil"}, "waiting": "wait", "fallback": "game",
+    },
+    "map": {
+        "journey": path("map/journey.svg"),
+        "route": path("map/route.json"),
+        "marker": path("map/marker.svg"),
+        "stopDoneGood": path("map/stop-done-good.svg"),
+        "stopDoneEvil": path("map/stop-done-evil.svg"),
+        "stopCurrent": path("map/stop-current.svg"),
+        "readme": path("map/README.md"),
+        "data": json.load(open(os.path.join(A, "map/route.json"), encoding="utf-8")) if has("map/route.json") else None,
     },
     "logo": {"full": path("logo.svg"), "light": path("logo-light.svg"), "mark": path("logo-mark.svg")},
     "avatars": [BASE + "avatars/" + f for f in sorted(listdir("avatars"), key=lambda s: int(''.join(c for c in s if c.isdigit()) or 0))],
@@ -121,6 +142,7 @@ toks = "".join(f'<figure class="tok"><img src="{rel(v)}" alt=""><figcaption>{k}<
                for k, v in {**m["tokens"], **m["teams"], **m["knowledge"]}.items())
 bgs = "".join(f'<figure class="bg"><img src="{rel(v)}" alt=""><figcaption>{k}</figcaption></figure>'
               for k, v in m["backgrounds"].items() if k not in ("css", "pattern", "patternOverlay"))
+bgs += f'<figure class="bg"><img src="./map/journey.svg" alt=""><figcaption>map</figcaption></figure>'
 avs = "".join(f'<img class="av" src="{rel(v)}" alt="">' for v in m["avatars"])
 ics = "".join(f'<span class="ic" title="{k}"><img src="{rel(v)}" alt=""></span>' for k, v in m["icons"].items())
 html = f"""<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">

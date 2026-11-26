@@ -991,9 +991,7 @@
   }
   function connHook(on) {
     var u = ui();
-    ["setOnline", "setConnection", "connection"].forEach(function (k) {
-      if (u && typeof u[k] === "function") { try { u[k](on); } catch (e) { console.error(e); } }
-    });
+    if (u && typeof u.setConnection === "function") { try { u.setConnection(on ? "online" : "offline"); } catch (e) { console.error(e); } }
     try { W.dispatchEvent(new Event(on ? "online" : "offline")); } catch (e) { /* node */ }
   }
   function simulateOffline(sec) {

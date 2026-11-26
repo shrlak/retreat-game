@@ -31,21 +31,22 @@ Phone-based online hidden-role game in the style of the classic team-quest deduc
 - Role names: church-retreat names in `web/config.js` (Spencer asked for church-themed names; current set is a first pick).
 - Hosting: Supabase (free, in existing project "health-dashboard") + GitHub Pages. Cloudflare not possible from the cloud session (connector can't deploy Workers).
 
-## Snapshot (2026-11-26 09:09 UTC, auto-generated every push)
+## Snapshot (2026-11-26 09:12 UTC, auto-generated every push)
 
 ### Engine tests
 ```
 tests did not run
 ```
 ### Helper folders (files, newest change)
-- `ui/`: 15 files, newest 2026-11-26 09:10 UTC
+- `ui/`: 16 files, newest 2026-11-26 09:14 UTC
 - `assets/`: 89 files, newest 2026-11-26 09:10 UTC
 - `guide/`: 8 files, newest 2026-11-26 09:01 UTC
-- `tests/`: 14 files, newest 2026-11-26 09:10 UTC
+- `tests/`: 17 files, newest 2026-11-26 09:14 UTC
 - `web/`: 4 files, newest 2026-11-26 09:03 UTC
-- `server/`: 3 files, newest 2026-11-26 09:04 UTC
+- `server/`: 3 files, newest 2026-11-26 09:13 UTC
 ### Recent commits
 ```
+e30af1c Handoff snapshot: tests, helper status, commits
 5c44ef9 Add .nojekyll
 2024bc9 Add live end-to-end bot test page
 d804a45 Server: SDK-free handler.js; index.ts is a thin wrapper
@@ -160,6 +161,7 @@ server/engine.js
 server/handler.js
 server/index.ts
 sync.sh
+tests/BUGS.md
 tests/README.md
 tests/RULES_CHECKLIST.md
 tests/concurrency.test.mjs
@@ -185,6 +187,7 @@ ui/src/20-home.js
 ui/src/21-lobby.js
 ui/src/22-reveal.js
 ui/src/30-board.js
+ui/src/40-cine.js
 ui/src/50-end.js
 ui/src/KIT.md
 ui/ui.css
