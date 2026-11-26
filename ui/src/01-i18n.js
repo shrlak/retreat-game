@@ -46,7 +46,7 @@
       assassinate: 'Name the Prophet', host: 'Host',
       ready: 'Ready', notReady: 'Get ready',
       lancelot: 'Pilgrim at the Crossroads', loyalty: 'Crossroads card', loyaltyNone: 'No change', loyaltySwitch: 'Sides switch',
-      lancelotVariant1: 'Quiet crossroads (they don\'t know each other)', lancelotVariant2: 'Known crossroads (they know each other)',
+      lancelotVariant1: 'Variant 1: a crossroads card each round from mission 3', lancelotVariant2: 'Variant 2: cards dealt face up, Lancelots play for their side', lancelotVariant3: 'Variant 3: no switching, the Lancelots know each other', loyaltyPlan: 'Crossroads cards on the table', lancelotForced: 'You can only play for your current side',
       excalibur: 'Scroll of the Word', excaliburAction: 'Flip one card', excaliburPass: 'Don\'t flip',
       allowRejoin: 'Allow rejoin', claimHost: 'Become host'
     },

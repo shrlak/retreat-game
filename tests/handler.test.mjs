@@ -16,7 +16,7 @@ test("full bot games run through the real handler for every player count", async
 });
 
 test("Lancelot (both modes) and Excalibur games run through the real handler", async () => {
-  for (const n of [7, 8, 10]) for (const lancelot of [1, 2]) for (const excalibur of [false, true]) {
+  for (const n of [7, 8, 10]) for (const lancelot of [1, 2, 3]) for (const excalibur of [false, true]) {
     const t = handlerTransport({ seed: n + lancelot, ...fast });
     const r = await playGame(t, { n, lady: n >= 8, lancelot, excalibur, seed: n * 13 + lancelot * 3 + (excalibur ? 1 : 0), roles: { merlin: true, percival: true, morgana: true, assassin: true, mordred: false, oberon: false } });
     assert.ok(r.result, `${r.tag} did not finish: ${r.setupRefused || ""}`);
