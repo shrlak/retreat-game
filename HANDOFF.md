@@ -27,13 +27,13 @@ Phone-based online hidden-role game in the style of the classic team-quest deduc
 
 - Live bot tests on GitHub Pages against function v6 (2026-11-26): base game 5–10 players 12 games 0 fails; expansions (Lancelot 1/2, Excalibur, lady) 5–10 players 16 games 0 fails. One request out of 4,588 hung 160 s (504) earlier → every DB call now has a 5 s deadline, a timed-out write is recognised by `_saveId`, phones abort a tap after 15 s.
 - Live bot tests against function v7 (official Lancelot variants 1/2/3, 2026-11-26 10:35 UTC): 7–10 players × 3 games = 12 games, 0 fails, 1,875 calls (covers V2 forced cards and public plan, V3 mutual knowledge, Excalibur, lady, Oberon at 10).
-- Auto push: a background loop runs sync.sh every 60 s and pushes only when a file changed (it lives in the working session; restart it if the session is replaced: `while true; do sleep 60; bash sync.sh; done`).
+- Final check (2026-11-26 12:05 UTC): all 64 unit tests pass (`node --test tests/*.test.mjs`; concurrency.test.mjs alone takes about 10 minutes). Tests thread: 600k simulated games (100k per player count 5–10), 0 rule violations, 0 role leaks, 0 server errors; 28 of 28 seeded mutations caught; live server 20 bot games clean, tap response typically 0.15 s, worst 0.21 s.
+- Auto push: the cloud session pushed with sync.sh every 60 s while it worked; that loop has stopped. In Claude Code, just commit and push to `main` (GitHub Pages serves `gh-pages`, so also `git push -f origin HEAD:gh-pages`, or run `bash sync.sh`).
 
 ## Next, in priority order
 1. Rerun tests/e2e.html after each server change.
-2. Verify the real UI on the live site with the new view fields.
-3. Clean up test leftovers in Supabase: function `mist-admin`, storage bucket `mist-game`.
-4. Keep README.md, HANDOFF.md, CLAUDE.md in step with every feature change.
+2. Clean up test leftovers in Supabase: function `mist-admin`, storage bucket `mist-game`.
+3. Keep README.md, HANDOFF.md, CLAUDE.md in step with every feature change.
 
 ## Open decisions
 - Role names: church-retreat names in `web/config.js` (Spencer asked for church-themed names; current set is a first pick).
