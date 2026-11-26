@@ -1,4 +1,4 @@
-// Optional modules: 갈림길의 순례자 (Lancelot, two variants), 말씀 두루마리 (Excalibur), host-approved rejoin.
+// Optional modules: 갈림길의 순례자 (Lancelot, official variants 1-3), 말씀 두루마리 (Excalibur), host-approved rejoin.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import * as E from "../server/engine.js";
@@ -25,31 +25,58 @@ function passProposal(r, team, extra = {}) {
   return leader;
 }
 
-test("Lancelot adds one pilgrim to each side and the loyalty deck has 3 blank + 2 switch", () => {
-  for (const variant of [1, 2]) {
+test("Lancelot (official rulebook): v1 deck 3 blank + 2 switch, v2 deals 5 of 7 face up, v3 has no deck", () => {
+  for (const variant of [1, 2, 3]) {
     const r = room(7, { lancelot: variant });
     assert.ok(roleId(r.g, "lancelotGood") && roleId(r.g, "lancelotEvil"));
     assert.equal(Object.values(r.g.roleOf).filter((x) => E.teamOf(x) === "evil").length, 3);
-    assert.deepEqual(r.g.loyaltyDeck.slice().sort(), ["none", "none", "none", "switch", "switch"]);
+    if (variant === 1) assert.deepEqual(r.g.loyaltyDeck.slice().sort(), ["none", "none", "none", "switch", "switch"]);
+    else assert.equal(r.g.loyaltyDeck.length, 0);
+    if (variant === 2) {
+      assert.equal(r.g.loyaltyPlan.length, 5);
+      assert.ok(r.g.loyaltyPlan.filter((c) => c === "switch").length <= 2);
+      assert.deepEqual(E.viewFor(r.state, r.ids[0], 1000).loyaltyPlan, r.g.loyaltyPlan, "v2 cards are public from the start");
+    } else assert.equal(r.g.loyaltyPlan, null);
   }
 });
 
-test("Lancelot knowledge: variant 1 hidden from evil, variant 2 the two pilgrims see each other and evil sees the evil pilgrim", () => {
-  const r1 = room(8, { lancelot: 1 });
-  const le1 = roleId(r1.g, "lancelotEvil"), lg1 = roleId(r1.g, "lancelotGood");
-  const evilIds = Object.keys(r1.g.roleOf).filter((id) => E.teamOf(r1.g.roleOf[id]) === "evil" && id !== le1);
-  for (const id of evilIds) assert.ok(!E.viewFor(r1.state, id, 1000).me.knowledge.some((k) => k.id === le1), "v1 evil must not see evil pilgrim");
-  assert.equal(E.viewFor(r1.state, le1, 1000).me.knowledge.length, 0);
-  assert.equal(E.viewFor(r1.state, lg1, 1000).me.knowledge.length, 0);
-  const merlin = roleId(r1.g, "merlin");
-  assert.ok(E.viewFor(r1.state, merlin, 1000).me.knowledge.some((k) => k.id === le1), "seer sees evil pilgrim");
+test("Lancelot knowledge (official): evil (not Oberon) sees Evil Lancelot, he sees no one; only v3 Lancelots know each other", () => {
+  for (const variant of [1, 2, 3]) {
+    const r = room(10, { lancelot: variant, roles: { oberon: true, mordred: false } });
+    const le = roleId(r.g, "lancelotEvil"), lg = roleId(r.g, "lancelotGood");
+    const ob = roleId(r.g, "oberon");
+    for (const id of Object.keys(r.g.roleOf)) {
+      const role = r.g.roleOf[id];
+      if (E.teamOf(role) !== "evil" || id === le) continue;
+      const sees = E.viewFor(r.state, id, 1000).me.knowledge.some((k) => k.id === le && k.tag === "evil");
+      assert.equal(sees, role !== "oberon", "v" + variant + " " + role + " seeing evil Lancelot");
+    }
+    const leK = E.viewFor(r.state, le, 1000).me.knowledge, lgK = E.viewFor(r.state, lg, 1000).me.knowledge;
+    assert.ok(!leK.some((k) => k.tag === "evil"), "evil Lancelot keeps his eyes closed");
+    assert.ok(!leK.some((k) => k.id === ob));
+    assert.equal(lgK.some((k) => k.id === le && k.tag === "lancelot"), variant === 3);
+    assert.equal(leK.some((k) => k.id === lg && k.tag === "lancelot"), variant === 3);
+    const merlin = roleId(r.g, "merlin");
+    assert.ok(E.viewFor(r.state, merlin, 1000).me.knowledge.some((k) => k.id === le), "seer sees evil Lancelot");
+  }
+});
 
-  const r2 = room(8, { lancelot: 2 });
-  const le2 = roleId(r2.g, "lancelotEvil"), lg2 = roleId(r2.g, "lancelotGood");
-  assert.ok(E.viewFor(r2.state, lg2, 1000).me.knowledge.some((k) => k.id === le2 && k.tag === "lancelot"));
-  assert.ok(E.viewFor(r2.state, le2, 1000).me.knowledge.some((k) => k.id === lg2 && k.tag === "lancelot"));
-  const evil2 = Object.keys(r2.g.roleOf).find((id) => r2.g.roleOf[id] === "morgana");
-  assert.ok(E.viewFor(r2.state, evil2, 1000).me.knowledge.some((k) => k.id === le2 && k.tag === "evil"));
+test("Lancelot v2: a switch takes effect at the start of its round, and Lancelots must play for their current side", () => {
+  const r = room(7, { lancelot: 2 });
+  const lg = roleId(r.g, "lancelotGood"), le = roleId(r.g, "lancelotEvil");
+  // reset to the start allegiance and use a fixed plan: switch at round 2 (index 1)
+  r.g.allegiance[lg] = "good"; r.g.allegiance[le] = "evil"; r.g.loyaltyRevealed = [];
+  r.g.loyaltyPlan = ["none", "switch", "none", "none", "none"];
+  const team0 = [le, ...r.ids.filter((id) => id !== le)].slice(0, r.g.quests[0].size);
+  passProposal(r, team0);
+  assert.ok(r.act(le, "quest", { success: true }).error, "evil Lancelot must fail in v2");
+  for (const id of team0) r.act(id, "quest", { success: E.viewFor(r.state, id, 1000).me.team === "good" ? true : false });
+  assert.equal(r.g.round, 1);
+  assert.equal(E.viewFor(r.state, lg, 1000).me.team, "evil", "switched at the start of round 2");
+  const team1 = [lg, ...r.ids.filter((id) => id !== lg)].slice(0, r.g.quests[1].size);
+  passProposal(r, team1);
+  assert.equal(r.act(lg, "quest", { success: true }).errorKey, "lancelotMustFail");
+  assert.deepEqual(r.act(lg, "quest", { success: false }), {});
 });
 
 test("Loyalty switch flips both pilgrims from round 3, and quest cards follow the current side", () => {

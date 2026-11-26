@@ -1,24 +1,22 @@
 # Status snapshot
 
-Auto-generated on every push by sync.sh (2026-11-26 10:18 UTC). The written handoff is HANDOFF.md.
+Auto-generated on every push by sync.sh (2026-11-26 10:19 UTC). The written handoff is HANDOFF.md.
 
 ### Engine tests
 ```
-not ok 27 - Lancelot adds one pilgrim to each side and the loyalty deck has 3 blank + 2 switch
-not ok 28 - Lancelot knowledge: variant 1 hidden from evil, variant 2 the two pilgrims see each other and evil sees the evil pilgrim
-# pass 32
-# fail 2
-tests did not run
+# pass 35
+# fail 0
 ```
 ### Helper folders (files, newest change)
 - `ui/`: 18 files, newest 2026-11-26 10:06 UTC
 - `assets/`: 114 files, newest 2026-11-26 09:25 UTC
 - `guide/`: 12 files, newest 2026-11-26 10:09 UTC
-- `tests/`: 20 files, newest 2026-11-26 10:16 UTC
+- `tests/`: 20 files, newest 2026-11-26 10:19 UTC
 - `web/`: 4 files, newest 2026-11-26 10:04 UTC
 - `server/`: 4 files, newest 2026-11-26 10:17 UTC
 ### Recent commits
 ```
+2179a49 Auto-sync (10:18 UTC)
 443c1af Auto-sync (10:17 UTC)
 b3fefaf Auto-sync (10:15 UTC)
 4d24325 Auto-sync (10:10 UTC)
@@ -26,7 +24,6 @@ c999504 Auto-sync (10:07 UTC)
 01441d1 Auto-sync (10:06 UTC)
 adeda75 Auto-sync (10:04 UTC)
 679f763 Auto-sync (10:03 UTC)
-d018cc0 Auto-sync (10:02 UTC)
 ```
 ### Files
 ```
