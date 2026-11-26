@@ -55,6 +55,48 @@ window.THEME = {
     fails: "사명이 3번 방해받았어요",
   },
 };
+// English. Same keys as THEME; the UI overlays THEME.i18n.en on THEME when the language is "en".
+// Language choice: localStorage "mist.lang" = "ko" | "en" (default "ko"), switchable on the home screen.
+window.THEME.i18n = {
+  ko: {},
+  en: {
+    title: "Light Expedition",
+    subtitle: "A hidden-role deduction game for retreats",
+    teams: { good: { name: "Workers of Light", short: "Light" }, evil: { name: "The Tempters", short: "Tempters" } },
+    roles: {
+      merlin:   { name: "Prophet", short: "Prophet", desc: "You know who the Tempters are, except the Wolf in Sheep's Clothing. Don't let them find out who you are." },
+      percival: { name: "Watchman", short: "Watchman", desc: "You see two Prophet candidates: the real Prophet and the False Prophet. Protect the real one." },
+      servant:  { name: "Worker of Light", short: "Worker", desc: "You know nothing, but with talk and votes you can find the Tempters and complete the missions." },
+      assassin: { name: "Spy", short: "Spy", desc: "Even if the Light completes 3 missions, the Tempters win if you point out the Prophet at the end." },
+      morgana:  { name: "False Prophet", short: "False", desc: "You look like the Prophet to the Watchman. Act like the real Prophet to confuse them." },
+      mordred:  { name: "Wolf in Sheep's Clothing", short: "Wolf", desc: "A Tempter the Prophet can't see. Hide as a Worker of Light." },
+      oberon:   { name: "Wanderer", short: "Wanderer", desc: "You're a Tempter, but you don't know the others and they don't know you. The Prophet can see you." },
+      minion:   { name: "Tempter", short: "Tempter", desc: "You know your fellow Tempters. Quietly hinder the missions." },
+      lancelotGood: { name: "Good Lancelot", short: "Lancelot", desc: "You start with the Light, but from the 3rd mission a crossroads card may switch your side. Always play for your current side." },
+      lancelotEvil: { name: "Evil Lancelot", short: "Lancelot", desc: "You start with the Tempters, but from the 3rd mission a crossroads card may switch your side. Always play for your current side." },
+    },
+    terms: {
+      quest: "Mission", questTeam: "Expedition", leader: "Leader",
+      success: "Blessing", fail: "Hindrance",
+      approve: "Approve", reject: "Reject",
+      lady: "Lamp", ladyAction: "Shine the Lamp",
+      assassinate: "Point out the Prophet", host: "Host",
+      ready: "Ready", notReady: "Get ready",
+      lancelot: "Lancelot", loyalty: "Crossroads card", loyaltyNone: "No change", loyaltySwitch: "Sides switch",
+      lancelotVariant1: "Quiet crossroads (they don't know each other)", lancelotVariant2: "Known crossroads (the two Lancelots know each other)",
+      excalibur: "Scroll of the Word", excaliburAction: "Flip one card", excaliburPass: "Don't flip",
+      allowRejoin: "Allow rejoin", claimHost: "Become host",
+    },
+    knowledgeText: { evil: "Tempter", merlinCandidate: "Prophet candidate", lancelot: "The other Lancelot" },
+    winText: {
+      quests: "The Workers of Light completed 3 missions",
+      assassinFailed: "The Spy couldn't find the Prophet",
+      assassinHit: "The Spy found the Prophet",
+      rejections: "The expedition was rejected 5 times in a row",
+      fails: "3 missions were hindered",
+    },
+  },
+};
 // Backend (public values only; the function keeps all secrets).
 window.BACKEND = {
   fnUrl: "https://datihyxdmpshreyifvzn.supabase.co/functions/v1/mist-game",

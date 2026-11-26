@@ -53,18 +53,20 @@
   let T = {};
   K.T = () => T;
   K.term = (k, d) => (T.terms && T.terms[k]) || d;
-  K.teamName = t => (T.teams && T.teams[t] && T.teams[t].name) || (t === 'evil' ? '유혹의 무리' : '빛의 일꾼들');
+  K.teamName = t => (T.teams && T.teams[t] && T.teams[t].name) || (t === 'evil' ? K.L('유혹의 무리', 'The Tempters') : K.L('빛의 일꾼들', 'Workers of Light'));
   K.teamOf = role => K.EVIL_ROLES.indexOf(role) >= 0 ? 'evil' : 'good';
   K.role = key => (T.roles && T.roles[key]) || {};
   K.roleName = key => K.role(key).name || key || '';
   K.roleDesc = key => K.role(key).desc || '';
   /* Guide text (guide/guide.js → window.GUIDE). K.G() returns the built guide or null. K.fmt fills runtime {params}. */
   let G = null;
-  K.G = () => { if (G) return G; try { if (window.GUIDE && GUIDE.build) G = GUIDE.build(T); } catch (e) { G = null; } return G; };
+  /* Language: K.guideSrc() (01-i18n.js) picks window.GUIDE or an English guide; null = parts use their own fallback text. */
+  K.G = () => { if (G) return G; try { const src = K.guideSrc ? K.guideSrc() : window.GUIDE; if (src && src.build) G = src.build(T); } catch (e) { G = null; } return G; };
+  K.setTheme = t => { T = t || {}; G = null; if (T.title) document.title = T.title; };
   K.fmt = (s, p) => { try { return window.GUIDE && GUIDE.format ? GUIDE.format(s, p || {}) : String(s).replace(/\{(\w+)(?::[^}]*)?\}/g, (m, k) => (p && p[k] != null ? p[k] : m)); } catch (e) { return s; } };
   /* K.hint(phase, key, params) -> one hint line (string) or '' */
   K.hint = (phase, key, params, idx) => { const g = K.G(); const a = g && g.phaseHints && g.phaseHints[phase] && g.phaseHints[phase][key]; if (!a) return ''; const s = Array.isArray(a) ? a[idx || 0] : a; return s ? K.fmt(s, params) : ''; };
-  K.knowText = tag => (T.knowledgeText && T.knowledgeText[tag]) || (tag === 'evil' ? K.teamName('evil') : tag === 'merlinCandidate' ? K.roleName('merlin') + '일지도' : tag);
+  K.knowText = tag => (T.knowledgeText && T.knowledgeText[tag]) || (tag === 'evil' ? K.teamName('evil') : tag === 'merlinCandidate' ? K.L(K.roleName('merlin') + '일지도', 'maybe ' + K.roleName('merlin')) : tag);
 
   // ---------- assets (with generated placeholders when a file is missing) ----------
   let assetBase = './assets/';
@@ -225,6 +227,7 @@
   let toastsEl;
   let lastToast = '', lastToastAt = 0;
   UI.toast = (msg, kind) => {
+    if (K.trMsg) msg = K.trMsg(msg);
     if (!toastsEl || !msg) return;
     if (msg === lastToast && Date.now() - lastToastAt < 1500) return;   // app.js also toasts api errors
     lastToast = msg; lastToastAt = Date.now();
@@ -252,7 +255,7 @@
   K.confirm = (title, body, o) => new Promise(res => {
     o = o || {}; let done = false;
     const sh = K.sheet('<div class="ux-stack" style="padding:4px 2px 6px"><h2 class="ux-h2 ux-center">' + esc(title) + '</h2>' + (body ? '<p class="ux-p ux-center">' + body + '</p>' : '') +
-      '<div class="ux-row" style="margin-top:8px"><button class="ux-btn ux-btn-ghost" data-close>' + esc(o.cancel || '취소') + '</button><button class="ux-btn ' + (o.danger ? 'ux-btn-evil' : 'ux-btn-gold') + '" data-yes>' + esc(o.ok || '확인') + '</button></div></div>',
+      '<div class="ux-row" style="margin-top:8px"><button class="ux-btn ux-btn-ghost" data-close>' + esc(o.cancel || K.L('취소', 'Cancel')) + '</button><button class="ux-btn ' + (o.danger ? 'ux-btn-evil' : 'ux-btn-gold') + '" data-yes>' + esc(o.ok || '확인') + '</button></div></div>',
       { onClose: () => { if (!done) { done = true; res(false); } } });
     sh.querySelector('[data-yes]').addEventListener('click', () => { done = true; res(true); sh.close(); });
   });
@@ -263,7 +266,7 @@
   /* K.call('vote', true) -> calls api.vote(true); shows toast on error; renders returned view. */
   K.call = async (name, ...args) => {
     if (busy.has(name)) return { ok: false, busy: true };
-    if (typeof api[name] !== 'function') { UI.toast('준비 중인 기능이에요'); return { ok: false }; }
+    if (typeof api[name] !== 'function') { UI.toast(K.L('준비 중인 기능이에요', 'Coming soon')); return { ok: false }; }
     busy.add(name); document.documentElement.classList.add('ux-busy');
     try {
       const r = await api[name](...args);
@@ -272,7 +275,7 @@
       else if (r) { netDown = 0; connCheck(); }
       else if (r && r.view) UI.render(r.view);
       return r || { ok: true };
-    } catch (e) { UI.toast('연결이 불안정해요. 다시 시도해 주세요.'); return { ok: false }; }
+    } catch (e) { UI.toast(K.L('연결이 불안정해요. 다시 시도해 주세요.', 'The connection is unstable. Please try again.')); return { ok: false }; }
     finally { busy.delete(name); if (!busy.size) document.documentElement.classList.remove('ux-busy'); }
   };
   K.busy = name => busy.has(name);
@@ -287,8 +290,8 @@
   }
 
   // ---------- shared top-bar buttons ----------
-  K.soundBtn = () => '<button class="ux-icon-btn" data-act="sound" aria-label="소리">' + (Sound.on ? '🔔' : '🔕') + '</button>';
-  K.actions.sound = (d, el) => { Sound.set(!Sound.on); el.textContent = Sound.on ? '🔔' : '🔕'; UI.toast(Sound.on ? '소리를 켰어요' : '소리를 껐어요', 'info'); };
+  K.soundBtn = () => '<button class="ux-icon-btn" data-act="sound" aria-label="' + K.L('소리', 'Sound') + '">' + (Sound.on ? '🔔' : '🔕') + '</button>';
+  K.actions.sound = (d, el) => { Sound.set(!Sound.on); el.textContent = Sound.on ? '🔔' : '🔕'; UI.toast(Sound.on ? K.L('소리를 켰어요', 'Sound on') : K.L('소리를 껐어요', 'Sound off'), 'info'); };
 
   // ---------- screen manager ----------
   let rootEl, appEl, stageEl, screenEl = null, screenName = null;
@@ -301,6 +304,8 @@
     if (v.phase === 'end') return 'end';
     return 'board';
   };
+  /* K.rebuild(): throw away the current screen and build it again (used after a language switch). */
+  K.rebuild = () => { if (!stageEl) return; const v = K.view; screenName = null; if (screenEl) { screenEl.remove(); screenEl = null; } renderScreen(v); };
   K.rerender = () => { if (screenName && K.screens[screenName] && screenEl) K.screens[screenName].update(K.view, K, screenEl); };
   function renderScreen(v) {
     const name = K.screenFor(v);
@@ -383,7 +388,7 @@
   }
   function makeCtx() {
     const ov = K.el('<div class="ux-overlay" role="dialog" aria-live="polite"><div class="inner"></div></div>');
-    const skip = K.el('<button class="ux-skip">건너뛰기 ›</button>');
+    const skip = K.el('<button class="ux-skip">' + K.L('건너뛰기', 'Skip') + ' ›</button>');
     const ctx = {
       el: ov, inner: ov.firstElementChild, skipped: false, waiters: [],
       sleep(ms) { if (ctx.skipped) return Promise.resolve(); return new Promise(r => { const t = setTimeout(done, ms); function done() { clearTimeout(t); ctx.waiters = ctx.waiters.filter(w => w !== done); r(); } ctx.waiters.push(done); }); },
@@ -429,9 +434,9 @@
   }
   function connHide() { if (connEl) { connEl.remove(); connEl = null; } }
   function connCheck() {
-    if (connForced === 'offline' || connForced === 'reconnecting') return connShow(connForced === 'offline' ? '연결이 끊겼어요. 다시 연결하는 중…' : '다시 연결하는 중…');
-    if (navigator.onLine === false) return connShow('인터넷 연결이 끊겼어요. 다시 연결하는 중…');
-    if (netDown && Date.now() - netDown < 8000) return connShow('연결이 불안정해요. 다시 연결하는 중…');
+    if (connForced === 'offline' || connForced === 'reconnecting') return connShow(connForced === 'offline' ? K.L('연결이 끊겼어요. 다시 연결하는 중…', 'Disconnected. Reconnecting…') : K.L('다시 연결하는 중…', 'Reconnecting…'));
+    if (navigator.onLine === false) return connShow(K.L('인터넷 연결이 끊겼어요. 다시 연결하는 중…', 'No internet connection. Reconnecting…'));
+    if (netDown && Date.now() - netDown < 8000) return connShow(K.L('연결이 불안정해요. 다시 연결하는 중…', 'Unstable connection. Reconnecting…'));
     connHide();
   }
   /* Optional extra (not in contract): app.js may call UI.setConnection('online'|'offline'|'reconnecting'). */
@@ -440,7 +445,7 @@
   // ---------- public API ----------
   /* UI.init(root, api, THEME, extra?) — extra may be window.GUIDE (app.js passes it) or {assetBase, guide}. */
   UI.init = (root, apiObj, theme, extra) => {
-    rootEl = root; api = apiObj || {}; T = theme || window.THEME || {};
+    rootEl = root; api = apiObj || {}; T = theme || window.THEME || {}; K.baseTheme = T;
     const opts = extra && (extra.build || extra.quick || extra.phaseHints) ? { guide: extra } : (extra || {});
     if (opts.guide && !window.GUIDE) window.GUIDE = opts.guide;
     if (opts.assetBase) assetBase = opts.assetBase.replace(/\/?$/, '/');

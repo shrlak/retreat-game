@@ -1,7 +1,8 @@
 // 빛의 원정대 — 게임 안 설명서 원본 (이 파일만 고치고 `node build.mjs` 를 돌리세요)
 //
 // 이름 자리표시: {merlin} {percival} {servant} {assassin} {morgana} {mordred} {oberon} {minion}
-//               {good} {evil} {quest} {leader} {success} {fail} {approve} {reject} {lady} {assassinate} {title}
+//               {lancelotGood} {lancelotEvil} {good} {evil} {quest} {leader} {success} {fail} {approve} {reject}
+//               {lady} {assassinate} {excalibur} {loyalty} {loyaltyNone} {loyaltySwitch} {host} {allowRejoin} {claimHost} {title}
 // 조사 자동: {key:은} {key:이} {key:을} {key:과} {key:으로} {key:이에요} {key:이나} {key:이면} {key:이라고} {key:이지만} {key:아}
 //   예) "{lady:으로}" → "등불로", "{percival:은}" → "파수꾼은"
 // 원작 규칙과 같고, 문장은 모두 새로 썼습니다.
@@ -25,7 +26,17 @@ export const DEFAULT_NAMES = {
   approve: "찬성",
   reject: "반대",
   lady: "등불",
-  assassinate: "마지막 지목",
+  assassinate: "선지자 지목",
+  lancelotGood: "갈림길의 순례자",
+  lancelotEvil: "갈림길의 그림자",
+  excalibur: "말씀 두루마리",
+  loyalty: "갈림길 카드",
+  loyaltyNone: "그대로",
+  loyaltySwitch: "편이 바뀜",
+  questTeam: "원정대",
+  host: "방장",
+  allowRejoin: "다시 입장 허용",
+  claimHost: "방장 맡기",
 };
 
 // ───────────────────────── 1. 홈 화면용 짧은 설명서 ─────────────────────────
@@ -62,6 +73,8 @@ export const quick = {
         { key: "mordred", line: "{merlin}에게도 안 보이는 숨은 우두머리예요." },
         { key: "oberon", line: "{evil:이지만} 동료를 모르고, 동료도 이 사람을 몰라요." },
         { key: "minion", line: "{evil}의 평범한 일원이에요. 동료를 알아요." },
+        { key: "lancelotGood", module: "lancelot", line: "(확장) {good} 편으로 시작하지만 {loyalty}에 따라 편이 바뀔 수 있어요." },
+        { key: "lancelotEvil", module: "lancelot", line: "(확장) {evil} 편으로 시작하지만 {loyalty}에 따라 편이 바뀔 수 있어요." },
       ],
     },
     {
@@ -145,6 +158,42 @@ export const overview = {
         "2·3·4번째 {quest:이} 끝날 때마다 {lady:을} 가진 사람이 한 명을 골라 그 사람의 진영({good} 또는 {evil})을 혼자 몰래 확인해요.",
         "확인받은 사람이 다음 {lady:을} 받아요. 이미 {lady:을} 가졌던 사람은 다시 고를 수 없어요.",
         "누가 누구를 비췄는지는 모두에게 보이지만, 결과는 본 사람만 알아요. 결과를 말로 전할지, 거짓으로 말할지는 본인 자유예요.",
+      ],
+    },
+    {
+      id: "lancelot",
+      module: "lancelot",
+      heading: "{lancelotGood:과} {lancelotEvil} (확장 규칙)",
+      body: [
+        "진행자가 켜면 쓰는 확장 규칙이에요. 두 순례자가 들어가고, {lancelotEvil:은} {evil} 한 자리를 차지해요.",
+        "{loyalty} 5장({loyaltyNone} 3장, {loyaltySwitch} 2장)을 섞어 두고, 3·4·5번째 {quest:이} 시작될 때마다 한 장씩 모두에게 공개해요.",
+        "'{loyaltySwitch}' 카드가 나오면 두 순례자의 편이 서로 바뀌어요. 또 나오면 다시 바뀌어요.",
+        "{quest} 카드, {lady}의 결과, 최종 승패는 모두 '지금 편'을 기준으로 정해져요. 순례자가 {good} 편일 때는 {success}만 낼 수 있어요.",
+      ],
+      bullets: [
+        "조용한 갈림길: {lancelotEvil:과} 다른 {evil:은} 서로를 몰라요. {merlin}에게는 {lancelotEvil:이} {evil:으로} 보여요.",
+        "알려진 갈림길: 두 순례자가 서로를 알아보고, {lancelotEvil:과} {evil} 동료도 서로 알아봐요.",
+        "{lancelotEvil:은} {assassinate:을} 맡지 않아요.",
+      ],
+    },
+    {
+      id: "excalibur",
+      module: "excalibur",
+      heading: "{excalibur} (확장 규칙)",
+      body: [
+        "{leader:은} 팀을 고를 때 팀원 한 명에게 {excalibur:을} 맡겨요. 자기 자신에게는 줄 수 없어요.",
+        "팀원이 모두 카드를 낸 뒤, {excalibur:을} 받은 사람은 다른 팀원 한 명의 카드를 반대로 뒤집을 수 있어요. 뒤집지 않아도 돼요.",
+        "뒤집힌 카드가 원래 무엇이었는지는 {excalibur:을} 쓴 사람만 알아요. 누가 누구의 카드를 뒤집었는지는 모두에게 공개돼요.",
+      ],
+    },
+    {
+      id: "balance",
+      module: "balance",
+      heading: "다른 팀 인원표 (선택)",
+      body: [
+        "진행자가 켜면 5명, 7명 게임의 {quest}별 팀 인원이 바뀌어요.",
+        "5명: 3 · 2 · 3 · 2 · 3",
+        "7명: 2 · 3 · 4 · 3 · 4 (네 번째 {quest:은} 여전히 {fail} 2장이 필요해요)",
       ],
     },
     {
@@ -310,6 +359,43 @@ export const roles = {
       "{merlin}처럼 보이는 사람을 기억해 두었다가 마지막 지목 때 알려 주세요.",
     ],
     seenBy: "{merlin}에게 {evil:으로} 보여요.",
+  },  lancelotGood: {
+    team: "good",
+    module: "lancelot",
+    tagline: "갈림길 앞에 선 순례자",
+    know: [
+      "조용한 갈림길: 아무도 보이지 않아요.",
+      "알려진 갈림길: {lancelotEvil:이} 누구인지 보이고, 그 사람도 나를 알아요.",
+    ],
+    goal: [
+      "지금 내 편이 이기도록 도와요. 처음에는 {good} 편이에요.",
+      "3번째 {quest}부터 '{loyaltySwitch}' 카드가 나오면 {evil} 편이 될 수 있어요.",
+    ],
+    tips: [
+      "{loyalty:이} 뒤집힐 때마다 지금 내 편을 다시 확인하세요. 승패는 마지막 순간의 편으로 정해져요.",
+      "{good} 편일 때는 {success}만 낼 수 있어요. {evil} 편이 되면 {fail}도 낼 수 있어요.",
+      "편이 바뀔 수 있으니 처음부터 너무 확신에 찬 말은 아껴 두세요.",
+    ],
+    seenBy: "알려진 갈림길이면 {lancelotEvil}에게 보여요. 그 밖에는 아무에게도 보이지 않아요.",
+  },
+  lancelotEvil: {
+    team: "evil",
+    module: "lancelot",
+    tagline: "갈림길에 드리운 그림자",
+    know: [
+      "조용한 갈림길: 아무도 보이지 않고, 다른 {evil}도 나를 몰라요.",
+      "알려진 갈림길: {evil} 동료와 {lancelotGood:이} 보이고, 그들도 나를 알아요.",
+    ],
+    goal: [
+      "지금 내 편이 이기도록 도와요. 처음에는 {evil} 편이에요.",
+      "3번째 {quest}부터 '{loyaltySwitch}' 카드가 나오면 {good} 편이 될 수 있어요.",
+    ],
+    tips: [
+      "{merlin}에게는 처음부터 {evil:으로} 보여요. 편이 바뀌어도 {merlin:은} 그 사실을 따로 알지 못해요.",
+      "{good} 편이 되면 {success}만 낼 수 있어요.",
+      "{assassinate:은} 내가 하지 않아요. 동료에게 의견만 보태 주세요.",
+    ],
+    seenBy: "{merlin}에게 {evil:으로} 보여요. 알려진 갈림길이면 {evil} 동료와 {lancelotGood}에게도 보여요.",
   },
 };
 
@@ -317,6 +403,7 @@ export const roles = {
 export const knowledgeLabels = {
   evil: "{evil}",
   merlinCandidate: "{merlin} 후보",
+  lancelot: "또 다른 순례자",
   emptyGood: "보이는 사람이 없어요. 대화와 투표로 추리해 보세요.",
   emptyOberon: "보이는 동료가 없어요. 혼자서도 해낼 수 있어요.",
 };
@@ -349,6 +436,9 @@ export const phaseHints = {
       "당신이 이번 {leader:이에요}. {quest}에 갈 {size}명을 고르세요.",
       "고르기 전에 이유를 말해 주면 투표가 쉬워져요.",
       "나를 포함해도 괜찮아요.",
+    ],
+    leaderExcalibur: [
+      "팀원 중 한 명에게 {excalibur:을} 맡겨 주세요. 나 자신에게는 줄 수 없어요.",
     ],
     others: [
       "{leaderName}님이 팀을 고르는 중이에요.",
@@ -384,6 +474,27 @@ export const phaseHints = {
     successWithFail: "{fail} 카드가 {fails}장 나왔지만, 이번 {quest:은} 2장이 필요해서 성공이에요!",
     fail: "{quest} 실패. {fail} 카드 {fails}장.",
   },
+  excalibur: {
+    holder: [
+      "{excalibur:을} 받았어요. 다른 팀원 한 명의 카드를 반대로 뒤집을 수 있어요.",
+      "뒤집지 않고 넘어가도 돼요.",
+      "뒤집으면 그 카드가 원래 무엇이었는지 나만 알게 돼요.",
+    ],
+    others: [
+      "{holderName}님이 {excalibur:을} 쓸지 고민하는 중이에요.",
+      "누구의 카드를 뒤집었는지는 모두에게 공개돼요.",
+    ],
+    used: "{holderName}님이 {targetName}님의 카드를 뒤집었어요.",
+    passed: "{holderName}님은 카드를 뒤집지 않았어요.",
+    result: "{targetName}님의 원래 카드는 {card:이었어요}. 지금은 반대로 뒤집혔어요.",
+  },
+  loyalty: {
+    none: "{loyalty:이} 공개됐어요: {loyaltyNone}. 두 순례자의 편은 그대로예요.",
+    switch: "{loyalty:이} 공개됐어요: {loyaltySwitch}! 두 순례자의 편이 서로 바뀌었어요.",
+    left: "남은 {loyalty} {count}장",
+    // 아래 문장은 순례자 본인 폰에만, 본인이 눌렀을 때 보여 주세요 (진영이 드러나요)
+    mySwitchSecret: "내 편이 바뀌었어요. 지금 나는 {team} 편이에요.",
+  },
   lady: {
     holder: [
       "{lady:으로} 한 사람을 비춰 보세요. 그 사람의 진영을 나만 알게 돼요.",
@@ -417,6 +528,7 @@ export const phaseHints = {
       rejections: "{evil}의 승리! 한 {quest}에서 5번 연속 팀이 {reject}되었어요.",
       assassinHit: "{evil}의 역전승! {assassin:이} {merlin:을} 찾아냈어요.",
     },
+    switchedNote: "{name}님은 갈림길에서 편이 바뀌어 {team} 편으로 끝났어요.",
     after: [
       "모든 사람의 역할이 공개됐어요. 누가 누구였는지 이야기 나눠 보세요.",
       "게임 속 의심은 여기서 끝! 서로 수고했다고 말해 주세요.",
@@ -425,6 +537,15 @@ export const phaseHints = {
 };
 
 // 상황 알림: 조건이 맞을 때 단계 힌트 위에 강조해서 보여주세요. (모두 진영 중립)
+// 연결·방장 관련 안내 (모두에게 보여도 괜찮아요)
+export const system = {
+  offline: "{targetName}님의 연결이 끊겼어요. 같은 폰으로 다시 열면 돌아올 수 있어요.",
+  rejoinHostTip: "새 폰으로 들어와야 한다면 {host:이} '{allowRejoin}'을 눌러 주세요.",
+  rejoinOpen: "{targetName}님 자리가 2분 동안 열렸어요. 새 폰에서 같은 방 코드와 같은 이름으로 들어오면 돼요.",
+  hostAway: "{host:이} 1분 넘게 자리를 비웠어요. 누구든 '{claimHost}'를 누르면 이어서 진행할 수 있어요.",
+  newHost: "이제 {targetName}님이 {host:이에요}.",
+};
+
 export const alerts = [
   { id: "firstQuest", when: "round == 0 && proposalNo == 1 && phase == 'propose'",
     text: "첫 {quest:이에요}. 아직 정보가 없으니 가볍게 시작해 보세요." },
@@ -438,6 +559,12 @@ export const alerts = [
     text: "{quest} 성공 2번! 한 번만 더 성공하면 {assassinate:이} 시작돼요." },
   { id: "evilMatchPoint", when: "fails == 2",
     text: "{quest} 실패 2번! 한 번 더 실패하면 {evil:이} 이겨요." },
+  { id: "loyaltyRevealed", when: "lancelot && round >= 2 && proposalNo == 1 && phase == 'propose'",
+    text: "이번 {quest:이} 시작되며 {loyalty:이} 한 장 공개됐어요. 순례자들의 편을 다시 생각해 보세요." },
+  { id: "loyaltySoon", when: "lancelot && round == 1 && phase == 'propose'",
+    text: "다음 {quest}부터 시작할 때마다 {loyalty:이} 한 장씩 공개돼요." },
+  { id: "excaliburOn", when: "excalibur && phase == 'propose'",
+    text: "이번 팀에는 {excalibur:을} 맡을 사람도 함께 정해요." },
   { id: "ladyNext", when: "settings.lady && (round == 1 || round == 2 || round == 3) && phase == 'propose'",
     text: "이번 {quest:이} 끝나면 {lady:이} 켜져요." },
 ];
@@ -516,6 +643,15 @@ export const hostGuide = {
       ],
     },
     {
+      heading: "익숙해지면 해 볼 확장 규칙",
+      bullets: [
+        "{lancelotGood:과} {lancelotEvil}: 3번째 {quest}부터 {loyalty:이} 공개되며 두 순례자의 편이 바뀔 수 있어요. 처음이면 '조용한 갈림길'을 추천해요.",
+        "{excalibur}: {leader:이} 팀원 한 명에게 맡기고, 그 사람이 다른 팀원의 카드 한 장을 뒤집을 수 있어요. 7명 이상에서 재미있어요.",
+        "다른 팀 인원표: 5명, 7명 게임의 팀 인원이 달라져요. 같은 사람들끼리 여러 판 할 때 바꿔 보세요.",
+        "확장 규칙은 한 번에 하나씩만 더해 보세요. 설명이 길어지면 처음 온 친구들이 힘들어해요.",
+      ],
+    },
+    {
       heading: "3분 설명 대본",
       script: [
         "\"우리 중에 {evil:이} 몰래 숨어 있어요. 나머지는 {good:이에요}.\"",
@@ -540,6 +676,8 @@ export const hostGuide = {
       heading: "문제가 생기면",
       bullets: [
         "폰이 꺼지거나 앱이 닫혔다면: 같은 폰으로 다시 열면 자기 자리와 역할로 돌아와요.",
+        "다른 폰으로 바꿔야 한다면: 그 사람 연결이 15초 넘게 끊긴 뒤 {host:이} '{allowRejoin}'을 누르면, 2분 동안 새 폰에서 같은 이름으로 들어올 수 있어요.",
+        "{host} 폰이 꺼졌다면: 1분이 지나면 다른 사람 화면에 '{claimHost}' 버튼이 생겨요. 누르면 그 사람이 이어서 진행해요.",
         "카드 확인에서 한 사람이 계속 멈춰 있다면: 진행자가 '건너뛰기'로 게임을 시작할 수 있어요.",
         "누군가 실수로 화면을 보여 줬다면: 이번 판은 연습이라 생각하고 끝까지 즐긴 뒤, 끝나면 '다시 시작'으로 새 판을 열어요.",
         "규칙이 헷갈리면: 게임 중에도 설명서 버튼으로 언제든 다시 볼 수 있어요.",
@@ -567,22 +705,35 @@ export const hostGuide = {
 // ───────────────────────── 7. 추천 역할 구성 (로비 '추천 구성' 버튼용) ─────────────────────────
 // settings 형식은 CONTRACT.md 와 같아요. merlin 을 켜면 엔진이 assassin 을 강제로 켭니다.
 const base = { merlin: true, assassin: true, percival: false, morgana: false, mordred: false, oberon: false };
+const off = { lancelot: 0, excalibur: false, balance: false };
 export const presets = {
   beginner: {
     label: "처음 하는 판",
     desc: "{merlin:과} {assassin}만 있는 가장 단순한 구성",
-    byCount: Object.fromEntries([5, 6, 7, 8, 9, 10].map((n) => [n, { roles: { ...base }, lady: false }])),
+    byCount: Object.fromEntries([5, 6, 7, 8, 9, 10].map((n) => [n, { roles: { ...base }, lady: false, ...off }])),
   },
   standard: {
     label: "기본 추천",
     desc: "{percival:과} {morgana}까지 넣어 서로 견제하는 구성",
     byCount: {
-      5: { roles: { ...base, percival: true, morgana: true }, lady: false },
-      6: { roles: { ...base, percival: true, morgana: true }, lady: false },
-      7: { roles: { ...base, percival: true, morgana: true, mordred: true }, lady: true },
-      8: { roles: { ...base, percival: true, morgana: true, mordred: true }, lady: true },
-      9: { roles: { ...base, percival: true, morgana: true, mordred: true }, lady: true },
-      10: { roles: { ...base, percival: true, morgana: true, mordred: true, oberon: true }, lady: true },
+      5: { roles: { ...base, percival: true, morgana: true }, lady: false, ...off },
+      6: { roles: { ...base, percival: true, morgana: true }, lady: false, ...off },
+      7: { roles: { ...base, percival: true, morgana: true, mordred: true }, lady: true, ...off },
+      8: { roles: { ...base, percival: true, morgana: true, mordred: true }, lady: true, ...off },
+      9: { roles: { ...base, percival: true, morgana: true, mordred: true }, lady: true, ...off },
+      10: { roles: { ...base, percival: true, morgana: true, mordred: true, oberon: true }, lady: true, ...off },
+    },
+  },
+  expansion: {
+    label: "확장 규칙 맛보기",
+    desc: "{lancelotGood}(조용한 갈림길)와 {excalibur:을} 더한 구성",
+    byCount: {
+      5: { roles: { ...base }, lady: false, ...off, lancelot: 1 },
+      6: { roles: { ...base, percival: true }, lady: false, ...off, lancelot: 1 },
+      7: { roles: { ...base, percival: true, morgana: true }, lady: true, ...off, lancelot: 1, excalibur: true },
+      8: { roles: { ...base, percival: true, morgana: true }, lady: true, ...off, lancelot: 1, excalibur: true },
+      9: { roles: { ...base, percival: true, morgana: true }, lady: true, ...off, lancelot: 1, excalibur: true },
+      10: { roles: { ...base, percival: true, morgana: true, mordred: true }, lady: true, ...off, lancelot: 1, excalibur: true },
     },
   },
 };
@@ -596,6 +747,8 @@ export const glossary = [
   { term: "{success} / {fail}", text: "{quest} 팀원이 몰래 내는 카드. {good:은} {success}만 낼 수 있어요." },
   { term: "{approve} / {reject}", text: "{leader:이} 고른 팀을 보낼지 정하는 투표." },
   { term: "{lady}", text: "선택 규칙. 한 사람의 진영을 몰래 확인할 수 있는 등불이에요." },
+  { term: "{excalibur}", text: "확장 규칙. 팀원 한 명이 다른 팀원의 카드 한 장을 뒤집을 수 있어요." },
+  { term: "{loyalty}", text: "확장 규칙. 3번째 {quest}부터 한 장씩 공개되며, 순례자들의 편을 바꿀 수 있어요." },
   { term: "{assassinate}", text: "{good:이} 3번 이긴 뒤 {assassin:이} {merlin:을} 찾아 지목하는 마지막 기회." },
 ];
 
@@ -612,4 +765,8 @@ export const ui = {
   close: "닫기",
   done: "알겠어요",
   skipTutorial: "건너뛰기",
+  language: "언어",
+  langKo: "한국어",
+  langEn: "English",
+  moduleTag: "확장",
 };

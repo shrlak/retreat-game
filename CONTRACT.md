@@ -177,3 +177,9 @@ window.GUIDE = {
 ```
 Loaded after config.js; UI must work if `window.GUIDE` is missing.
 Deployed path: `./guide/guide.js`.
+
+## Languages (Korean / English)
+- One language per phone, chosen on the home screen: `Net.getLang()` → `"ko"|"en"`, `Net.setLang(l)` (stored in localStorage `mist.lang`, default `"ko"`). Switching re-renders everything; layout, art and animation are identical in both.
+- Names and texts: `THEME` holds Korean; `THEME.i18n.en` holds English with the same keys (`title, subtitle, teams.<good|evil>.name/short, roles.<key>.name/short/desc, terms.*, knowledgeText.*, winText.*`). Overlay `THEME.i18n[lang]` on `THEME`. `guide/guide.js` follows the same rule: `window.GUIDE` (Korean) and `window.GUIDE.i18n.en` (English, same shape).
+- Server messages: every refusal is `{ok:false, error, errorKey, errorParams, errorEn}`: `error` Korean, `errorEn` English, `errorKey` a stable key from `server/messages.js` (params already filled in both texts). Show `Net.errorText(result)`. Lobby view: `setupError` / `setupErrorEn` / `setupErrorKey` the same way. Client-only failures from Net use keys `offline`, `badResponse`, `noSession`.
+- The server never sends other UI text; phases, roles and tags are keys the UI translates.

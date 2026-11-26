@@ -17,6 +17,7 @@ Phone-based online hidden-role game in the style of the classic team-quest deduc
 - Synced transitions: engine stamps `phaseSeq/phaseStartedAt/prevPhase/transitionMs/serverNow`; Net estimates server clock (`Net.serverTime()`, `view.serverOffsetMs`).
 - Handler: jittered backoff on optimistic-lock retries (14 attempts); realtime broadcast no longer delays the reply (EdgeRuntime.waitUntil).
 - Edge function `mist-game` v4 deployed, pinned to commit 5287161 via jsDelivr. Table `mist_rooms` with RLS.
+- Korean/English: THEME.i18n.en (all role/team/term/win names in English, Lancelots as Good/Evil Lancelot), server/messages.js (every server message in ko+en, responses carry errorKey/errorParams/errorEn), Net.getLang/setLang/errorText. UI thread builds the language switch on the home screen.
 - Favicon, apple-touch icon, site.webmanifest in index.html. README.md (Korean) at repo root.
 - web/config.js (names, incl. English names for Lancelot/Excalibur as `en`), web/net.js, web/app.js (api: excalibur, allowRejoin, claimHost, propose(ids, excaliburTo)), web/dev-ui.js covers all phases.
 
@@ -34,21 +35,22 @@ Phone-based online hidden-role game in the style of the classic team-quest deduc
 - Role names: church-retreat names in `web/config.js` (Spencer asked for church-themed names; current set is a first pick).
 - Hosting: Supabase (free, in existing project "health-dashboard") + GitHub Pages. Cloudflare not possible from the cloud session (connector can't deploy Workers).
 
-## Snapshot (2026-11-26 09:33 UTC, auto-generated every push)
+## Snapshot (2026-11-26 09:36 UTC, auto-generated every push)
 
 ### Engine tests
 ```
 tests did not run
 ```
 ### Helper folders (files, newest change)
-- `ui/`: 17 files, newest 2026-11-26 09:30 UTC
+- `ui/`: 18 files, newest 2026-11-26 09:37 UTC
 - `assets/`: 114 files, newest 2026-11-26 09:25 UTC
-- `guide/`: 8 files, newest 2026-11-26 09:34 UTC
-- `tests/`: 19 files, newest 2026-11-26 09:33 UTC
-- `web/`: 4 files, newest 2026-11-26 09:25 UTC
-- `server/`: 3 files, newest 2026-11-26 09:22 UTC
+- `guide/`: 12 files, newest 2026-11-26 09:38 UTC
+- `tests/`: 19 files, newest 2026-11-26 09:37 UTC
+- `web/`: 4 files, newest 2026-11-26 09:36 UTC
+- `server/`: 4 files, newest 2026-11-26 09:36 UTC
 ### Recent commits
 ```
+62f0a7b Sync progress
 fed8261 Auto-sync work in progress (09:32 UTC)
 c64a236 Sync progress
 5287161 Sync progress
@@ -56,7 +58,6 @@ c64a236 Sync progress
 7140171 Auto-sync work in progress (09:19 UTC)
 43ce8c2 Auto-sync work in progress (09:12 UTC)
 e30af1c Handoff snapshot: tests, helper status, commits
-5c44ef9 Add .nojekyll
 ```
 ### Files
 ```
@@ -181,6 +182,7 @@ assets/vote-approve.svg
 assets/vote-reject.svg
 guide/README.md
 guide/build.mjs
+guide/content.en.mjs
 guide/content.mjs
 guide/guide.js
 guide/guide.json
@@ -191,6 +193,7 @@ index.html
 server/engine.js
 server/handler.js
 server/index.ts
+server/messages.js
 site.webmanifest
 sync.sh
 tests/BUGS.md
@@ -211,12 +214,14 @@ tests/live.html
 tests/mutation-check.mjs
 tests/perf.mjs
 tests/run-matrix.mjs
+tests/stress.mjs
 ui/README.md
 ui/build.js
 ui/dev.html
 ui/dev/mock.js
 ui/dev/theme-fallback.js
 ui/src/00-core.js
+ui/src/01-i18n.js
 ui/src/10-common.js
 ui/src/20-home.js
 ui/src/21-lobby.js

@@ -32,7 +32,7 @@
     const f = api[k];
     api[k] = async (...a) => {
       const r = await f(...a);
-      if (r && r.ok === false && r.error && UIimpl.toast) UIimpl.toast(r.error);
+      if (r && r.ok === false && r.error && UIimpl.toast) UIimpl.toast(N.errorText ? N.errorText(r) : r.error);
       return r;
     };
   }

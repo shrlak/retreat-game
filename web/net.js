@@ -21,6 +21,12 @@
     if (rtt <= aged) { clockOffset = serverNow - (t0 + t1) / 2; clockRtt = rtt; clockAt = t1; }
   }
   const serverTime = () => Date.now() + clockOffset;
+  // language: "ko" | "en", kept on this phone
+  const LANG_KEY = "mist.lang";
+  function getLang() { try { return localStorage.getItem(LANG_KEY) === "en" ? "en" : "ko"; } catch { return "ko"; } }
+  function setLang(l) { try { localStorage.setItem(LANG_KEY, l === "en" ? "en" : "ko"); } catch {} document.documentElement.lang = l === "en" ? "en" : "ko"; }
+  // the message to show for a failed result, in the chosen language
+  const errorText = (r) => (r ? (getLang() === "en" ? r.errorEn || r.error : r.error) : "");
 
   async function call(body) {
     try {
@@ -30,14 +36,14 @@
         headers: { "content-type": "application/json", apikey: B.anonKey },
         body: JSON.stringify(body),
       });
-      const j = await r.json().catch(() => ({ ok: false, error: "응답을 읽지 못했어요" }));
+      const j = await r.json().catch(() => ({ ok: false, error: "응답을 읽지 못했어요", errorKey: "badResponse", errorEn: "Couldn't read the server's answer" }));
       if (j && j.view) {
         sampleClock(t0, Date.now(), j.view.serverNow);
         j.view.serverOffsetMs = Math.round(clockOffset);
       }
       return j;
     } catch (e) {
-      return { ok: false, error: "인터넷 연결을 확인해 주세요", offline: true };
+      return { ok: false, error: "인터넷 연결을 확인해 주세요", errorKey: "offline", errorEn: "Please check your internet connection", offline: true };
     }
   }
 
@@ -56,7 +62,7 @@
     inflight = call({ action: "state", code: session.code, playerId: session.playerId, token: session.token })
       .then((j) => {
         if (j.ok) emit(j.view);
-        else if (j.kicked) { drop(); listeners.forEach((cb) => cb(null, j.error)); }
+        else if (j.kicked) { drop(); listeners.forEach((cb) => cb(null, errorText(j))); }
         return j;
       })
       .finally(() => { inflight = null; });
@@ -100,7 +106,7 @@
   window.Net = {
     get session() { return session; },
     get view() { return lastView; },
-    serverTime,
+    serverTime, getLang, setLang, errorText,
     get clockOffset() { return clockOffset; },
     onView(cb) { listeners.push(cb); },
     async create(name) { return enter(await call({ action: "create", name }), name); },
@@ -117,10 +123,10 @@
       return enter(j, prev.name);
     },
     async act(action, params = {}) {
-      if (!session) return { ok: false, error: "방에 들어가 있지 않아요" };
+      if (!session) return { ok: false, error: "방에 들어가 있지 않아요", errorKey: "noSession", errorEn: "You're not in a room" };
       const j = await call({ action, code: session.code, playerId: session.playerId, token: session.token, ...params });
       if (j.view) emit(j.view);
-      if (j.kicked) { drop(); listeners.forEach((cb) => cb(null, j.error)); }
+      if (j.kicked) { drop(); listeners.forEach((cb) => cb(null, errorText(j))); }
       if (action === "leave" && j.ok) { drop(); listeners.forEach((cb) => cb(null)); }
       return j;
     },
