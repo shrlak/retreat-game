@@ -26,6 +26,7 @@ Phone-based online hidden-role game in the style of the classic team-quest deduc
 - `tests/` thread: concurrency + handler models.
 
 - Live bot tests on GitHub Pages against function v6 (2026-11-26): base game 5–10 players 12 games 0 fails; expansions (Lancelot 1/2, Excalibur, lady) 5–10 players 16 games 0 fails. One request out of 4,588 hung 160 s (504) earlier → every DB call now has a 5 s deadline, a timed-out write is recognised by `_saveId`, phones abort a tap after 15 s.
+- Live bot tests against function v7 (official Lancelot variants 1/2/3, 2026-11-26 10:35 UTC): 7–10 players × 3 games = 12 games, 0 fails, 1,875 calls (covers V2 forced cards and public plan, V3 mutual knowledge, Excalibur, lady, Oberon at 10).
 - Auto push: a background loop runs sync.sh every 60 s and pushes only when a file changed (it lives in the working session; restart it if the session is replaced: `while true; do sleep 60; bash sync.sh; done`).
 
 ## Next, in priority order

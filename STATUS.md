@@ -1,6 +1,6 @@
 # Status snapshot
 
-Auto-generated on every push by sync.sh (2026-11-26 10:31 UTC). The written handoff is HANDOFF.md.
+Auto-generated on every push by sync.sh (2026-11-26 10:33 UTC). The written handoff is HANDOFF.md.
 
 ### Engine tests
 ```
@@ -16,6 +16,7 @@ Auto-generated on every push by sync.sh (2026-11-26 10:31 UTC). The written hand
 - `server/`: 4 files, newest 2026-11-26 10:17 UTC
 ### Recent commits
 ```
+62941d3 Auto-sync (10:31 UTC)
 b045c56 Auto-sync (10:30 UTC)
 dcf69e3 Auto-sync (10:29 UTC)
 8d16727 Auto-sync (10:28 UTC)
@@ -23,7 +24,6 @@ dcf69e3 Auto-sync (10:29 UTC)
 29180a5 Auto-sync (10:26 UTC)
 6cc1406 Auto-sync (10:25 UTC)
 5970377 Auto-sync (10:23 UTC)
-ef93bda Auto-sync (10:22 UTC)
 ```
 ### Files
 ```
