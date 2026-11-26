@@ -2079,7 +2079,7 @@
 
 
 /* ---- src/40-cine.js ---- */
-/* 빛의 원정대 — full-screen cinematics (deal, begin, vote, quest, lady, assassin, end).
+/* 빛의 원정대 — full-screen cinematics (deal, begin, vote, excalibur, quest, loyalty, lady, assassin, end); Korean + English via K.L.
    Registered as K.cine.<type> = async (ctx, ev, v, K). Core plays them in order, then fades the overlay.
    Style: biblical manuscript (gold leaf, stained glass, scroll, candle light). Light from above for good,
    purple dusk for evil. Only transform/opacity animate. Every effect is skipped once ctx.skipped. */
