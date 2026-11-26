@@ -57,7 +57,7 @@ The player who was checked receives the Lamp next. Anyone who has already held i
 
 Everyone sees who checked whom, but only the holder sees the answer. Whether to share it, or to share it truthfully, is up to them.
 
-## Good Lancelot and Evil Lancelot (expansion)
+## Expansion: Good Lancelot and Evil Lancelot
 
 This expansion is used only if the host turns it on. The two Lancelots join the game, and the Evil Lancelot takes one of the Tempters seats.
 
@@ -109,7 +109,7 @@ If the host turns this on, the team sizes change for 5 and 7 player games.
 
 ## Roles
 
-### Prophet (Workers of Light)
+### Prophet · Workers of Light
 
 _Knows everything, but can't say it_
 
@@ -131,7 +131,7 @@ _Knows everything, but can't say it_
 
 **Who can see you**: The Watchman sees you as a Prophet candidate.
 
-### Watchman (Workers of Light)
+### Watchman · Workers of Light
 
 _The one who protects the Prophet_
 
@@ -151,7 +151,7 @@ _The one who protects the Prophet_
 
 **Who can see you**: Nobody sees you in any special way.
 
-### Worker of Light (Workers of Light)
+### Worker of Light · Workers of Light
 
 _Fights with faith and sharp eyes_
 
@@ -169,7 +169,7 @@ _Fights with faith and sharp eyes_
 
 **Who can see you**: Nobody sees you in any special way.
 
-### Spy (Tempters)
+### Spy · Tempters
 
 _Holds the final move_
 
@@ -189,7 +189,7 @@ _Holds the final move_
 
 **Who can see you**: The Prophet sees you as one of the Tempters.
 
-### False Prophet (Tempters)
+### False Prophet · Tempters
 
 _Pretends to be a person of light_
 
@@ -207,7 +207,7 @@ _Pretends to be a person of light_
 
 **Who can see you**: The Watchman sees you as a Prophet candidate, and the Prophet sees you as one of the Tempters.
 
-### Wolf in Sheep's Clothing (Tempters)
+### Wolf in Sheep's Clothing · Tempters
 
 _The hidden leader even the Prophet can't see_
 
@@ -225,7 +225,7 @@ _The hidden leader even the Prophet can't see_
 
 **Who can see you**: Even the Prophet can't see you. Only your fellow Tempters know you.
 
-### Wanderer (Tempters)
+### Wanderer · Tempters
 
 _One of the Tempters, wandering alone_
 
@@ -243,7 +243,7 @@ _One of the Tempters, wandering alone_
 
 **Who can see you**: The Prophet sees you as one of the Tempters. Your fellow Tempters can't see you.
 
-### Tempter (Tempters)
+### Tempter · Tempters
 
 _Quietly stirs things up_
 
@@ -261,7 +261,7 @@ _Quietly stirs things up_
 
 **Who can see you**: The Prophet sees you as one of the Tempters.
 
-### Good Lancelot (Workers of Light)
+### Good Lancelot · Workers of Light
 
 _A Lancelot of the light, standing at a crossroads_
 
@@ -280,7 +280,7 @@ _A Lancelot of the light, standing at a crossroads_
 
 **Who can see you**: In Known Crossroads, the Evil Lancelot can see you. Otherwise nobody can.
 
-### Evil Lancelot (Tempters)
+### Evil Lancelot · Tempters
 
 _A Lancelot in shadow, standing at a crossroads_
 

@@ -27,8 +27,9 @@ export const DEFAULT_NAMES = {
   reject: "반대",
   lady: "등불",
   assassinate: "선지자 지목",
-  lancelotGood: "갈림길의 순례자",
-  lancelotEvil: "갈림길의 그림자",
+  lancelotGood: "갈림길의 순례자 (선한 랜슬롯)",
+  lancelotEvil: "갈림길의 그림자 (악한 랜슬롯)",
+  lancelot: "갈림길의 순례자 (랜슬롯)",
   excalibur: "말씀 두루마리",
   loyalty: "갈림길 카드",
   loyaltyNone: "그대로",
@@ -163,7 +164,7 @@ export const overview = {
     {
       id: "lancelot",
       module: "lancelot",
-      heading: "{lancelotGood:과} {lancelotEvil} (확장 규칙)",
+      heading: "확장 규칙: {lancelotGood:과} {lancelotEvil}",
       body: [
         "진행자가 켜면 쓰는 확장 규칙이에요. 두 순례자가 들어가고, {lancelotEvil:은} {evil} 한 자리를 차지해요.",
         "{loyalty} 5장({loyaltyNone} 3장, {loyaltySwitch} 2장)을 섞어 두고, 3·4·5번째 {quest:이} 시작될 때마다 한 장씩 모두에게 공개해요.",
@@ -726,7 +727,7 @@ export const presets = {
   },
   expansion: {
     label: "확장 규칙 맛보기",
-    desc: "{lancelotGood}(조용한 갈림길)와 {excalibur:을} 더한 구성",
+    desc: "두 순례자(조용한 갈림길)와 {excalibur:을} 더한 구성",
     byCount: {
       5: { roles: { ...base }, lady: false, ...off, lancelot: 1 },
       6: { roles: { ...base, percival: true }, lady: false, ...off, lancelot: 1 },

@@ -1303,7 +1303,10 @@
     start: function () { return asMe("start"); },
     ack: function () { return asMe("ack"); },
     skipReveal: function () { return asMe("skipReveal"); },
-    propose: function (ids) { return asMe("propose", { team: ids }); },
+    propose: function (ids, excaliburTo) { return asMe("propose", excaliburTo ? { team: ids, excaliburTo: excaliburTo } : { team: ids }); },
+    excalibur: function (id) { return asMe("excalibur", id ? { targetId: id } : {}); },
+    allowRejoin: function (id) { return asMe("allowRejoin", { targetId: id }); },
+    claimHost: function () { return asMe("claimHost"); },
     vote: function (b) { return asMe("vote", { approve: !!b }); },
     quest: function (b) { return asMe("quest", { success: !!b }); },
     lady: function (id) { return asMe("lady", { targetId: id }); },
@@ -1381,7 +1384,7 @@
     var T = W.THEME;
     return r ? ((T && T.roles && T.roles[r] && T.roles[r].name) || r) : "";
   }
-  var PHASE_KO = { lobby: "대기실", reveal: "역할 확인", propose: "원정대 구성", vote: "투표", quest: "사명", lady: "등불", assassin: "지목", end: "끝" };
+  var PHASE_KO = { lobby: "대기실", reveal: "역할 확인", propose: "원정대 구성", vote: "투표", quest: "사명", excalibur: "두루마리", lady: "등불", assassin: "지목", end: "끝" };
 
   function panelHTML() {
     var st = S.state, h = [];

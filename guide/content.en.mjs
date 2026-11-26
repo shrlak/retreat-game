@@ -18,6 +18,7 @@ export const DEFAULT_NAMES = {
   minion: "Tempter",
   lancelotGood: "Good Lancelot",
   lancelotEvil: "Evil Lancelot",
+  lancelot: "Lancelot",
   quest: "Mission",
   leader: "Group Leader",
   success: "Blessing",
@@ -159,7 +160,7 @@ export const overview = {
     {
       id: "lancelot",
       module: "lancelot",
-      heading: "{lancelotGood} and {lancelotEvil} (expansion)",
+      heading: "Expansion: {lancelotGood} and {lancelotEvil}",
       body: [
         "This expansion is used only if the host turns it on. The two Lancelots join the game, and the {lancelotEvil} takes one of the {evil} seats.",
         "A deck of 5 {loyalty}s (3 {loyaltyNone}, 2 {loyaltySwitch}) is shuffled. At the start of the 3rd, 4th and 5th {quest}s, one card is shown to everyone.",
@@ -715,7 +716,7 @@ export const presets = {
   },
   expansion: {
     label: "Try the expansions",
-    desc: "Adds the {lancelotGood} (Quiet Crossroads) and the {excalibur}",
+    desc: "Adds the two Lancelots (Quiet Crossroads) and the {excalibur}",
     byCount: {
       5: { roles: { ...base }, lady: false, ...off, lancelot: 1 },
       6: { roles: { ...base, percival: true }, lady: false, ...off, lancelot: 1 },

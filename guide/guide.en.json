@@ -15,6 +15,7 @@
     "minion": "Tempter",
     "lancelotGood": "Good Lancelot",
     "lancelotEvil": "Evil Lancelot",
+    "lancelot": "Lancelot",
     "quest": "Mission",
     "leader": "Group Leader",
     "success": "Blessing",
@@ -201,7 +202,7 @@
       {
         "id": "lancelot",
         "module": "lancelot",
-        "heading": "Good Lancelot and Evil Lancelot (expansion)",
+        "heading": "Expansion: Good Lancelot and Evil Lancelot",
         "body": [
           "This expansion is used only if the host turns it on. The two Lancelots join the game, and the Evil Lancelot takes one of the Tempters seats.",
           "A deck of 5 Crossroads cards (3 Stay, 2 Switch sides) is shuffled. At the start of the 3rd, 4th and 5th Missions, one card is shown to everyone.",
@@ -1018,7 +1019,7 @@
     },
     "expansion": {
       "label": "Try the expansions",
-      "desc": "Adds the Good Lancelot (Quiet Crossroads) and the Scroll of the Word",
+      "desc": "Adds the two Lancelots (Quiet Crossroads) and the Scroll of the Word",
       "byCount": {
         "5": {
           "roles": {

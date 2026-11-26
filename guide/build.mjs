@@ -64,7 +64,7 @@ function namesFromTheme(theme, defaults, lang) {
     if (t.teams.evil && t.teams.evil.name) n.evil = t.teams.evil.name;
   }
   if (t.roles) for (var r in t.roles) if (t.roles[r] && t.roles[r].name) n[r] = t.roles[r].name;
-  if (t.terms) for (var x in t.terms) if (typeof t.terms[x] === "string" && x !== "lancelot" && x !== "excaliburEn" && x !== "lancelotEn") n[x] = t.terms[x];
+  if (t.terms) for (var x in t.terms) if (typeof t.terms[x] === "string" && x !== "excaliburEn" && x !== "lancelotEn") n[x] = t.terms[x];
   return n;
 }
 function detectLang() {
@@ -186,7 +186,7 @@ function rulesMd(g, lang) {
   md.push(`## ${t.heading}\n\n| ${t.columns.join(" | ")} |\n|${t.columns.map(() => "---").join("|")}|\n${t.rows.map((r) => `| ${r.join(" | ")} |`).join("\n")}\n\n${t.note}\n`);
   md.push(`## ${l.roles}\n`);
   for (const [key, r] of Object.entries(g.roles)) {
-    md.push(`### ${N[key]} (${r.team === "good" ? N.good : N.evil})\n\n_${r.tagline}_\n\n**${l.know}**\n${list(r.know)}\n\n**${l.goal}**\n${list(r.goal)}\n\n**${l.tips}**\n${list(r.tips)}\n\n**${l.seenBy}**: ${r.seenBy}\n`);
+    md.push(`### ${N[key]} · ${r.team === "good" ? N.good : N.evil}\n\n_${r.tagline}_\n\n**${l.know}**\n${list(r.know)}\n\n**${l.goal}**\n${list(r.goal)}\n\n**${l.tips}**\n${list(r.tips)}\n\n**${l.seenBy}**: ${r.seenBy}\n`);
   }
   md.push(`## ${l.glossary}\n\n${g.glossary.map((x) => `- **${x.term}**: ${x.text}`).join("\n")}\n`);
   return md.join("\n");

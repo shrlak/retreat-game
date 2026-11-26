@@ -540,6 +540,7 @@
     return K.el('<div class="bd-root">' +
       '<div class="bd-veil-slot"></div>' +
       '<div class="ux-top bd-top" data-bd="top"></div>' +
+      '<div data-bd="seat"></div>' +
       '<div class="ux-panel bd-trackp" data-bd="track"></div>' +
       '<div class="ux-table" data-bd="table"></div>' +
       '<div class="ux-panel ux-action bd-action" data-bd="action"><div class="bd-glow" aria-hidden="true"></div><div data-bd="head"></div><div data-bd="ctl"></div><div class="bd-live" data-bd="live"></div><div class="bd-pvs" data-bd="pv"></div></div>' +
@@ -557,6 +558,7 @@
     // veil
     K.patch(K.$('.bd-veil-slot', el), v.phase === 'assassin' ? '<div class="ux-assassin-veil bd-veil"></div>' : '');
     K.patch(K.$('[data-bd="top"]', el), topHtml(v));
+    K.patch(K.$('[data-bd="seat"]', el), K.seatNotice ? K.seatNotice(v) : '');
     const tr = trackHtml(v);
     K.patch(K.$('[data-bd="track"]', el), tr.html);
     tr.fresh.forEach(f => setTimeout(() => {

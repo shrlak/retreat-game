@@ -258,7 +258,7 @@
   K.confirm = (title, body, o) => new Promise(res => {
     o = o || {}; let done = false;
     const sh = K.sheet('<div class="ux-stack" style="padding:4px 2px 6px"><h2 class="ux-h2 ux-center">' + esc(title) + '</h2>' + (body ? '<p class="ux-p ux-center">' + body + '</p>' : '') +
-      '<div class="ux-row" style="margin-top:8px"><button class="ux-btn ux-btn-ghost" data-close>' + esc(o.cancel || K.L('취소', 'Cancel')) + '</button><button class="ux-btn ' + (o.danger ? 'ux-btn-evil' : 'ux-btn-gold') + '" data-yes>' + esc(o.ok || '확인') + '</button></div></div>',
+      '<div class="ux-row" style="margin-top:8px"><button class="ux-btn ux-btn-ghost" data-close>' + esc(o.cancel || K.L('취소', 'Cancel')) + '</button><button class="ux-btn ' + (o.danger ? 'ux-btn-evil' : 'ux-btn-gold') + '" data-yes>' + esc(o.ok || K.L('확인', 'OK')) + '</button></div></div>',
       { onClose: () => { if (!done) { done = true; res(false); } } });
     sh.querySelector('[data-yes]').addEventListener('click', () => { done = true; res(true); sh.close(); });
   });
@@ -1933,6 +1933,7 @@
     return K.el('<div class="bd-root">' +
       '<div class="bd-veil-slot"></div>' +
       '<div class="ux-top bd-top" data-bd="top"></div>' +
+      '<div data-bd="seat"></div>' +
       '<div class="ux-panel bd-trackp" data-bd="track"></div>' +
       '<div class="ux-table" data-bd="table"></div>' +
       '<div class="ux-panel ux-action bd-action" data-bd="action"><div class="bd-glow" aria-hidden="true"></div><div data-bd="head"></div><div data-bd="ctl"></div><div class="bd-live" data-bd="live"></div><div class="bd-pvs" data-bd="pv"></div></div>' +
@@ -1950,6 +1951,7 @@
     // veil
     K.patch(K.$('.bd-veil-slot', el), v.phase === 'assassin' ? '<div class="ux-assassin-veil bd-veil"></div>' : '');
     K.patch(K.$('[data-bd="top"]', el), topHtml(v));
+    K.patch(K.$('[data-bd="seat"]', el), K.seatNotice ? K.seatNotice(v) : '');
     const tr = trackHtml(v);
     K.patch(K.$('[data-bd="track"]', el), tr.html);
     tr.fresh.forEach(f => setTimeout(() => {
