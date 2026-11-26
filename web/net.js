@@ -31,11 +31,15 @@
   async function call(body) {
     try {
       const t0 = Date.now();
+      const ctl = typeof AbortController !== "undefined" ? new AbortController() : null;
+      const timer = ctl && setTimeout(() => ctl.abort(), 15000); // never leave a tap hanging
       const r = await fetch(B.fnUrl, {
+        signal: ctl ? ctl.signal : undefined,
         method: "POST",
         headers: { "content-type": "application/json", apikey: B.anonKey },
         body: JSON.stringify(body),
       });
+      if (timer) clearTimeout(timer);
       const j = await r.json().catch(() => ({ ok: false, error: "응답을 읽지 못했어요", errorKey: "badResponse", errorEn: "Couldn't read the server's answer" }));
       if (j && j.view) {
         sampleClock(t0, Date.now(), j.view.serverNow);

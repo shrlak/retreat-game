@@ -14,30 +14,48 @@ const json = (body, status = 200) =>
 export function makeHandler({ url, key, table = "mist_rooms" }) {
   const H = { apikey: key, Authorization: `Bearer ${key}`, "content-type": "application/json" };
   const rest = `${url}/rest/v1/${table}`;
+  // every database call gets a deadline, so one stuck connection can't hang a phone's tap
+  const tfetch = (u, opts = {}, ms = 5000) =>
+    fetch(u, typeof AbortSignal !== "undefined" && AbortSignal.timeout ? { ...opts, signal: AbortSignal.timeout(ms) } : opts);
+  const isTimeout = (e) => e && (e.name === "TimeoutError" || e.name === "AbortError");
 
-  async function load(code) {
-    const r = await fetch(`${rest}?code=eq.${encodeURIComponent(code)}&select=state,v`, { headers: H });
+  async function load(code, tries = 3) {
+    let r;
+    try {
+      r = await tfetch(`${rest}?code=eq.${encodeURIComponent(code)}&select=state,v`, { headers: H });
+    } catch (e) {
+      if (isTimeout(e) && tries > 1) return load(code, tries - 1);
+      throw e;
+    }
     if (!r.ok) throw new Error(`load ${r.status} ${await r.text()}`);
     const rows = await r.json();
     return rows[0] || null;
   }
   async function insert(code, state) {
-    const r = await fetch(rest, { method: "POST", headers: { ...H, Prefer: "return=minimal" }, body: JSON.stringify({ code, state, v: state.v }) });
+    const r = await tfetch(rest, { method: "POST", headers: { ...H, Prefer: "return=minimal" }, body: JSON.stringify({ code, state, v: state.v }) });
     if (r.status === 409) return false;
     if (!r.ok) throw new Error(`insert ${r.status} ${await r.text()}`);
     return true;
   }
   async function save(code, state, prevV) {
-    const r = await fetch(`${rest}?code=eq.${encodeURIComponent(code)}&v=eq.${prevV}&select=code`, {
-      method: "PATCH",
-      headers: { ...H, Prefer: "return=representation" },
-      body: JSON.stringify({ state, v: state.v, updated_at: new Date().toISOString() }),
-    });
+    let r;
+    try {
+      r = await tfetch(`${rest}?code=eq.${encodeURIComponent(code)}&v=eq.${prevV}&select=code`, {
+        method: "PATCH",
+        headers: { ...H, Prefer: "return=representation" },
+        body: JSON.stringify({ state, v: state.v, updated_at: new Date().toISOString() }),
+      });
+    } catch (e) {
+      if (!isTimeout(e)) throw e;
+      // the write may or may not have landed: look, and count it as saved only if the row is exactly ours
+      const row = await load(code);
+      return !!row && row.v === state.v && JSON.stringify(row.state) === JSON.stringify(state);
+    }
     if (!r.ok) throw new Error(`save ${r.status} ${await r.text()}`);
     return (await r.json()).length > 0;
   }
   async function cleanup(now) {
-    await fetch(`${rest}?updated_at=lt.${new Date(now - 3 * 864e5).toISOString()}`, { method: "DELETE", headers: H }).catch(() => {});
+    await tfetch(`${rest}?updated_at=lt.${new Date(now - 3 * 864e5).toISOString()}`, { method: "DELETE", headers: H }).catch(() => {});
   }
   // reply right away; the realtime ping finishes in the background (EdgeRuntime keeps it alive)
   function later(p) {
@@ -47,7 +65,7 @@ export function makeHandler({ url, key, table = "mist_rooms" }) {
     } catch {}
   }
   function broadcast(code, v) {
-    return fetch(`${url}/realtime/v1/api/broadcast`, {
+    return tfetch(`${url}/realtime/v1/api/broadcast`, {
       method: "POST",
       headers: H,
       body: JSON.stringify({ messages: [{ topic: `mist:${code}`, event: "update", payload: { v }, private: false }] }),
