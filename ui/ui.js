@@ -2877,7 +2877,7 @@
     if (card === 'switch') {
       tc.classList.add('cn-swap');
       res.innerHTML = '<div class="ux-banner cn-sw">' + E(name) + '</div>' +
-        '<div class="cn-note">' + L('<b>' + E(LANC()) + ' 두 사람의 편이 서로 바뀌어요</b><br>누가 순례자인지는 여전히 비밀이에요',
+        '<div class="cn-note">' + L('<b>두 순례자의 편이 서로 바뀌어요</b><br>누가 순례자인지는 여전히 비밀이에요',
           '<b>Both ' + E(LANC()) + ' players switch sides</b><br>Who they are stays secret') + '</div>' +
         V('너희가 섬길 자를 오늘 택하라', '수 24:15', 'Choose today whom you will serve', 'Joshua 24:15');
       S.scene('candle', S.y(tc), { rays: true });
@@ -2885,7 +2885,7 @@
       S.burst(tc, { n: 34, colors: [GOLD[0], DUSK[0], GOLD[2], DUSK[1]], speed: 190 });
     } else {
       res.innerHTML = '<div class="ux-banner good">' + E(name) + '</div>' +
-        '<div class="cn-note">' + L(EP(LANC(), '은') + ' 지금 편 그대로 가요<br>누가 순례자인지는 여전히 비밀이에요',
+        '<div class="cn-note">' + L('두 순례자는 지금 편 그대로 가요<br>누가 순례자인지는 여전히 비밀이에요',
           'The ' + E(LANC()) + ' players stay on their current sides<br>Who they are stays secret') + '</div>' +
         V('예수 그리스도는 어제나 오늘이나 영원토록 동일하시니라', '히 13:8', 'Jesus Christ is the same yesterday, today, and forever', 'Hebrews 13:8');
       S.sfx('chime'); S.buzz('pick');
