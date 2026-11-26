@@ -1,6 +1,6 @@
 // Proves the harness catches real rule bugs: copies server/engine.js, plants one bug at a time,
 // and runs a small matrix against each mutant. Every mutant must be caught.
-import { readFileSync, writeFileSync, mkdtempSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdtempSync, copyFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { runMatrix } from "./run-matrix.mjs";
@@ -38,6 +38,8 @@ const MUTANTS = {
   "final teams leak early": [`finalTeams: ended ? Object.fromEntries`, `finalTeams: true ? Object.fromEntries`],
 };
 const dir = mkdtempSync(join(tmpdir(), "mut-"));
+// the engine imports its sibling message table
+copyFileSync(new URL("../server/messages.js", import.meta.url), join(dir, "messages.js"));
 let missed = 0;
 for (const [name, [from, to]] of Object.entries(MUTANTS)) {
   if (!src.includes(from)) { console.log(`?? ${name}: pattern not found (engine changed) — update mutant`); missed++; continue; }
