@@ -1,6 +1,6 @@
 # HANDOFF — 빛의 원정대 (retreat-game)
 
-_Last updated: see the bottom "Snapshot" section (regenerated on every push by `sync.sh`)._
+_Last updated by hand with each feature change. Auto status: STATUS.md (rewritten on every push)._
 
 ## Goal (Spencer's ask)
 Phone-based online hidden-role game in the style of the classic team-quest deduction board game, redesigned for church retreats and gatherings, with all the standard rules. Adjustable player count (5–10), anyone creates a room, others join by code, random roles, everyone presses ready, host starts. Flashy, immersive design and animation. Original card illustrations; church-retreat role names.

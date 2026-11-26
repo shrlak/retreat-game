@@ -80,6 +80,7 @@
 .ux-seat.fresh { animation: popIn .45s var(--ease-spring) both; animation-delay: calc(var(--i, 0) * 35ms); }
 .ux-seat .icons span img { width: 100%; height: 100%; border: 0; background: none; border-radius: 50%; }
 .ux-seat .icons .lamp img, .ux-seat .icons .xc img { padding: 1px; }
+.ux-seat .icons .xc { background: #2a2350; border-color: rgba(255,215,122,.5); }
 .ux-seat .sub { flex-wrap: wrap; min-height: 14px; margin-top: 2px; }
 .ux-seat .sub .off { color: var(--text-mute); }
 .ux-seat .sub .tm { color: var(--gold); }
@@ -88,7 +89,7 @@
 .ux-seat.on-team { background: rgba(244,201,107,.07); }
 .ux-seat.selectable { cursor: pointer; }
 .ux-seat.disabled { pointer-events: none; }
-.ux-seat .bd-xc-seat { position: absolute; top: -7px; right: -5px; width: 24px; height: 24px; border-radius: 50%; background: rgba(20,24,52,.92); border: 1px solid var(--gold); box-shadow: 0 0 12px rgba(244,201,107,.5); display: none; padding: 2px; }
+.ux-seat .bd-xc-seat { position: absolute; bottom: -8px; right: 6px; width: 24px; height: 24px; border-radius: 50%; background: rgba(20,24,52,.92); border: 1px solid var(--gold); box-shadow: 0 0 12px rgba(244,201,107,.5); display: none; padding: 2px; }
 .ux-seat .bd-xc-seat img { width: 100%; height: 100%; }
 .ux-seat.bd-xc-on .bd-xc-seat { display: block; animation: popIn .4s var(--ease-spring) both; }
 .bd-action { overflow: hidden; }
