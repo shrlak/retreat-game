@@ -15,7 +15,7 @@ const MUTANTS = {
   "leader stuck on reject": [`g.proposal = null;\n              nextLeader(state);`, `g.proposal = null;`],
   "lady on previous holder": [`if (g.ladyUsedBy.includes(t.id)) return err`, `if (false) return err`],
   "revealed leaks early": [`revealed: ended ? { ...g.roleOf } : null`, `revealed: { ...g.roleOf }`],
-  "good may fail": [`if (curTeam(g, me.id) === "good" && !success) return err`, `if (false) return err`],
+  "good may fail": [`if (curTeam(g, me.id) === "good" && !success) return err("빛의`, `if (false) return err("빛의`],
   "percival misses morgana": [`(r === "merlin" || r === "morgana")`, `(r === "merlin")`],
   "6p wrong sizes": [`6: [2, 3, 4, 3, 4]`, `6: [2, 3, 3, 4, 4]`],
   "10p 3 evil": [`10: 4 }`, `10: 3 }`],
