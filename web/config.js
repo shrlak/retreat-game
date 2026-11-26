@@ -1,0 +1,53 @@
+// 빛의 원정대 — theme & names. Change names/texts here only. Role KEYS are fixed (see CONTRACT.md).
+// Mapping to the classic roles is kept in `classic` for reference.
+window.THEME = {
+  title: "빛의 원정대",
+  subtitle: "수련회 숨은 역할 추리 게임",
+  teams: {
+    good: { name: "빛의 일꾼들", short: "빛", color: "#f4c95d" },
+    evil: { name: "유혹의 무리", short: "유혹", color: "#8e6cc8" },
+  },
+  roles: {
+    merlin:   { classic: "seer",        name: "선지자",          short: "선지자", team: "good", art: "./assets/roles/merlin.svg",
+                desc: "유혹의 무리가 누구인지 알고 있어요. 단, 양의 탈을 쓴 늑대는 보이지 않아요. 끝까지 정체를 들키지 마세요." },
+    percival: { classic: "protector",   name: "파수꾼",          short: "파수꾼", team: "good", art: "./assets/roles/percival.svg",
+                desc: "선지자 후보 두 명이 보여요. 한 명은 진짜 선지자, 한 명은 거짓 선지자예요. 진짜를 지켜 주세요." },
+    servant:  { classic: "loyal",       name: "빛의 일꾼",       short: "일꾼",   team: "good", art: "./assets/roles/servant.svg",
+                desc: "아무 정보도 없지만, 대화와 투표로 유혹의 무리를 찾아내 사명을 성공시키세요." },
+    assassin: { classic: "assassin",    name: "정탐꾼",          short: "정탐꾼", team: "evil", art: "./assets/roles/assassin.svg",
+                desc: "빛의 일꾼들이 사명을 3번 성공해도, 마지막에 선지자를 정확히 지목하면 유혹의 무리가 이겨요." },
+    morgana:  { classic: "false seer",  name: "거짓 선지자",     short: "거짓",   team: "evil", art: "./assets/roles/morgana.svg",
+                desc: "파수꾼에게 선지자처럼 보여요. 진짜 선지자인 척해서 파수꾼을 헷갈리게 하세요." },
+    mordred:  { classic: "hidden lord", name: "양의 탈을 쓴 늑대", short: "늑대",  team: "evil", art: "./assets/roles/mordred.svg",
+                desc: "선지자에게도 보이지 않는 유혹의 무리예요. 빛의 일꾼인 척 숨어 있으세요." },
+    oberon:   { classic: "lone evil",   name: "방황하는 자",     short: "방황",   team: "evil", art: "./assets/roles/oberon.svg",
+                desc: "유혹의 무리지만 동료를 모르고, 동료도 당신을 몰라요. 선지자에게는 보여요." },
+    minion:   { classic: "minion",      name: "유혹하는 자",     short: "유혹",   team: "evil", art: "./assets/roles/minion.svg",
+                desc: "동료 유혹하는 자들을 알고 있어요. 몰래 사명을 방해하세요." },
+  },
+  terms: {
+    quest: "사명", questTeam: "원정대", leader: "조장",
+    success: "축복", fail: "방해",
+    approve: "찬성", reject: "반대",
+    lady: "등불", ladyAction: "등불로 비추기",
+    assassinate: "선지자 지목", host: "방장",
+    ready: "준비 완료", notReady: "준비하기",
+  },
+  knowledgeText: {
+    evil: "유혹의 무리",
+    merlinCandidate: "선지자 후보",
+  },
+  winText: {
+    quests: "빛의 일꾼들이 사명 3번을 이뤘어요",
+    assassinFailed: "정탐꾼이 선지자를 찾지 못했어요",
+    assassinHit: "정탐꾼이 선지자를 찾아냈어요",
+    rejections: "원정대가 5번 연속 반대로 무산됐어요",
+    fails: "사명이 3번 방해받았어요",
+  },
+};
+// Backend (public values only; the function keeps all secrets).
+window.BACKEND = {
+  fnUrl: "https://datihyxdmpshreyifvzn.supabase.co/functions/v1/mist-game",
+  supabaseUrl: "https://datihyxdmpshreyifvzn.supabase.co",
+  anonKey: "sb_publishable_ELxGSab8ISe1RaejUkKNtw_urwJd2ed",
+};
