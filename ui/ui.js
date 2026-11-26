@@ -704,8 +704,8 @@
     '<rect x="51" y="58" width="18" height="40" rx="3" fill="url(#uxe-c)"/><path d="M51 64 q9 4 18 0" stroke="#cdb98f" stroke-width="1.5" fill="none"/>' +
     '<rect x="40" y="97" width="40" height="7" rx="3.5" fill="#c98d2e"/><rect x="46" y="104" width="28" height="4" rx="2" fill="#8a5a18"/></svg></div>';
 
-  // ---------- verses (short, for flavour) ----------
-  K.VERSES = {
+  // ---------- verses (short, for flavour). Korean: 개역개정 phrases; English: World English Bible (public domain). ----------
+  const VERSES_KO = {
     home: ['너희는 세상의 빛이라', '마태복음 5:14'],
     lobby: ['두세 사람이 내 이름으로 모인 곳에는', '마태복음 18:20'],
     reveal: ['빛이 어둠에 비치되', '요한복음 1:5'],
@@ -713,35 +713,77 @@
     evil: ['깨어 있으라', '마태복음 26:41'],
     end: ['선한 싸움을 싸우고', '디모데후서 4:7']
   };
-  K.verse = key => { const v = K.VERSES[key]; return v ? '<p class="ux-verse">“' + esc(v[0]) + '”<cite>' + esc(v[1]) + '</cite></p>' : ''; };
+  const VERSES_EN = {
+    home: ['You are the light of the world.', 'Matthew 5:14'],
+    lobby: ['Where two or three are gathered together in my name, there I am in the middle of them.', 'Matthew 18:20'],
+    reveal: ['The light shines in the darkness.', 'John 1:5'],
+    good: ['Let there be light.', 'Genesis 1:3'],
+    evil: ['Watch and pray.', 'Matthew 26:41'],
+    end: ['I have fought the good fight.', '2 Timothy 4:7']
+  };
+  // K.VERSES follows the current language at read time (Korean object unchanged in Korean mode).
+  try { Object.defineProperty(K, 'VERSES', { configurable: true, enumerable: true, get: () => (K.isEn && K.isEn() ? VERSES_EN : VERSES_KO) }); } catch (e) { K.VERSES = VERSES_KO; }
+  K.VERSES_KO = VERSES_KO; K.VERSES_EN = VERSES_EN;
+  K.verse = key => {
+    const en = K.isEn && K.isEn(), v = (en ? VERSES_EN : VERSES_KO)[key];
+    if (!v) return '';
+    return '<p class="ux-verse">“' + esc(v[0]) + '”<cite>' + esc(v[1]) + '</cite></p>';
+  };
+
+  const ui = (k, ko, en) => { const g = K.G(), u = g && g.ui; return (u && u[k]) || K.L(ko, en); };
+  /* G.system texts (offline / rejoin / host away) with a K.L fallback. */
+  const sys = (k, p, ko, en) => { const g = K.G(), t = g && g.system && g.system[k]; return t ? K.fmt(t, p || {}) : K.L(ko, en); };
+  /* Guide items marked module:"lancelot"|"excalibur"|"balance" are shown only when that module is on (outside a room: always). */
+  const modOn = m => { const v = K.view, s = v && v.settings; if (!m || !v || !s) return true; return m === 'lancelot' ? !!(v.lancelot || s.lancelot) : m === 'excalibur' ? !!(v.excalibur || s.excalibur) : m === 'balance' ? !!s.balance : true; };
+  K.guideModOn = modOn;
+  const isLan = r => r === 'lancelotGood' || r === 'lancelotEvil';
+  K.isLancelot = isLan;
 
   // ---------- my role sheet ----------
   K.knowList = v => {
     const me = v.me || {}, list = me.knowledge || [];
     const g = K.G(), kl = (g && g.knowledgeLabels) || {};
     if (!list.length) {
-      const empty = me.role === 'oberon' ? (kl.emptyOberon || '보이는 동료가 없어요.') : (kl.emptyGood || '보이는 사람이 없어요. 대화와 투표로 추리해 보세요.');
+      const empty = me.role === 'oberon' ? (kl.emptyOberon || K.L('보이는 동료가 없어요.', 'You can\'t see any teammates.'))
+        : isLan(me.role) ? K.L('보이는 사람이 없어요. 갈림길 카드가 뒤집힐 때마다 지금 내 편을 다시 확인하세요.', 'You can\'t see anyone. Each time a Crossroads card turns over, check which side you\'re on now.')
+        : (kl.emptyGood || K.L('보이는 사람이 없어요. 대화와 투표로 추리해 보세요.', 'You can\'t see anyone. Use conversation and votes to work it out.'));
       return '<p class="ux-p ux-center" style="padding:6px 0">' + esc(empty) + '</p>';
     }
     return '<div class="ux-know-list">' + list.map((k, i) => {
       const p = K.player(v, k.id) || { id: k.id, name: '?' };
-      return '<div class="ux-know ' + esc(k.tag) + '" style="animation-delay:' + (i * 90) + 'ms">' + K.avatar(p) +
-        '<span class="nm">' + esc(p.name) + '</span><span class="tag">' + esc(K.knowText(k.tag)) + '</span></div>';
-    }).join('') + '</div>';
+      return '<div class="ux-know ' + esc(k.tag) + (k.tag === 'lancelot' ? ' uxc-lan' : '') + '" style="animation-delay:' + (i * 90) + 'ms">' + K.avatar(p) +
+        '<span class="nm">' + esc(p.name) + '</span><span class="tag">' + (k.tag === 'lancelot' ? '🧭 ' : '') + esc(K.knowText(k.tag)) + '</span></div>';
+    }).join('') + (list.some(k => k.tag === 'lancelot') ? '<p class="ux-muted ux-center" style="margin-top:2px">' + esc(K.L('서로 알아보지만, 누가 지금 어느 편인지는 몰라요.', 'You know each other, but not which side the other is on now.')) + '</p>' : '') + '</div>';
   };
   K.ladyList = v => {
     const r = (v.me && v.me.ladyResults) || []; if (!r.length) return '';
-    return '<h3 class="ux-h3" style="margin:14px 0 8px">' + esc(K.term('lady', '등불')) + '으로 알게 된 것</h3><div class="ux-know-list">' + r.map(x => {
+    const lamp = K.term('lady', K.L('등불', 'Lamp'));
+    return '<h3 class="ux-h3" style="margin:14px 0 8px">' + esc(K.L((K.josa ? K.josa(lamp, '으로') : lamp + '으로') + ' 알게 된 것', 'What the ' + lamp + ' showed me')) + '</h3><div class="ux-know-list">' + r.map(x => {
       const p = K.player(v, x.targetId) || { name: '?' };
       return '<div class="ux-know ' + (x.team === 'evil' ? 'evil' : '') + '">' + K.avatar(p) + '<span class="nm">' + esc(p.name) + '</span><span class="tag">' + esc(K.teamName(x.team)) + '</span></div>';
     }).join('') + '</div>';
   };
+  /* Lancelot: what my side is now, and the Crossroads cards turned so far. */
+  K.lancelotNote = v => {
+    const me = (v && v.me) || {}; if (!isLan(me.role)) return '';
+    const start = me.startTeam || K.teamOf(me.role), now = me.team || start, moved = start !== now;
+    const revealed = (v.loyaltyRevealed || []), loy = K.term('loyalty', K.L('갈림길 카드', 'Crossroads card'));
+    const cards = revealed.length ? '<div class="uxc-loy">' + revealed.map(x => '<span class="uxc-loy-c ' + (x.card === 'switch' ? 'sw' : '') + '">' + K.img(K.asset('loyalty/' + (x.card === 'switch' ? 'switch' : 'none') + '.svg'), 'loyalty', '') +
+      '<small>' + esc(K.term('quest', K.L('사명', 'Mission'))) + ' ' + ((x.round || 0) + 1) + '</small></span>').join('') + '</div>' : '';
+    const g = K.G(), sec = g && g.phaseHints && g.phaseHints.loyalty && g.phaseHints.loyalty.mySwitchSecret;
+    const line = moved
+      ? (sec ? K.fmt(sec, { team: K.isEn() ? K.teamName(now).replace(/^The /, '') : K.teamName(now) }) : K.L(K.teamName(start) + ' 편으로 시작했지만, 지금은 ' + K.teamName(now) + ' 편이에요.', 'You started with ' + K.teamName(start) + ', but now you\'re with ' + K.teamName(now) + '.'))
+      : K.L('지금 내 편: ' + K.teamName(now), 'Your side now: ' + K.teamName(now));
+    const how = K.L('3번째 ' + K.term('quest', '사명') + '부터 ' + loy + '가 한 장씩 뒤집혀요. "' + K.term('loyaltySwitch', '편이 바뀜') + '"이 나오면 두 사람의 편이 서로 바뀌어요. 늘 지금 내 편으로 카드를 내세요.',
+      'From the 3rd ' + K.term('quest', 'Mission') + ', one ' + loy + ' turns over each round. On "' + K.term('loyaltySwitch', 'Sides switch') + '", both Lancelots swap sides. Always play for your current side.');
+    return '<div class="uxc-lnote ' + now + '"><b>🧭 ' + esc(line) + '</b><span>' + esc(how) + '</span>' + cards + '</div>';
+  };
   K.roleTips = role => {
     const g = K.G(), r = g && g.roles && g.roles[role]; if (!r) return '';
     const li = a => (a || []).map(x => '<li>' + esc(x) + '</li>').join('');
-    return '<details class="uxc-tips"><summary>' + esc((g.ui && g.ui.myRoleTipsButton) || '내 역할 팁') + '</summary>' +
+    return '<details class="uxc-tips"><summary>' + esc(ui('myRoleTipsButton', '내 역할 팁', 'My role tips')) + '</summary>' +
       (r.tagline ? '<p class="ux-verse" style="margin:8px 0">' + esc(r.tagline) + '</p>' : '') +
-      (r.goal ? '<b>목표</b><ul>' + li(r.goal) + '</ul>' : '') + (r.tips ? '<b>팁</b><ul>' + li(r.tips) + '</ul>' : '') +
+      (r.goal ? '<b>' + esc(K.L('목표', 'Goal')) + '</b><ul>' + li(r.goal) + '</ul>' : '') + (r.tips ? '<b>' + esc(K.L('팁', 'Tips')) + '</b><ul>' + li(r.tips) + '</ul>' : '') +
       (r.seenBy ? '<p class="ux-muted">' + esc(r.seenBy) + '</p>' : '') + '</details>';
   };
   K.openRoleSheet = () => {
@@ -750,40 +792,121 @@
     K.fb('flip');
     K.sheet('<div class="uxc-role">' +
       '<div class="uxc-mini ' + team + '">' + K.roleImg(me.role) + '<div class="plate"><div class="rname">' + esc(K.roleName(me.role)) + '</div><div class="rteam">' + esc(K.teamName(team)) + '</div></div></div>' +
-      '<p class="ux-p ux-center" style="margin:12px 4px">' + esc(K.roleDesc(me.role)) + '</p>' +
-      '<div class="ux-ornament">내 눈에 보이는 사람</div><div style="margin-top:10px">' + K.knowList(v) + '</div>' + K.ladyList(v) +
+      '<p class="ux-p ux-center" style="margin:12px 4px">' + esc(K.roleDesc(me.role)) + '</p>' + K.lancelotNote(v) +
+      '<div class="ux-ornament">' + esc(K.L('내 눈에 보이는 사람', 'Who I can see')) + '</div><div style="margin-top:10px">' + K.knowList(v) + '</div>' + K.ladyList(v) +
       K.roleTips(me.role) +
-      '<button class="ux-btn ux-btn-ghost" data-close style="margin-top:14px">닫기</button></div>');
+      '<button class="ux-btn ux-btn-ghost" data-close style="margin-top:14px">' + esc(ui('close', '닫기', 'Close')) + '</button></div>');
   };
 
   // ---------- history sheet ----------
   K.openHistory = () => {
     const v = K.view; if (!v) return;
     const hist = (v.voteHistory || []).slice().reverse();
-    const qs = (v.quests || []).map((q, i) => q.result ? '<span class="ux-badge ' + (q.result === 'success' ? 'gold' : 'evil') + '">' + esc(K.term('quest', '사명')) + ' ' + (i + 1) + ' ' + (q.result === 'success' ? esc(K.term('success', '축복')) : esc(K.term('fail', '방해')) + (q.fails != null ? ' ' + q.fails + '장' : '')) + '</span>' : '').join(' ');
+    const qn = K.term('quest', K.L('사명', 'Mission'));
+    const qs = (v.quests || []).map((q, i) => q.result ? '<span class="ux-badge ' + (q.result === 'success' ? 'gold' : 'evil') + '">' + esc(qn) + ' ' + (i + 1) + ' ' + (q.result === 'success' ? esc(K.term('success', K.L('축복', 'Blessing'))) : esc(K.term('fail', K.L('방해', 'Hindrance'))) + (q.fails != null ? ' ' + esc(K.L(q.fails + '장', '×' + q.fails)) : '')) + '</span>' : '').join(' ');
     const items = hist.map(h => {
       const team = h.team || [];
       const votes = K.players(v).map(p => {
         const y = h.votes ? h.votes[p.id] : null; if (y == null) return '';
         return '<span class="' + (y ? 'y' : 'n') + (team.indexOf(p.id) >= 0 ? ' t' : '') + '">' + esc(p.name) + ' ' + (y ? '○' : '✕') + '</span>';
       }).join('');
-      return '<div class="ux-hist-item"><div class="hd"><span><b>' + esc(K.term('quest', '사명')) + ' ' + ((h.round || 0) + 1) + '</b> · ' + (h.proposalNo || 1) + '번째 · ' + esc(K.term('leader', '조장')) + ' ' + esc(K.pname(v, h.leaderId)) + '</span>' +
-        '<span class="ux-badge ' + (h.approved ? 'ok' : 'evil') + '">' + (h.approved ? '통과' : '부결') + '</span></div>' +
-        '<div class="ux-muted" style="margin-bottom:6px">' + esc(K.term('questTeam', '원정대')) + ': ' + team.map(id => esc(K.pname(v, id))).join(', ') + '</div><div class="votes">' + votes + '</div></div>';
+      const no = h.proposalNo || 1;
+      return '<div class="ux-hist-item"><div class="hd"><span><b>' + esc(qn) + ' ' + ((h.round || 0) + 1) + '</b> · ' + esc(K.L(no + '번째', 'Try ' + no)) + ' · ' + esc(K.term('leader', K.L('조장', 'Leader'))) + ' ' + esc(K.pname(v, h.leaderId)) + '</span>' +
+        '<span class="ux-badge ' + (h.approved ? 'ok' : 'evil') + '">' + esc(h.approved ? K.L('통과', 'Approved') : K.L('부결', 'Rejected')) + '</span></div>' +
+        '<div class="ux-muted" style="margin-bottom:6px">' + esc(K.term('questTeam', K.L('원정대', 'Expedition'))) + ': ' + team.map(id => esc(K.pname(v, id))).join(', ') + '</div><div class="votes">' + votes + '</div></div>';
     }).join('');
-    K.sheet('<h2 class="ux-h2 ux-center" style="margin-bottom:6px">기록</h2>' + (qs ? '<div class="ux-center" style="margin-bottom:12px;display:flex;flex-wrap:wrap;gap:6px;justify-content:center">' + qs + '</div>' : '') +
-      '<div class="ux-hist">' + (items || '<p class="ux-p ux-center">아직 투표 기록이 없어요.</p>') + '</div>' +
-      '<p class="ux-muted ux-center" style="margin-top:10px">테두리가 있는 이름은 그 제안의 ' + esc(K.term('questTeam', '원정대')) + '예요.</p>' +
-      '<button class="ux-btn ux-btn-ghost" data-close style="margin-top:12px">닫기</button>');
+    const qt = K.term('questTeam', K.L('원정대', 'Expedition'));
+    K.sheet('<h2 class="ux-h2 ux-center" style="margin-bottom:6px">' + esc(K.L('기록', 'History')) + '</h2>' + (qs ? '<div class="ux-center" style="margin-bottom:12px;display:flex;flex-wrap:wrap;gap:6px;justify-content:center">' + qs + '</div>' : '') +
+      '<div class="ux-hist">' + (items || '<p class="ux-p ux-center">' + esc(K.L('아직 투표 기록이 없어요.', 'No votes yet.')) + '</p>') + '</div>' +
+      '<p class="ux-muted ux-center" style="margin-top:10px">' + esc(K.L('테두리가 있는 이름은 그 제안의 ' + qt + '예요.', 'Names with a border were on that ' + qt + '.')) + '</p>' +
+      '<button class="ux-btn ux-btn-ghost" data-close style="margin-top:12px">' + esc(ui('close', '닫기', 'Close')) + '</button>');
+  };
+
+  // ---------- seats: who is connected, rejoin from a new phone, take over as host ----------
+  /* K.seatNotice(v) → small banner HTML (or ''): non-host sees "become host" when the host is away; in game the host sees
+     offline players with "allow rejoin" and the seat that is open now. Board/other screens can embed it; cm-seats opens the sheet. */
+  K.seatNotice = v => {
+    if (!v || !v.me) return '';
+    const me = v.me, inGame = v.phase && v.phase !== 'lobby', ps = K.players(v);
+    const host = ps.find(p => p.isHost);
+    let h = '';
+    if (v.hostAway && !me.isHost) {
+      h += '<div class="uxc-seatnote"><span>' + esc(sys('hostAway', { targetName: host ? host.name : '' }, '방장이 1분 넘게 자리를 비웠어요. 누구든 \'방장 맡기\'를 누르면 이어서 진행할 수 있어요.', 'The Host has been away for over a minute. Anyone can tap \'Become host\' to keep the game going.')) + '</span>' +
+        '<button class="ux-btn ux-btn-sm ux-btn-gold" data-act="cm-claim">' + esc(K.term('claimHost', K.L('방장 맡기', 'Become host'))) + '</button></div>';
+    }
+    if (inGame && me.isHost) {
+      const open = v.rejoinOpenFor && K.player(v, v.rejoinOpenFor);
+      if (open) h += '<div class="uxc-seatnote ok"><span>' + esc(sys('rejoinOpen', { targetName: open.name }, open.name + '님 자리가 2분 동안 열렸어요. 새 폰에서 같은 방 코드와 같은 이름으로 들어오면 돼요.',
+        open.name + '\'s seat is open for 2 minutes. Join from the new phone with the same room code and the same name.') + ' (' + v.code + ')') + '</span></div>';
+      const off = ps.filter(p => p.online === false && !K.isMe(v, p.id) && p.id !== v.rejoinOpenFor);
+      if (off.length) h += '<div class="uxc-seatnote"><span>' + esc(sys('offline', { targetName: off.map(p => p.name).join(', ') }, off.map(p => p.name).join(', ') + '님의 연결이 끊겼어요. 같은 폰으로 다시 열면 돌아올 수 있어요.', off.map(p => p.name).join(', ') + ' lost connection. Reopening on the same phone brings them back.') + ' ' +
+        sys('rejoinHostTip', {}, '새 폰으로 들어와야 한다면 방장이 \'다시 입장 허용\'을 눌러 주세요.', 'If they need to use a new phone, the Host can tap \'Allow rejoin\'.')) + '</span>' +
+        '<button class="ux-btn ux-btn-sm ux-btn-ghost" data-act="cm-seats">' + esc(K.L('자리 관리', 'Seats')) + '</button></div>';
+    }
+    return h;
+  };
+  function seatsHtml(v) {
+    const me = v.me || {}, inGame = v.phase && v.phase !== 'lobby';
+    const rows = K.players(v).map(p => {
+      const mine = K.isMe(v, p.id), open = v.rejoinOpenFor === p.id;
+      let right = '';
+      if (open) right = '<span class="ux-badge ok">' + esc(K.L('자리 열림', 'Seat open')) + '</span>';
+      else if (me.isHost && inGame && !mine && p.online === false) right = '<button class="ux-btn ux-btn-sm ux-btn-gold" data-act="cm-rejoin" data-id="' + esc(p.id) + '">' + esc(K.term('allowRejoin', K.L('다시 입장 허용', 'Allow rejoin'))) + '</button>';
+      else if (p.online === false) right = '<span class="ux-badge">' + esc(K.L('연결 끊김', 'Offline')) + '</span>';
+      return '<div class="ux-player' + (mine ? ' is-me' : '') + '">' + K.avatar(p, true) + '<div class="ux-player-name">' + esc(p.name) + (mine ? '<small>' + esc(K.L('나', 'me')) + '</small>' : '') + '</div>' +
+        (p.isHost ? '<span class="ux-badge gold">👑 ' + esc(K.term('host', K.L('방장', 'Host'))) + '</span>' : '') + right + '</div>';
+    }).join('');
+    const tip = me.isHost
+      ? (inGame ? K.L('15초 넘게 연결이 끊긴 사람은 새 폰에서 같은 이름으로 다시 들어올 수 있게 2분 동안 자리를 열어 줄 수 있어요.', 'For someone offline for over 15 seconds, you can open their seat for 2 minutes so they can rejoin from a new phone with the same name.')
+        : K.L('게임 중에 누가 폰을 바꾸면 여기서 다시 입장을 허용할 수 있어요.', 'If someone changes phones during the game, you can let them rejoin here.'))
+      : sys('rejoinHostTip', {}, '원래 폰을 잃었거나 바꿨다면 방장에게 "' + K.term('allowRejoin', '다시 입장 허용') + '"을 부탁하세요.', 'If you lost or changed your phone, ask the host to tap "' + K.term('allowRejoin', 'Allow rejoin') + '".');
+    return '<h2 class="ux-h2 ux-center" style="margin-bottom:6px">' + esc(K.L('함께하는 사람', 'Players')) + '</h2>' + K.seatNotice(Object.assign({}, v, { me: Object.assign({}, me), phase: 'lobby' })) +
+      '<div class="ux-players" style="margin-top:8px">' + rows + '</div><p class="ux-muted ux-center" style="margin-top:10px">' + esc(tip) + '</p>' +
+      '<button class="ux-btn ux-btn-ghost" data-close style="margin-top:12px">' + esc(ui('close', '닫기', 'Close')) + '</button>';
+  }
+  let seatSheet = null, seatTimer = null;
+  K.openSeats = () => {
+    const v = K.view; if (!v) return;
+    const sh = seatSheet = K.sheet('<div class="uxc-seats"></div>', { onClose: () => { clearInterval(seatTimer); seatSheet = null; } });
+    const box = sh.querySelector('.uxc-seats');
+    const draw = () => { if (K.view) K.patch(box, seatsHtml(K.view)); };
+    draw(); clearInterval(seatTimer); seatTimer = setInterval(draw, 1000);
+  };
+  K.actions['cm-seats'] = () => { K.fb('tap'); K.openSeats(); };
+  K.actions['cm-rejoin'] = async d => {
+    const nm = K.pname(K.view, d.id);
+    if (!(await K.confirm(K.L(nm + '님 자리를 열까요?', 'Open ' + nm + '\'s seat?'),
+      esc(K.L('2분 동안 새 폰에서 같은 이름 "' + nm + '"으로 이 방에 다시 들어올 수 있어요.', 'For 2 minutes, a new phone can rejoin this room with the same name "' + nm + '".')),
+      { ok: K.term('allowRejoin', K.L('다시 입장 허용', 'Allow rejoin')), cancel: K.L('취소', 'Cancel') }))) return;
+    const r = await K.call('allowRejoin', d.id);
+    if (r && r.ok !== false) { K.fb('chime'); K.toast(K.L(nm + '님 자리를 열었어요', nm + '\'s seat is open'), 'info'); }
+  };
+  K.actions['cm-claim'] = async () => {
+    if (!(await K.confirm(K.L('방장을 맡을까요?', 'Become the host?'), esc(K.L('방장은 게임을 다시 시작하고, 끊긴 사람의 자리를 열어 줄 수 있어요.', 'The host can restart the game and reopen seats for people who got disconnected.')),
+      { ok: K.term('claimHost', K.L('방장 맡기', 'Become host')), cancel: K.L('취소', 'Cancel') }))) return;
+    const r = await K.call('claimHost');
+    if (r && r.ok !== false) { K.fb('chime'); K.toast(sys('newHost', { targetName: (K.view && K.view.me && K.view.me.name) || '' }, '이제 내가 방장이에요', 'You\'re the host now'), 'info'); }
   };
 
   // ---------- guide (quick pages, full rules, tutorial) ----------
   function fallbackPages() {
-    const t = K.term;
+    const t = (k, ko, en) => K.term(k, K.L(ko, en)), ev = K.teamName('evil'), gd = K.teamName('good');
     return [
-      { heading: '어떤 게임인가요?', lines: ['우리 중에 몰래 숨어 있는 ' + K.teamName('evil') + '가 있어요.', K.teamName('good') + '은 ' + t('quest', '사명') + ' 5번 중 3번을 성공하면 이기고, ' + K.teamName('evil') + '는 3번을 방해하면 이겨요.', '대화와 투표로 누가 누군지 알아맞혀요. 5~10명이 함께해요.'] },
-      { heading: '한 라운드는 이렇게', steps: [t('leader', '조장') + '이 ' + t('quest', '사명') + ' 팀을 골라요.', '모두 동시에 ' + t('approve', '찬성') + ' 또는 ' + t('reject', '반대') + ' 투표해요. 절반보다 많아야 통과예요.', '통과하면 팀원만 몰래 ' + t('success', '축복') + ' 또는 ' + t('fail', '방해') + ' 카드를 내요.', t('fail', '방해') + '가 한 장이라도 있으면 실패예요.', '한 ' + t('quest', '사명') + '에서 5번 연속 부결되면 ' + K.teamName('evil') + '가 이겨요.'] },
-      { heading: '역할', roles: K.OPTIONAL_ROLES.concat(['servant', 'minion']).map(k => ({ key: k, line: K.roleDesc(k) })) }
+      {
+        heading: K.L('어떤 게임인가요?', 'What kind of game is this?'), lines: [
+          K.L('우리 중에 몰래 숨어 있는 ' + ev + '가 있어요.', ev + ' are hiding among us.'),
+          K.L(gd + '은 ' + t('quest', '사명') + ' 5번 중 3번을 성공하면 이기고, ' + ev + '는 3번을 방해하면 이겨요.', gd + ' win by completing 3 of 5 ' + t('quest', '', 'Missions') + 's; ' + ev + ' win by hindering 3.'),
+          K.L('대화와 투표로 누가 누군지 알아맞혀요. 5~10명이 함께해요.', 'Talk and vote to work out who is who. For 5–10 players.')]
+      },
+      {
+        heading: K.L('한 라운드는 이렇게', 'How a round works'), steps: [
+          K.L(t('leader', '조장') + '이 ' + t('quest', '사명') + ' 팀을 골라요.', 'The ' + t('leader', '', 'Leader') + ' picks a team for the ' + t('quest', '', 'Mission') + '.'),
+          K.L('모두 동시에 ' + t('approve', '찬성') + ' 또는 ' + t('reject', '반대') + ' 투표해요. 절반보다 많아야 통과예요.', 'Everyone votes ' + t('approve', '', 'Approve') + ' or ' + t('reject', '', 'Reject') + ' at once. More than half must approve.'),
+          K.L('통과하면 팀원만 몰래 ' + t('success', '축복') + ' 또는 ' + t('fail', '방해') + ' 카드를 내요.', 'If approved, only team members secretly play a ' + t('success', '', 'Blessing') + ' or ' + t('fail', '', 'Hindrance') + ' card.'),
+          K.L(t('fail', '방해') + '가 한 장이라도 있으면 실패예요.', 'One ' + t('fail', '', 'Hindrance') + ' card is enough to fail it.'),
+          K.L('한 ' + t('quest', '사명') + '에서 5번 연속 부결되면 ' + ev + '가 이겨요.', 'If 5 teams in a row are rejected in one ' + t('quest', '', 'Mission') + ', ' + ev + ' win.')]
+      },
+      { heading: K.L('역할', 'Roles'), roles: K.OPTIONAL_ROLES.concat(['servant', 'minion']).map(k => ({ key: k, line: K.roleDesc(k) })) }
     ];
   }
   const guidePages = () => { const g = K.G(); return (g && g.quick && g.quick.pages) || fallbackPages(); };
@@ -793,7 +916,7 @@
     if (p.body) h += (Array.isArray(p.body) ? p.body : String(p.body).split('\n')).map(l => '<p class="ux-p" style="margin:0 0 10px">' + esc(l) + '</p>').join('');
     if (p.steps) h += '<ol class="uxc-steps">' + p.steps.map(s => '<li>' + (typeof s === 'string' ? esc(s) : '<b>' + esc(s.title) + '</b> ' + esc(s.text)) + '</li>').join('') + '</ol>';
     if (p.bullets) h += '<ul class="uxc-steps">' + p.bullets.map(s => '<li>' + esc(s) + '</li>').join('') + '</ul>';
-    if (p.roles) h += '<div class="uxc-roles">' + p.roles.map(r => '<div class="uxc-r ' + K.teamOf(r.key) + '"><i>' + K.roleImg(r.key) + '</i><div><b>' + esc(K.roleName(r.key)) + '</b><span>' + esc(r.line) + '</span></div></div>').join('') + '</div>';
+    if (p.roles) h += '<div class="uxc-roles">' + p.roles.filter(r => modOn(r.module)).map(r => '<div class="uxc-r ' + K.teamOf(r.key) + '"><i>' + K.roleImg(r.key) + '</i><div><b>' + esc(K.roleName(r.key)) + '</b><span>' + esc(r.line) + '</span></div></div>').join('') + '</div>';
     if (p.text) h += '<p class="ux-p">' + esc(p.text) + '</p>';
     if (p.after) h += '<p class="ux-p">' + esc(p.after) + '</p>';
     return h;
@@ -801,13 +924,13 @@
   function pager(title, pages, extraBtns) {
     let i = 0;
     const sh = K.sheet('<div class="uxc-guide"><div class="ux-ornament">' + esc(title) + '</div><div class="uxc-page"></div>' +
-      '<div class="uxc-dots"></div><div class="ux-row" style="margin-top:12px"><button class="ux-btn ux-btn-ghost" data-g="prev">이전</button><button class="ux-btn ux-btn-gold" data-g="next">다음</button></div>' + (extraBtns || '') + '</div>');
+      '<div class="uxc-dots"></div><div class="ux-row" style="margin-top:12px"><button class="ux-btn ux-btn-ghost" data-g="prev">' + esc(ui('prev', '이전', 'Back')) + '</button><button class="ux-btn ux-btn-gold" data-g="next">' + esc(ui('next', '다음', 'Next')) + '</button></div>' + (extraBtns || '') + '</div>');
     const pg = sh.querySelector('.uxc-page'), dots = sh.querySelector('.uxc-dots');
     const show = (dir) => {
       pg.innerHTML = pageHtml(pages[i]); pg.classList.remove('in-l', 'in-r'); void pg.offsetWidth; pg.classList.add(dir < 0 ? 'in-l' : 'in-r');
       dots.innerHTML = pages.map((_, j) => '<i class="' + (j === i ? 'on' : '') + '"></i>').join('');
       sh.querySelector('[data-g=prev]').disabled = i === 0;
-      sh.querySelector('[data-g=next]').textContent = i === pages.length - 1 ? '알겠어요' : '다음';
+      sh.querySelector('[data-g=next]').textContent = i === pages.length - 1 ? ui('done', '알겠어요', 'Got it') : ui('next', '다음', 'Next');
     };
     sh.addEventListener('click', e => {
       const b = e.target.closest('[data-g]'); if (!b) return;
@@ -822,21 +945,21 @@
   }
   K.openGuide = () => {
     const g = K.G();
-    pager((g && g.quick && g.quick.title) || '1분 설명서', guidePages(),
-      '<div class="ux-row" style="margin-top:8px"><button class="ux-btn ux-btn-sm ux-btn-ghost" data-g="tutorial">' + esc((g && g.ui && g.ui.tutorialButton) || '처음이에요') + '</button><button class="ux-btn ux-btn-sm ux-btn-ghost" data-g="rules">' + esc((g && g.ui && g.ui.fullRulesButton) || '전체 규칙') + '</button></div>');
+    pager((g && g.quick && g.quick.title) || ui('quickButton', '1분 설명서', '1-Minute Guide'), guidePages(),
+      '<div class="ux-row" style="margin-top:8px"><button class="ux-btn ux-btn-sm ux-btn-ghost" data-g="tutorial">' + esc(ui('tutorialButton', '처음이에요', 'I\'m new')) + '</button><button class="ux-btn ux-btn-sm ux-btn-ghost" data-g="rules">' + esc(ui('fullRulesButton', '전체 규칙', 'Full rules')) + '</button></div>');
   };
   K.openRules = () => {
     const g = K.G(), o = g && g.overview;
     if (!o) return K.openGuide();
-    let h = '<h2 class="ux-h2 ux-center">' + esc(o.title || '전체 규칙') + '</h2>' + (o.intro ? '<p class="ux-p ux-center" style="margin:6px 0 12px">' + esc(o.intro) + '</p>' : '');
-    (o.sections || []).forEach(s => { h += '<div class="ux-ornament" style="margin:16px 0 8px">' + esc(s.heading) + '</div>' + pageHtml(Object.assign({}, s, { heading: '' })).replace(/^<h2[^>]*><\/h2>/, ''); });
+    let h = '<h2 class="ux-h2 ux-center">' + esc(o.title || ui('fullRulesButton', '전체 규칙', 'Full rules')) + '</h2>' + (o.intro ? '<p class="ux-p ux-center" style="margin:6px 0 12px">' + esc(o.intro) + '</p>' : '');
+    (o.sections || []).filter(s => modOn(s.module)).forEach(s => { h += '<div class="ux-ornament" style="margin:16px 0 8px">' + esc(s.heading) + '</div>' + pageHtml(Object.assign({}, s, { heading: '' })).replace(/^<h2[^>]*><\/h2>/, ''); });
     const t = o.table; if (t) h += '<div class="ux-ornament" style="margin:16px 0 8px">' + esc(t.heading) + '</div><div class="uxc-table"><table><tr>' + t.columns.map(c => '<th>' + esc(c) + '</th>').join('') + '</tr>' + t.rows.map(r => '<tr>' + r.map(c => '<td>' + esc(c) + '</td>').join('') + '</tr>').join('') + '</table></div>' + (t.note ? '<p class="ux-muted">' + esc(t.note) + '</p>' : '');
-    K.sheet(h + '<button class="ux-btn ux-btn-ghost" data-close style="margin-top:14px">닫기</button>');
+    K.sheet(h + '<button class="ux-btn ux-btn-ghost" data-close style="margin-top:14px">' + esc(ui('close', '닫기', 'Close')) + '</button>');
   };
   K.openTutorial = () => {
     const g = K.G(), t = g && g.tutorial;
     if (!t || !t.steps) return K.openGuide();
-    pager(t.title || '처음 해 보기', t.steps.map(s => ({ heading: s.title, text: s.text })));
+    pager(t.title || K.L('처음 해 보기', 'First game walkthrough'), t.steps.map(s => ({ heading: s.title, text: s.text })));
   };
   K.actions['cm-guide'] = () => { K.fb('tap'); K.openGuide(); };
   K.actions['cm-rules'] = () => { K.fb('tap'); K.openRules(); };
@@ -867,6 +990,16 @@
 .uxc-r b { display: block; font-size: 14px; } .uxc-r span { font-size: 12px; color: var(--text-dim); line-height: 1.45; }
 .uxc-dots { display: flex; justify-content: center; gap: 6px; margin-top: 10px; } .uxc-dots i { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,.2); transition: all .3s; } .uxc-dots i.on { width: 18px; border-radius: 3px; background: var(--gold); }
 .uxc-table { overflow-x: auto; } .uxc-table table { width: 100%; border-collapse: collapse; font-size: 12px; } .uxc-table th, .uxc-table td { padding: 6px 4px; text-align: center; border-bottom: 1px solid var(--line); } .uxc-table th { color: var(--gold-hi); }
+.uxc-know-lan, .ux-know.uxc-lan { background: rgba(94,200,190,.1); border: 1px solid rgba(94,200,190,.35); }
+.uxc-lnote { margin: 2px 0 14px; padding: 10px 12px; border-radius: 12px; background: rgba(255,255,255,.04); border: 1px solid var(--line); font-size: 13px; color: var(--text-dim); line-height: 1.5; display: flex; flex-direction: column; gap: 4px; }
+.uxc-lnote b { color: var(--text); font-size: 14px; } .uxc-lnote.good b { color: var(--gold-hi); } .uxc-lnote.evil b { color: #ff9db5; }
+.uxc-loy { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+.uxc-loy-c { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 11px; color: var(--text-mute); }
+.uxc-loy-c img { width: 34px; height: 48px; object-fit: cover; border-radius: 6px; box-shadow: 0 0 0 1px var(--line); } .uxc-loy-c.sw img { box-shadow: 0 0 0 1.5px var(--gold); }
+.uxc-seatnote { display: flex; align-items: center; gap: 10px; margin: 8px 0; padding: 10px 12px; border-radius: 12px; font-size: 13px; line-height: 1.45; color: #ffcf8a; background: rgba(255,170,60,.1); border: 1px solid rgba(255,170,60,.25); }
+.uxc-seatnote.ok { color: var(--ok); background: rgba(111,227,166,.08); border-color: rgba(111,227,166,.3); }
+.uxc-seatnote span { flex: 1; min-width: 0; } .uxc-seatnote .ux-btn { flex: none; width: auto; padding-left: 12px; padding-right: 12px; }
+.uxc-seats .ux-players { display: flex; flex-direction: column; gap: 6px; } .uxc-seats .ux-player .ux-btn { flex: none; width: auto; padding: 6px 10px; }
 `;
   const st = document.createElement('style'); st.id = 'uxc-style'; st.textContent = css; document.head.appendChild(st);
 })();
@@ -985,17 +1118,19 @@
 (function () {
   'use strict';
   const K = window.UI._k, esc = K.esc;
+  const TOPK = ['lady', 'balance', 'excalibur'];   // top-level boolean settings (the rest are settings.roles)
+  const ui = (k, ko, en) => { const g = K.G(), u = g && g.ui; return (u && u[k]) || K.L(ko, en); };
 
   K.screens.lobby = {
     build(v) {
       return K.el('<section class="uxl">' +
-        '<div class="ux-top"><div class="grow"><div class="ux-top-title">' + esc(K.T().title || '빛의 원정대') + '</div><div class="ux-top-sub">대기실</div></div>' +
-        '<button class="ux-icon-btn" data-act="cm-guide" aria-label="설명서">📖</button>' + K.soundBtn() +
-        '<button class="ux-icon-btn" data-act="l-leave" aria-label="나가기">🚪</button></div>' +
-        '<div class="ux-panel ux-code-card uxl-in" style="animation-delay:.05s"><div class="ux-label">참가 코드</div><div class="ux-code" data-slot="code"></div>' +
-        '<div class="ux-row" style="justify-content:center"><button class="ux-btn ux-btn-sm ux-btn-ghost" data-act="l-copy">📋 복사</button><button class="ux-btn ux-btn-sm ux-btn-ghost" data-act="l-share">📨 초대하기</button></div></div>' +
-        '<div data-slot="hint"></div>' +
-        '<div class="ux-panel uxl-in" style="animation-delay:.12s"><div class="ux-panel-head"><h3 class="ux-h3">함께하는 사람</h3><span class="ux-chip" data-slot="count"></span></div>' +
+        '<div class="ux-top"><div class="grow"><div class="ux-top-title">' + esc(K.T().title || K.L('빛의 원정대', 'Light Expedition')) + '</div><div class="ux-top-sub">' + esc(K.L('대기실', 'Lobby')) + '</div></div>' +
+        '<button class="ux-icon-btn" data-act="cm-guide" aria-label="' + esc(ui('helpButton', '설명서', 'Guide')) + '">📖</button>' + K.soundBtn() +
+        '<button class="ux-icon-btn" data-act="l-leave" aria-label="' + esc(K.L('나가기', 'Leave')) + '">🚪</button></div>' +
+        '<div class="ux-panel ux-code-card uxl-in" style="animation-delay:.05s"><div class="ux-label">' + esc(K.L('참가 코드', 'Room code')) + '</div><div class="ux-code" data-slot="code"></div>' +
+        '<div class="ux-row" style="justify-content:center"><button class="ux-btn ux-btn-sm ux-btn-ghost" data-act="l-copy">📋 ' + esc(K.L('복사', 'Copy')) + '</button><button class="ux-btn ux-btn-sm ux-btn-ghost" data-act="l-share">📨 ' + esc(K.L('초대하기', 'Invite')) + '</button></div></div>' +
+        '<div data-slot="seat"></div><div data-slot="hint"></div>' +
+        '<div class="ux-panel uxl-in" style="animation-delay:.12s"><div class="ux-panel-head"><h3 class="ux-h3">' + esc(K.L('함께하는 사람', 'Players')) + '</h3><span class="ux-chip" data-slot="count"></span></div>' +
         '<div class="ux-players" data-slot="players"></div><div data-slot="balance" style="margin-top:12px"></div></div>' +
         '<div class="ux-panel uxl-in" style="animation-delay:.2s" data-slot="settings"></div>' +
         K.verse('lobby') +
@@ -1008,16 +1143,17 @@
       K.patch(el.querySelector('[data-slot=code]'), esc(v.code || ''));
       K.patch(el.querySelector('[data-slot=count]'), '<b>' + n + '</b> / ' + max);
       const hint = K.hint('lobby', isHost ? 'host' : 'guest', {}, n < 5 ? 0 : (isHost ? 2 : 2));
+      K.patch(el.querySelector('[data-slot=seat]'), K.seatNotice ? K.seatNotice(v) : '');
       K.patch(el.querySelector('[data-slot=hint]'), hint ? '<p class="ux-p ux-center uxl-hint">' + esc(hint) + '</p>' : '');
 
       // players
       const items = ps.map(p => ({
         key: p.id, html: '<div class="ux-player' + (K.isMe(v, p.id) ? ' is-me' : '') + (p.ready || p.isHost ? ' is-ready' : '') + '">' + K.avatar(p, true) +
-          '<div class="ux-player-name">' + esc(p.name) + (K.isMe(v, p.id) ? '<small>나</small>' : '') + '</div>' +
-          (p.isHost ? '<span class="ux-badge gold">👑 방장</span>' : (p.ready ? '<span class="ux-badge ok">✓ 준비 완료</span>' : '<span class="ux-badge">기다리는 중</span>')) +
-          (isHost && !p.isHost ? '<button class="ux-kick" data-act="l-kick" data-id="' + esc(p.id) + '" aria-label="내보내기">✕</button>' : '') + '</div>'
+          '<div class="ux-player-name">' + esc(p.name) + (K.isMe(v, p.id) ? '<small>' + esc(K.L('나', 'me')) + '</small>' : '') + '</div>' +
+          (p.isHost ? '<span class="ux-badge gold">👑 ' + esc(K.term('host', K.L('방장', 'Host'))) + '</span>' : (p.ready ? '<span class="ux-badge ok">✓ ' + esc(K.term('ready', K.L('준비 완료', 'Ready'))) + '</span>' : '<span class="ux-badge">' + esc(K.L('기다리는 중', 'Waiting')) + '</span>')) +
+          (isHost && !p.isHost ? '<button class="ux-kick" data-act="l-kick" data-id="' + esc(p.id) + '" aria-label="' + esc(K.L('내보내기', 'Remove') + ' ' + p.name) + '">✕</button>' : '') + '</div>'
       }));
-      for (let i = n; i < Math.max(5, Math.min(max, n + 1)); i++) items.push({ key: 'empty' + i, html: '<div class="ux-player ux-empty-seat">' + (i < 5 ? '빈 자리 · 최소 5명' : '빈 자리') + '</div>' });
+      for (let i = n; i < Math.max(5, Math.min(max, n + 1)); i++) items.push({ key: 'empty' + i, html: '<div class="ux-player ux-empty-seat">' + esc(i < 5 ? K.L('빈 자리 · 최소 5명', 'Empty seat · min. 5') : K.L('빈 자리', 'Empty seat')) + '</div>' });
       K.patchList(el.querySelector('[data-slot=players]'), items);
 
       // balance
@@ -1027,26 +1163,41 @@
       const rig = Array.isArray(v.rolesInGame) && v.rolesInGame.length ? '<div class="ux-roles-strip" style="margin-top:10px">' + v.rolesInGame.map(r => '<span class="ux-role-pill ' + K.teamOf(r) + '"><i>' + K.roleImg(r) + '</i>' + esc(K.roleName(r)) + '</span>').join('') + '</div>' : '';
       K.patch(el.querySelector('[data-slot=balance]'),
         '<div class="ux-balance"><div class="g"><b>' + (cnt - evil) + '</b>' + esc(K.teamName('good')) + '</div><div class="e"><b>' + evil + '</b>' + esc(K.teamName('evil')) + '</div></div>' +
-        '<p class="ux-muted ux-center" style="margin-top:8px">' + (n < 5 ? cnt + '명 기준 · ' : '') + esc(K.term('quest', '사명')) + ' 인원 ' + sizes.join(' · ') + (cnt >= 7 ? ' · 4번째는 ' + esc(K.term('fail', '방해')) + ' 2장' : '') + '</p>' + rig);
+        '<p class="ux-muted ux-center" style="margin-top:8px">' + esc(K.L((n < 5 ? cnt + '명 기준 · ' : '') + K.term('quest', '사명') + ' 인원 ' + sizes.join(' · ') + (cnt >= 7 ? ' · 4번째는 ' + K.term('fail', '방해') + ' 2장' : ''),
+          (n < 5 ? 'For ' + cnt + ' players · ' : '') + K.term('quest', 'Mission') + ' sizes ' + sizes.join(' · ') + (cnt >= 7 ? ' · 4th needs 2 ' + K.term('fail', 'Hindrance') + ' cards' : ''))) + '</p>' + rig);
 
       // settings
-      const val = (k) => (k in pend ? pend[k] : (k === 'lady' || k === 'balance' ? !!s[k] : !!roles[k]));
+      const sw = (k, label) => '<button class="ux-switch' + (val(k) ? ' on' : '') + '" data-act="l-toggle" data-k="' + k + '"' + (isHost ? '' : ' disabled') + ' aria-pressed="' + val(k) + '" aria-label="' + esc(label) + '"></button>';
+      const val = (k) => (k in pend ? pend[k] : (TOPK.indexOf(k) >= 0 ? !!s[k] : !!roles[k]));
       const g = K.G(), presets = g && g.presets;
-      let h = '<div class="ux-panel-head"><h3 class="ux-h3">역할과 규칙</h3>' + (isHost ? '' : '<span class="ux-muted">방장이 정해요</span>') + '</div>';
+      let h = '<div class="ux-panel-head"><h3 class="ux-h3">' + esc(K.L('역할과 규칙', 'Roles & rules')) + '</h3>' + (isHost ? '' : '<span class="ux-muted">' + esc(K.L('방장이 정해요', 'The host decides')) + '</span>') + '</div>';
       if (isHost && presets) h += '<div class="uxl-presets">' + Object.keys(presets).map(k => '<button class="ux-chip" data-act="l-preset" data-k="' + esc(k) + '">✨ ' + esc(presets[k].label || k) + '</button>').join('') + '</div>';
-      h += '<div class="ux-setting"><div class="txt"><div class="name">최대 인원</div><div class="desc">5~10명</div></div><div class="ux-stepper">' +
-        (isHost ? '<button data-act="l-max" data-d="-1"' + (max <= Math.max(5, n) ? ' disabled' : '') + '>−</button>' : '') + '<span class="val">' + max + '</span>' +
-        (isHost ? '<button data-act="l-max" data-d="1"' + (max >= 10 ? ' disabled' : '') + '>+</button>' : '') + '</div></div>';
+      h += '<div class="ux-setting"><div class="txt"><div class="name">' + esc(K.L('최대 인원', 'Max players')) + '</div><div class="desc">' + esc(K.L('5~10명', '5–10 players')) + '</div></div><div class="ux-stepper">' +
+        (isHost ? '<button data-act="l-max" data-d="-1" aria-label="' + esc(K.L('줄이기', 'Fewer')) + '"' + (max <= Math.max(5, n) ? ' disabled' : '') + '>−</button>' : '') + '<span class="val">' + max + '</span>' +
+        (isHost ? '<button data-act="l-max" data-d="1" aria-label="' + esc(K.L('늘리기', 'More')) + '"' + (max >= 10 ? ' disabled' : '') + '>+</button>' : '') + '</div></div>';
       K.OPTIONAL_ROLES.forEach(k => {
         const on = val(k), ev = K.teamOf(k) === 'evil';
         h += '<div class="ux-setting"><div class="thumb">' + K.roleImg(k) + '</div><div class="txt"><div class="name">' + esc(K.roleName(k)) + ' <span class="ux-badge ' + (ev ? 'evil' : 'gold') + '" style="padding:2px 7px">' + esc(ev ? K.teamName('evil') : K.teamName('good')) + '</span></div><div class="desc">' + esc(K.roleDesc(k)) + '</div></div>' +
           '<button class="ux-switch' + (on ? ' on' : '') + (ev ? ' evil' : '') + '" data-act="l-toggle" data-k="' + k + '"' + (isHost ? '' : ' disabled') + ' aria-pressed="' + on + '" aria-label="' + esc(K.roleName(k)) + '"></button></div>';
       });
-      h += '<div class="ux-setting"><div class="thumb" style="display:grid;place-items:center">' + K.tokenImg('lady') + '</div><div class="txt"><div class="name">' + esc(K.term('lady', '등불')) + '</div><div class="desc">2·3·4번째 ' + esc(K.term('quest', '사명')) + ' 뒤에 한 사람의 진영을 몰래 확인해요. 7명 이상 추천.</div></div>' +
-        '<button class="ux-switch' + (val('lady') ? ' on' : '') + '" data-act="l-toggle" data-k="lady"' + (isHost ? '' : ' disabled') + '></button></div>';
-      h += '<div class="ux-setting"><div class="txt"><div class="name">균형 모드</div><div class="desc">5명·7명일 때 ' + esc(K.term('quest', '사명')) + ' 인원을 바꿔 균형을 맞춰요.</div></div>' +
-        '<button class="ux-switch' + (val('balance') ? ' on' : '') + '" data-act="l-toggle" data-k="balance"' + (isHost ? '' : ' disabled') + '></button></div>';
-      if (v.setupError) h += '<div class="ux-warn" style="margin-top:8px">⚠️ ' + esc(v.setupError) + '</div>';
+      h += '<div class="ux-setting"><div class="thumb" style="display:grid;place-items:center">' + K.tokenImg('lady') + '</div><div class="txt"><div class="name">' + esc(K.term('lady', K.L('등불', 'Lamp'))) + '</div><div class="desc">' + esc(K.L('2·3·4번째 ' + K.term('quest', '사명') + ' 뒤에 한 사람의 진영을 몰래 확인해요. 7명 이상 추천.', 'After the 2nd, 3rd and 4th ' + K.term('quest', 'Mission') + 's, secretly check one player\'s side. Best with 7+.')) + '</div></div>' +
+        sw('lady', K.term('lady', K.L('등불', 'Lamp'))) + '</div>';
+      h += '<div class="ux-setting"><div class="txt"><div class="name">' + esc(K.L('균형 모드', 'Balance mode')) + '</div><div class="desc">' + esc(K.L('5명·7명일 때 ' + K.term('quest', '사명') + ' 인원을 바꿔 균형을 맞춰요.', 'With 5 or 7 players, ' + K.term('quest', 'Mission') + ' sizes change for a fairer game.')) + '</div></div>' +
+        sw('balance', K.L('균형 모드', 'Balance mode')) + '</div>';
+      // expansions
+      const modTag = '<span class="ux-badge" style="padding:2px 7px">' + esc(ui('moduleTag', '확장', 'Expansion')) + '</span>';
+      const lan = 'lancelot' in pend ? pend.lancelot : (Number(s.lancelot) || 0);
+      const vshort = i => String(K.term('lancelotVariant' + i, i === 1 ? K.L('조용한 갈림길', 'Quiet crossroads') : K.L('알려진 갈림길', 'Known crossroads'))).split(' (')[0];
+      const lanDesc = lan === 2 ? K.L('두 순례자가 서로 알아보고, ' + K.teamName('evil') + '는 ' + K.roleName('lancelotEvil') + '를 알아요.', 'The two Lancelots see each other, and ' + K.teamName('evil') + ' see the ' + K.roleName('lancelotEvil') + '.')
+        : lan === 1 ? K.L('순례자끼리 서로 모르고, ' + K.roleName('lancelotEvil') + '와 ' + K.teamName('evil') + '도 서로 몰라요.', 'The Lancelots don\'t know each other, and the ' + K.roleName('lancelotEvil') + ' and ' + K.teamName('evil') + ' don\'t know each other.')
+        : K.L('3번째 ' + K.term('quest', '사명') + '부터 ' + K.term('loyalty', '갈림길 카드') + '에 따라 두 순례자의 편이 바뀔 수 있어요.', 'From the 3rd ' + K.term('quest', 'Mission') + ', a ' + K.term('loyalty', 'Crossroads card') + ' can switch the two Lancelots\' sides.');
+      h += '<div class="ux-setting uxl-mod"><div class="thumb">' + K.roleImg(lan ? 'lancelotEvil' : 'lancelotGood') + '</div><div class="txt"><div class="name">' + esc(K.term('lancelot', K.L('갈림길의 순례자', 'Lancelot'))) + ' ' + modTag + '</div><div class="desc">' + esc(lanDesc) + '</div>' +
+        '<div class="uxl-seg" role="group" aria-label="' + esc(K.term('lancelot', K.L('갈림길의 순례자', 'Lancelot'))) + '">' + [0, 1, 2].map(i => '<button class="' + (lan === i ? 'on' : '') + '" data-act="l-lan" data-n="' + i + '"' + (isHost ? '' : ' disabled') + ' aria-pressed="' + (lan === i) + '">' + esc(i ? vshort(i) : K.L('끔', 'Off')) + '</button>').join('') + '</div></div></div>';
+      h += '<div class="ux-setting"><div class="thumb" style="display:grid;place-items:center">' + K.img(K.asset('excalibur.svg'), 'excalibur', '') + '</div><div class="txt"><div class="name">' + esc(K.term('excalibur', K.L('말씀 두루마리', 'Scroll of the Word'))) + ' ' + modTag + '</div><div class="desc">' +
+        esc(K.L(K.term('leader', '조장') + '이 원정대원 한 명에게 주면, 카드를 다 낸 뒤 다른 대원 한 명의 카드를 뒤집을 수 있어요.', 'The ' + K.term('leader', 'Leader') + ' gives it to one team member, who may flip one other member\'s card after all cards are in.')) + '</div></div>' +
+        sw('excalibur', K.term('excalibur', K.L('말씀 두루마리', 'Scroll of the Word'))) + '</div>';
+      const se = v.setupError ? (K.isEn() ? (v.setupErrorEn || K.trMsg(v.setupError)) : v.setupError) : '';
+      if (se) h += '<div class="ux-warn" style="margin-top:8px">⚠️ ' + esc(se) + '</div>';
       K.patch(el.querySelector('[data-slot=settings]'), h);
 
       // dock
@@ -1055,13 +1206,13 @@
       let d;
       if (isHost) {
         const can = n >= 5 && n <= 10 && allReady && !v.setupError;
-        const why = n < 5 ? (5 - n) + '명이 더 필요해요' : !allReady ? '모두 준비하면 시작할 수 있어요 (' + readyN + '/' + others.length + ')' : v.setupError ? '설정을 확인해 주세요' : '모두 준비됐어요!';
+        const why = n < 5 ? K.L((5 - n) + '명이 더 필요해요', (5 - n) + ' more needed') : !allReady ? K.L('모두 준비하면 시작할 수 있어요 (' + readyN + '/' + others.length + ')', 'You can start when everyone is ready (' + readyN + '/' + others.length + ')') : v.setupError ? K.L('설정을 확인해 주세요', 'Please check the settings') : K.L('모두 준비됐어요!', 'Everyone is ready!');
         d = '<div class="ux-progress"><i style="width:' + (others.length ? Math.round(100 * readyN / others.length) : 0) + '%"></i></div><p class="ux-muted ux-center">' + esc(why) + '</p>' +
-          '<button class="ux-btn ux-btn-gold uxl-start' + (can ? ' can' : '') + '" data-act="l-start"' + (can ? '' : ' disabled') + '>✝️ 게임 시작</button>';
+          '<button class="ux-btn ux-btn-gold uxl-start' + (can ? ' can' : '') + '" data-act="l-start"' + (can ? '' : ' disabled') + '>✝️ ' + esc(K.L('게임 시작', 'Start game')) + '</button>';
       } else {
         const r = !!me.ready;
-        d = '<p class="ux-muted ux-center">' + (r ? '방장이 시작하기를 기다리는 중 <span class="ux-dots"><i></i><i></i><i></i></span>' : '준비되면 아래 버튼을 눌러 주세요') + ' · ' + readyN + '/' + others.length + ' 준비</p>' +
-          '<button class="ux-btn ux-ready-btn ' + (r ? 'is-ready' : 'ux-btn-gold') + '" data-act="l-ready">' + (r ? '준비 완료' : '준비하기') + '</button>';
+        d = '<p class="ux-muted ux-center">' + (r ? esc(K.L('방장이 시작하기를 기다리는 중', 'Waiting for the host to start')) + ' <span class="ux-dots"><i></i><i></i><i></i></span>' : esc(K.L('준비되면 아래 버튼을 눌러 주세요', 'Tap the button below when you\'re ready'))) + ' · ' + readyN + '/' + others.length + ' ' + esc(K.L('준비', 'ready')) + '</p>' +
+          '<button class="ux-btn ux-ready-btn ' + (r ? 'is-ready' : 'ux-btn-gold') + '" data-act="l-ready">' + esc(r ? K.term('ready', K.L('준비 완료', 'Ready')) : K.term('notReady', K.L('준비하기', 'Get ready'))) + '</button>';
       }
       K.patch(el.querySelector('[data-slot=dock]'), d);
 
@@ -1075,39 +1226,46 @@
 
   K.actions['l-copy'] = async () => {
     const c = K.view && K.view.code; if (!c) return;
-    try { await navigator.clipboard.writeText(c); K.toast('코드를 복사했어요', 'info'); } catch (e) { K.toast('코드: ' + c, 'info'); }
+    try { await navigator.clipboard.writeText(c); K.toast(K.L('코드를 복사했어요', 'Code copied'), 'info'); } catch (e) { K.toast(K.L('코드: ', 'Code: ') + c, 'info'); }
     K.fb('tap');
   };
   K.actions['l-share'] = async () => {
     const c = K.view && K.view.code; if (!c) return;
     const url = location.origin + location.pathname + '?code=' + encodeURIComponent(c);
-    const text = (K.T().title || '빛의 원정대') + '에 초대해요! 코드 ' + c;
-    if (navigator.share) { try { await navigator.share({ title: K.T().title || '빛의 원정대', text, url }); } catch (e) { } }
-    else { try { await navigator.clipboard.writeText(text + '\n' + url); K.toast('초대 링크를 복사했어요', 'info'); } catch (e) { K.toast(url, 'info'); } }
+    const title = K.T().title || K.L('빛의 원정대', 'Light Expedition');
+    const text = K.L(title + '에 초대해요! 코드 ' + c, 'Join me for ' + title + '! Code ' + c);
+    if (navigator.share) { try { await navigator.share({ title, text, url }); } catch (e) { } }
+    else { try { await navigator.clipboard.writeText(text + '\n' + url); K.toast(K.L('초대 링크를 복사했어요', 'Invite link copied'), 'info'); } catch (e) { K.toast(url, 'info'); } }
   };
   K.actions['l-ready'] = (d, btn) => { const r = !(K.view.me && K.view.me.ready); K.fb(r ? 'good' : 'tap'); if (r) K.fx.burstAt(btn, { n: 24, speed: 200 }); K.call('ready', r); };
   K.actions['l-start'] = (d, btn) => { K.fb('chime'); K.fx.burstAt(btn, { n: 50, speed: 320 }); K.call('start'); };
   K.actions['l-kick'] = async d => {
     const nm = K.pname(K.view, d.id);
-    if (await K.confirm(nm + '님을 내보낼까요?', '', { ok: '내보내기', danger: true })) K.call('kick', d.id);
+    if (await K.confirm(K.L(nm + '님을 내보낼까요?', 'Remove ' + nm + ' from the room?'), '', { ok: K.L('내보내기', 'Remove'), cancel: K.L('취소', 'Cancel'), danger: true })) K.call('kick', d.id);
   };
   K.actions['l-leave'] = async () => {
-    if (await K.confirm('대기실에서 나갈까요?', '나가면 코드를 다시 입력해 들어올 수 있어요.', { ok: '나가기', danger: true })) K.call('leave');
+    if (await K.confirm(K.L('대기실에서 나갈까요?', 'Leave the lobby?'), esc(K.L('나가면 코드를 다시 입력해 들어올 수 있어요.', 'You can come back by entering the code again.')), { ok: K.L('나가기', 'Leave'), cancel: K.L('취소', 'Cancel'), danger: true })) K.call('leave');
   };
   K.actions['l-max'] = d => { const s = K.view.settings || {}; const m = Math.max(5, Math.min(10, (s.maxPlayers || 10) + Number(d.d))); K.fb('tick'); K.call('settings', { maxPlayers: m }); };
   K.actions['l-toggle'] = (d, btn) => {
     const v = K.view, s = v.settings || {}, k = d.k;
-    const cur = k === 'lady' || k === 'balance' ? !!s[k] : !!(s.roles || {})[k];
+    const cur = TOPK.indexOf(k) >= 0 ? !!s[k] : !!(s.roles || {})[k];
     btn.classList.toggle('on', !cur); K.fb('pick');
     K.local.pend = Object.assign({}, K.local.pend, { [k]: !cur });
-    if (k === 'lady' || k === 'balance') K.call('settings', { [k]: !cur });
+    if (TOPK.indexOf(k) >= 0) K.call('settings', { [k]: !cur });
     else K.call('settings', { roles: Object.assign({}, s.roles || {}, { [k]: !cur }) });
+  };
+  K.actions['l-lan'] = (d, btn) => {
+    const n = Number(d.n) || 0, cur = Number((K.view.settings || {}).lancelot) || 0; if (n === cur) return;
+    const seg = btn.parentNode; Array.prototype.forEach.call(seg.children, b => b.classList.toggle('on', b === btn));
+    K.fb('pick'); K.local.pend = Object.assign({}, K.local.pend, { lancelot: n });
+    K.call('settings', { lancelot: n });
   };
   K.actions['l-preset'] = d => {
     const g = K.G(), p = g && g.presets && g.presets[d.k]; if (!p) return;
     const n = Math.max(5, Math.min(10, K.players(K.view).length));
     const c = (p.byCount && (p.byCount[n] || p.byCount[String(n)])) || null; if (!c) return;
-    K.fb('chime'); K.toast((p.label || '추천 구성') + ' 적용' + (c.note ? ' · ' + c.note : ''), 'info');
+    K.fb('chime'); K.toast(K.L((p.label || '추천 구성') + ' 적용', (p.label || 'Recommended setup') + ' applied') + (c.note ? ' · ' + c.note : ''), 'info');
     K.call('settings', c);
   };
 
@@ -1115,6 +1273,11 @@
 .uxl-in { animation: uxhCard .7s var(--ease-out) both; }
 .uxl-hint { margin: -2px 6px 0; font-size: 13px; animation: uxhFade .6s both; }
 .uxl-presets { display: flex; flex-wrap: wrap; gap: 6px; margin: -2px 0 8px; } .uxl-presets .ux-chip { color: var(--gold-hi); }
+.uxl-seg { display: flex; gap: 4px; margin-top: 8px; padding: 3px; border-radius: 12px; background: rgba(255,255,255,.06); border: 1px solid var(--line); }
+.uxl-seg button { flex: 1; min-width: 0; min-height: 34px; padding: 4px 6px; border-radius: 9px; font-size: 13px; font-weight: 700; color: var(--text-dim); line-height: 1.2; transition: background .25s, color .25s; }
+.uxl-seg button.on { color: #2a1a02; background: linear-gradient(180deg, var(--gold-hi), var(--gold)); }
+.uxl-seg button:disabled:not(.on) { opacity: .55; }
+.ux-en .uxl-seg button { font-size: 12px; }
 .uxl-start.can { animation: uxlGlow 1.6s ease-in-out infinite; }
 @keyframes uxlGlow { 0%,100% { box-shadow: 0 8px 28px rgba(244,201,107,.35); } 50% { box-shadow: 0 8px 44px rgba(244,201,107,.8), 0 0 0 6px rgba(244,201,107,.15); } }
 `;
@@ -1127,25 +1290,28 @@
 (function () {
   'use strict';
   const K = window.UI._k, esc = K.esc;
+  const ui = (k, ko, en) => { const g = K.G(), u = g && g.ui; return (u && u[k]) || K.L(ko, en); };
 
   K.screens.reveal = {
     build(v) {
       const me = v.me || {}, role = me.role, team = me.team || K.teamOf(role);
       const el = K.el('<section class="uxr">' +
-        '<div class="ux-top"><div class="grow"><span class="ux-phase-tag">✦ 역할 확인</span></div><button class="ux-icon-btn" data-act="cm-guide" aria-label="설명서">📖</button>' + K.soundBtn() + '</div>' +
-        '<p class="ux-p ux-center uxr-lead">' + esc(K.hint('reveal', 'all') || '화면을 손으로 가리고 카드를 눌러 확인하세요') + '</p>' +
+        '<div class="ux-top"><div class="grow"><span class="ux-phase-tag">✦ ' + esc(K.L('역할 확인', 'Your role')) + '</span></div><button class="ux-icon-btn" data-act="cm-seats" aria-label="' + esc(K.L('함께하는 사람', 'Players')) + '">👥</button><button class="ux-icon-btn" data-act="cm-guide" aria-label="' + esc(ui('helpButton', '설명서', 'Guide')) + '">📖</button>' + K.soundBtn() + '</div>' +
+        '<div data-slot="seat"></div>' +
+        '<p class="ux-p ux-center uxr-lead">' + esc(K.hint('reveal', 'all') || K.L('화면을 손으로 가리고 카드를 눌러 확인하세요', 'Cover the screen with your hand and tap the card')) + '</p>' +
         '<div class="ux-card-wrap"><div class="ux-card-glow ' + team + '"></div>' +
-        '<div class="ux-card float ' + team + '" data-act="r-flip" role="button" aria-label="카드 뒤집기">' +
+        '<div class="ux-card float ' + team + '" data-act="r-flip" role="button" aria-label="' + esc(K.L('카드 뒤집기', 'Flip the card')) + '">' +
         '<div class="ux-card-face ux-card-back">' + K.backImg() + '<div class="uxr-backglow"></div></div>' +
         '<div class="ux-card-face ux-card-front">' + K.roleImg(role) + '<div class="frame"></div><div class="plate"><div class="rname">' + esc(K.roleName(role)) + '</div><div class="rteam" style="color:' + (team === 'evil' ? '#ff9db5' : 'var(--good)') + '">' + esc(K.teamName(team)) + '</div></div><div class="sheen"></div></div>' +
         '</div></div>' +
-        '<p class="ux-tap-hint" data-slot="tap">카드를 눌러 뒤집기</p>' +
+        '<p class="ux-tap-hint" data-slot="tap">' + esc(K.L('카드를 눌러 뒤집기', 'Tap the card to flip it')) + '</p>' +
         '<div data-slot="info" class="uxr-info"></div>' +
         '<div class="ux-spacer"></div><div class="ux-dock" data-slot="dock"></div></section>');
       return el;
     },
     update(v, K_, el) {
       const me = v.me || {}, flipped = !!K.local.flipped;
+      K.patch(el.querySelector('[data-slot=seat]'), K.seatNotice ? K.seatNotice(v) : '');
       el.querySelector('.ux-card').classList.toggle('flipped', flipped);
       el.querySelector('.ux-card-wrap').classList.toggle('revealed', flipped);
       el.querySelector('[data-slot=tap]').style.visibility = flipped ? 'hidden' : '';
@@ -1155,23 +1321,32 @@
         const rig = (v.rolesInGame || []);
         K.patch(el.querySelector('[data-slot=info]'),
           '<div class="ux-panel uxr-in"><p class="ux-p ux-center">' + esc(K.roleDesc(role)) + '</p></div>' +
-          '<div class="ux-panel uxr-in" style="animation-delay:.15s"><div class="ux-ornament" style="margin-bottom:10px">밤 사이 내게 보인 것</div>' + K.knowList(v) + K.roleTips(role) + '</div>' +
-          (rig.length ? '<div class="ux-panel plain uxr-in" style="animation-delay:.3s"><h3 class="ux-h3" style="margin-bottom:8px">이번 게임의 역할</h3><div class="ux-roles-strip">' + rig.map(r => '<span class="ux-role-pill ' + K.teamOf(r) + '"><i>' + K.roleImg(r) + '</i>' + esc(K.roleName(r)) + '</span>').join('') + '</div></div>' : '') +
-          '<p class="ux-muted ux-center">카드를 다시 누르면 가릴 수 있어요</p>');
+          (K.lancelotNote && K.lancelotNote(v) ? '<div class="ux-panel uxr-in" style="animation-delay:.08s">' + K.lancelotNote(v) + '</div>' : '') +
+          '<div class="ux-panel uxr-in" style="animation-delay:.15s"><div class="ux-ornament" style="margin-bottom:10px">' + esc(K.L('밤 사이 내게 보인 것', 'What I saw in the night')) + '</div>' + K.knowList(v) + K.roleTips(role) + '</div>' +
+          (rig.length ? '<div class="ux-panel plain uxr-in" style="animation-delay:.3s"><h3 class="ux-h3" style="margin-bottom:8px">' + esc(K.L('이번 게임의 역할', 'Roles in this game')) + '</h3><div class="ux-roles-strip">' + rig.map(r => '<span class="ux-role-pill ' + K.teamOf(r) + '"><i>' + K.roleImg(r) + '</i>' + esc(K.roleName(r)) + '</span>').join('') + '</div>' + extras(v) + '</div>' : '') +
+          '<p class="ux-muted ux-center">' + esc(K.L('카드를 다시 누르면 가릴 수 있어요', 'Tap the card again to hide it')) + '</p>');
       }
       if (!flipped && K.local.infoShown) { K.local.infoShown = false; K.patch(el.querySelector('[data-slot=info]'), ''); }
       const ps = K.players(v), acked = ps.filter(p => p.acked).length;
       let d;
       if (me.acked) {
-        d = '<div class="ux-waiting"><p class="ux-p">다른 사람들이 확인하는 중 <span class="ux-dots"><i></i><i></i><i></i></span></p><div class="ux-progress"><i style="width:' + Math.round(100 * acked / Math.max(1, ps.length)) + '%"></i></div><p class="ux-muted">' + acked + ' / ' + ps.length + ' 확인</p></div>' +
-          (me.isHost && typeof (K.api || {}).skipReveal === 'function' ? '<button class="ux-btn ux-btn-sm ux-btn-ghost" data-act="r-skip" style="align-self:center">기다리지 않고 시작하기</button>' : '');
+        d = '<div class="ux-waiting"><p class="ux-p">' + esc(K.L('다른 사람들이 확인하는 중', 'Others are checking their cards')) + ' <span class="ux-dots"><i></i><i></i><i></i></span></p><div class="ux-progress"><i style="width:' + Math.round(100 * acked / Math.max(1, ps.length)) + '%"></i></div><p class="ux-muted">' + acked + ' / ' + ps.length + ' ' + esc(K.L('확인', 'checked')) + '</p></div>' +
+          (me.isHost && typeof (K.api || {}).skipReveal === 'function' ? '<button class="ux-btn ux-btn-sm ux-btn-ghost" data-act="r-skip" style="align-self:center">' + esc(K.L('기다리지 않고 시작하기', 'Start without waiting')) + '</button>' : '');
       } else {
-        d = '<button class="ux-btn ux-btn-gold" data-act="r-ack"' + (K.local.everFlipped ? '' : ' disabled') + '>' + (K.local.everFlipped ? '확인했어요' : '먼저 카드를 확인하세요') + '</button><p class="ux-muted ux-center">' + acked + ' / ' + ps.length + ' 확인</p>';
+        d = '<button class="ux-btn ux-btn-gold" data-act="r-ack"' + (K.local.everFlipped ? '' : ' disabled') + '>' + esc(K.local.everFlipped ? K.L('확인했어요', 'I\'ve seen it') : K.L('먼저 카드를 확인하세요', 'Check your card first')) + '</button><p class="ux-muted ux-center">' + acked + ' / ' + ps.length + ' ' + esc(K.L('확인', 'checked')) + '</p>';
       }
       K.patch(el.querySelector('[data-slot=dock]'), d);
     }
   };
 
+  /* Which extra rules are on in this game (public). */
+  function extras(v) {
+    const s = v.settings || {}, a = [];
+    if (s.lady) a.push(K.term('lady', K.L('등불', 'Lamp')));
+    if (v.excalibur || s.excalibur) a.push(K.term('excalibur', K.L('말씀 두루마리', 'Scroll of the Word')));
+    if (v.lancelot || s.lancelot) a.push(K.term('loyalty', K.L('갈림길 카드', 'Crossroads card')) + ' (' + String(K.term('lancelotVariant' + ((v.lancelot || s.lancelot) === 2 ? 2 : 1), '')).split(' (')[0] + ')');
+    return a.length ? '<p class="ux-muted" style="margin-top:8px">' + esc(K.L('함께 쓰는 규칙: ', 'Also in this game: ') + a.join(' · ')) + '</p>' : '';
+  }
   K.actions['r-flip'] = (d, card) => {
     const v = K.view; if (!v || !v.me) return;
     K.local.flipped = !K.local.flipped;
@@ -1191,7 +1366,7 @@
     K.local.flipped = false; K.fb('chime'); K.fx.burstAt(btn, { n: 26, speed: 200 });
     K.rerender(); K.call('ack');
   };
-  K.actions['r-skip'] = async () => { if (await K.confirm('모두 확인하지 않았어도 시작할까요?', '아직 카드를 못 본 사람은 게임 중에 "내 역할"에서 볼 수 있어요.', { ok: '시작하기' })) K.call('skipReveal'); };
+  K.actions['r-skip'] = async () => { if (await K.confirm(K.L('모두 확인하지 않았어도 시작할까요?', 'Start before everyone has checked?'), esc(K.L('아직 카드를 못 본 사람은 게임 중에 "내 역할"에서 볼 수 있어요.', 'Anyone who hasn\'t seen their card yet can open "My role" during the game.')), { ok: K.L('시작하기', 'Start'), cancel: K.L('취소', 'Cancel') })) K.call('skipReveal'); };
 
   const css = `
 .uxr-lead { animation: uxhFade .6s both; }
@@ -1204,15 +1379,16 @@
 
 
 /* ---- src/30-board.js ---- */
-/* 빛의 원정대 — board screen (phases propose / vote / quest / lady / assassin).
+/* 빛의 원정대 — board screen (phases propose / vote / quest / excalibur / lady / assassin).
    Layout: top bar · quest track + rejection track · players table · action panel.
    update() runs on every view (polls): it only patches parts whose html changed, and applies
-   local picks (seat selection, chosen card) as classes so nothing re-animates on polls. */
+   local picks (seat selection, chosen card, Scroll holder) as classes so nothing re-animates on polls.
+   Every visible string goes through K.L(ko, en); themed words come from K.term (English in English mode). */
 (function () {
   'use strict';
   const K = window.UI._k;
 
-  // ---------- Korean particles for themed words (terms may be renamed in config.js) ----------
+  // ---------- Korean particles for themed words (terms may be renamed in config.js; Korean branches only) ----------
   const lastCode = w => { const s = String(w || ''); return s.charCodeAt(s.length - 1); };
   const batchim = w => { const c = lastCode(w); return c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28 !== 0; };
   const rieul = w => { const c = lastCode(w); return c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28 === 8; };
@@ -1221,18 +1397,26 @@
 
   // ---------- themed words ----------
   const W = {
-    quest: () => K.term('quest', '사명'),
-    team: () => K.term('questTeam', '원정대'),
-    leader: () => K.term('leader', '조장'),
-    success: () => K.term('success', '축복'),
-    fail: () => K.term('fail', '방해'),
-    approve: () => K.term('approve', '찬성'),
-    reject: () => K.term('reject', '반대'),
-    lady: () => K.term('lady', '등불'),
-    assassinate: () => K.term('assassinate', '지목')
+    quest: () => K.term('quest', K.L('사명', 'Mission')),
+    team: () => K.term('questTeam', K.L('원정대', 'Team')),
+    leader: () => K.term('leader', K.L('조장', 'Leader')),
+    success: () => K.term('success', K.L('축복', 'Blessing')),
+    fail: () => K.term('fail', K.L('방해', 'Hindrance')),
+    approve: () => K.term('approve', K.L('찬성', 'Approve')),
+    reject: () => K.term('reject', K.L('반대', 'Reject')),
+    lady: () => K.term('lady', K.L('등불', 'Lamp')),
+    assassinate: () => K.term('assassinate', K.L('지목', 'Name the Prophet')),
+    xc: () => K.term('excalibur', K.L('말씀 두루마리', 'Scroll of the Word')),
+    xcFlip: () => K.term('excaliburAction', K.L('카드 하나 뒤집기', 'Flip one card')),
+    xcPass: () => K.term('excaliburPass', K.L('뒤집지 않기', 'Don\'t flip')),
+    loyalty: () => K.term('loyalty', K.L('갈림길 카드', 'Crossroads card')),
+    loyNone: () => K.term('loyaltyNone', K.L('그대로', 'No change')),
+    loySwitch: () => K.term('loyaltySwitch', K.L('편이 바뀜', 'Sides switch')),
+    seer: () => K.roleName('merlin') || K.L('선지자', 'Prophet')
   };
   const e = K.esc;
   const nm = (v, id) => e(K.pname(v, id));
+  const meWord = () => K.L('나', 'you');
 
   // ---------- one-time CSS ----------
   function injectCSS() {
@@ -1245,19 +1429,28 @@
 .bd-top .ux-top-sub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .bd-top .ux-icon-btn { width: 36px; height: 36px; border-radius: 11px; font-size: 16px; }
 .bd-top .ux-icon-btn.on { border-color: var(--gold); background: rgba(244,201,107,.16); }
-.bd-top .ux-role-chip { padding: 3px 10px 3px 3px; gap: 6px; font-size: 12px; color: var(--text); flex: none; }
+.bd-top .ux-role-chip { padding: 3px 10px 3px 3px; gap: 6px; font-size: 12px; color: var(--text); flex: none; white-space: nowrap; }
 .bd-top .ux-role-chip .dot { width: 22px; height: 30px; border-radius: 5px; }
 .bd-top .ux-role-chip .dot img { object-position: 50% 50%; }
 .bd-trackp { overflow: hidden; padding: 8px 8px 12px; }
 .bd-trackp > .ux-rose { width: 340px; height: 340px; margin: -170px 0 0 -170px; opacity: .10; }
 .bd-trackp > *:not(.ux-rose) { position: relative; }
-.bd-trackp .ux-track { padding: 12px 6px 14px; }
+.bd-trackp .ux-track { padding: 12px 6px 14px; align-items: flex-start; }
 .bd-qwrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 9px; min-width: 0; }
 .bd-qwrap .ux-quest { width: 100%; }
 .bd-qn { font-size: 11.5px; font-weight: 700; color: var(--text-dim); letter-spacing: .06em; }
 .bd-qwrap.cur .bd-qn { color: var(--gold); }
 .bd-qwrap .two + .bd-qn, .bd-qwrap.two-b .bd-qn { margin-top: 3px; }
 .ux-quest.current::after { content: ''; position: absolute; inset: -7px; border-radius: 50%; border: 1px dashed rgba(244,201,107,.55); animation: spin 14s linear infinite; }
+.bd-loy { width: 22px; height: 31px; margin-top: -4px; border-radius: 4px; overflow: hidden; flex: none; box-shadow: 0 2px 8px rgba(0,0,0,.35); border: 1px solid rgba(255,227,163,.35); position: relative; }
+.bd-loy img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.bd-loy.sp { visibility: hidden; box-shadow: none; }
+.bd-loy.down { opacity: .55; }
+.bd-loy.down::after { content: '?'; position: absolute; inset: 0; display: grid; place-items: center; font-size: 12px; font-weight: 900; color: var(--gold-hi); text-shadow: 0 1px 3px rgba(0,0,0,.8); }
+.bd-loy.switch { border-color: rgba(200,182,255,.8); box-shadow: 0 0 10px rgba(143,108,240,.55); }
+.bd-loy.fresh-up { animation: stamp .8s var(--ease-spring) both; }
+.bd-loyl { display: flex; justify-content: center; align-items: center; gap: 6px; margin-top: 8px; font-size: 11.5px; color: var(--text-mute); }
+.bd-loyl b { color: var(--text-dim); font-variant-numeric: tabular-nums; }
 .bd-rejl { margin-right: 4px; }
 .ux-rej.last.on { animation: bd-throb 1.4s ease-in-out infinite; }
 @keyframes bd-throb { 0%,100% { transform: scale(1); } 50% { transform: scale(1.22); } }
@@ -1267,14 +1460,18 @@
 .ux-seat .check { color: transparent; }
 .ux-seat.fresh { animation: popIn .45s var(--ease-spring) both; animation-delay: calc(var(--i, 0) * 35ms); }
 .ux-seat .icons span img { width: 100%; height: 100%; border: 0; background: none; border-radius: 50%; }
-.ux-seat .icons .lamp img { padding: 1px; }
+.ux-seat .icons .lamp img, .ux-seat .icons .xc img { padding: 1px; }
 .ux-seat .sub { flex-wrap: wrap; min-height: 14px; margin-top: 2px; }
 .ux-seat .sub .off { color: var(--text-mute); }
 .ux-seat .sub .tm { color: var(--gold); }
+.ux-seat .knowtag.bd-kt-xc { background: rgba(255,255,255,.1); color: var(--text-dim); }
 .ux-seat .done { flex: none; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: rgba(111,227,166,.16); animation: popIn .4s var(--ease-spring) both; }
 .ux-seat.on-team { background: rgba(244,201,107,.07); }
 .ux-seat.selectable { cursor: pointer; }
 .ux-seat.disabled { pointer-events: none; }
+.ux-seat .bd-xc-seat { position: absolute; top: -7px; right: -5px; width: 24px; height: 24px; border-radius: 50%; background: rgba(20,24,52,.92); border: 1px solid var(--gold); box-shadow: 0 0 12px rgba(244,201,107,.5); display: none; padding: 2px; }
+.ux-seat .bd-xc-seat img { width: 100%; height: 100%; }
+.ux-seat.bd-xc-on .bd-xc-seat { display: block; animation: popIn .4s var(--ease-spring) both; }
 .bd-action { overflow: hidden; }
 .bd-action.turn { border-color: rgba(244,201,107,.5); box-shadow: 0 10px 30px rgba(0,0,0,.35), 0 0 0 1px rgba(244,201,107,.25), 0 0 26px rgba(244,201,107,.18); }
 .bd-action.dark { border-color: rgba(224,72,110,.45); box-shadow: 0 10px 30px rgba(0,0,0,.4), 0 0 26px rgba(224,72,110,.2); }
@@ -1286,6 +1483,8 @@
 .bd-tag { display: flex; justify-content: center; margin-bottom: 8px; }
 .bd-hint { text-align: center; margin: -4px 0 12px; }
 .bd-note { text-align: center; font-size: 12px; color: #ffb3c4; margin: -6px 0 12px; }
+.bd-xnote { text-align: center; font-size: 12px; color: var(--text-dim); margin: -6px 0 12px; }
+.bd-xnote img, .bd-ti { width: 16px; height: 16px; vertical-align: -3px; }
 .bd-count { text-align: center; font-size: 14px; color: var(--text-dim); margin: 2px 0 12px; }
 .bd-count b { font-size: 24px; font-weight: 900; color: var(--gold-hi); font-variant-numeric: tabular-nums; display: inline-block; transition: transform .25s var(--ease-spring); }
 .bd-count b.bump { transform: scale(1.3); }
@@ -1293,6 +1492,22 @@
 .bd-pickname { text-align: center; font-size: 15px; margin: 2px 0 12px; color: var(--text-dim); min-height: 22px; }
 .bd-pickname b { color: var(--gold-hi); }
 .bd-action.dark .bd-pickname b { color: #ff9db5; }
+.bd-xc { margin: -2px 0 14px; padding: 10px 10px 12px; border-radius: 14px; border: 1px dashed rgba(244,201,107,.35); background: rgba(244,201,107,.05); text-align: center; transition: opacity .3s; }
+.bd-xc:empty { display: none; }
+.bd-xc.wait { opacity: .55; }
+.bd-xc .h { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; font-weight: 700; color: var(--gold-hi); }
+.bd-xc .h img { width: 22px; height: 22px; }
+.bd-xc .s { font-size: 12px; color: var(--text-dim); margin: 4px 0 0; line-height: 1.4; }
+.bd-xc-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 7px; margin-top: 10px; }
+.bd-xc-chip { position: relative; display: inline-flex; align-items: center; gap: 6px; padding: 5px 30px 5px 5px; border-radius: 999px; background: rgba(255,255,255,.06); border: 1px solid var(--line-strong); color: var(--text); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; transition: border-color .25s, background .25s, transform .2s var(--ease-out), box-shadow .3s; }
+.bd-xc-chip:active { transform: scale(.95); }
+.bd-xc-chip .ux-avatar { width: 24px; height: 24px; font-size: 11px; }
+.bd-xc-chip .slot { position: absolute; right: 4px; top: 50%; width: 22px; height: 22px; margin-top: -11px; border-radius: 50%; border: 1px dashed rgba(244,201,107,.45); }
+.bd-xc-chip .slot img { width: 100%; height: 100%; display: block; animation: popIn .45s var(--ease-spring) both; }
+.bd-xc-chip.on { border-color: var(--gold); background: rgba(244,201,107,.16); box-shadow: 0 0 16px rgba(244,201,107,.35); }
+.bd-xc-chip.on .slot { border-color: transparent; }
+.ux-team-chip.has-xc { padding-right: 6px; }
+.ux-team-chip .xc { width: 18px; height: 18px; }
 .bd-root .ux-choices { margin: 4px 0 14px; }
 .bd-root .ux-choice { max-width: 148px; aspect-ratio: 4 / 5; font-size: 21px; }
 .bd-root .ux-choice img { width: 58%; }
@@ -1300,17 +1515,25 @@
 .bd-done .seal { width: 54px; height: 54px; border-radius: 50%; display: grid; place-items: center; font-size: 24px; font-weight: 900; color: #2a1a02;
   background: radial-gradient(circle at 40% 35%, #fff4cf, var(--gold) 55%, var(--gold-deep)); box-shadow: 0 0 22px var(--good-glow); animation: stamp .7s var(--ease-spring) both; }
 .bd-done .t { font-family: var(--font-display); font-size: 19px; font-weight: 700; color: var(--gold-hi); }
+.bd-btn2 { margin-top: 10px; min-height: 46px; font-size: 15px; }
 .bd-live { margin-top: 14px; }
 .bd-live:empty { display: none; }
+.bd-pvs:empty { display: none; }
+.bd-pv { display: flex; align-items: center; gap: 8px; width: 100%; margin-top: 14px; padding: 9px 12px; border-radius: 12px; border: 1px dashed rgba(244,201,107,.35); background: rgba(255,255,255,.04); color: var(--text-dim); font: inherit; font-size: 12.5px; line-height: 1.4; text-align: left; cursor: pointer; }
+.bd-pv img { width: 22px; height: 22px; flex: none; }
+.bd-pv b { color: var(--gold-hi); }
+.bd-pv.open { border-style: solid; color: var(--text); background: rgba(244,201,107,.08); animation: popIn .35s var(--ease-spring) both; }
 .bd-prog-l { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-dim); margin-bottom: 6px; }
 .bd-prog-l b { color: var(--text); font-variant-numeric: tabular-nums; }
 .bd-next { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 6px; margin-top: 14px; font-size: 12px; color: var(--text-mute); }
 .bd-next .ux-chip { padding: 3px 9px; font-size: 12px; max-width: 110px; overflow: hidden; text-overflow: ellipsis; }
 .bd-next .arr { opacity: .5; }
-.bd-ti { width: 16px; height: 16px; vertical-align: -3px; }
 .bd-wait-ic { width: 54px; height: 54px; }
 .bd-wait-ic img { width: 100%; height: 100%; animation: breathe 2.6s ease-in-out infinite; }
+.ux-en .bd-top .ux-role-chip { padding-right: 8px; }
+.ux-en .bd-root .ux-choice { font-size: 19px; }
 `;
+    s.textContent += '.ux-quest .two { max-width: 64px; }';
     document.head.appendChild(s);
   }
 
@@ -1319,14 +1542,20 @@
   const meId = v => (v.me && v.me.id) || null;
   const keyOf = v => v.phase + '|' + v.round + '|' + v.proposalNo;
   const onTeamIds = v => (v.proposal && v.proposal.team) || [];
+  const xcOn = v => !!(v && v.excalibur);
+  const xcHolder = v => (xcOn(v) && v.proposal && v.proposal.excaliburTo) || null;
+  const cardWord = ok => ok ? W.success() : W.fail();
 
-  /* What the current action needs from me: mode multi (propose), single (lady/assassin) or none. */
+  /* What the current action needs from me: mode multi (propose), single (lady/assassin/excalibur) or none. */
   function pickMode(v) {
     const me = meId(v); const ps = K.players(v);
     if (v.phase === 'propose' && v.leaderId === me) return { mode: 'multi', size: K.teamSize(v), allowed: new Set(ps.map(p => p.id)), kind: 'team' };
     if (v.phase === 'lady' && v.ladyHolderId === me) {
       const used = new Set(v.ladyUsedBy || []);
       return { mode: 'single', size: 1, allowed: new Set(ps.filter(p => p.id !== me && !used.has(p.id)).map(p => p.id)), kind: 'lady' };
+    }
+    if (v.phase === 'excalibur' && xcHolder(v) === me) {
+      return { mode: 'single', size: 1, allowed: new Set(onTeamIds(v).filter(id => id !== me)), kind: 'excalibur' };
     }
     if (v.phase === 'assassin' && v.assassinId === me) {
       return { mode: 'single', size: 1, allowed: new Set(ps.filter(p => p.id !== me && K.knowOf(v, p.id).indexOf('evil') < 0).map(p => p.id)), kind: 'assassin' };
@@ -1339,6 +1568,7 @@
     if (v.phase === 'propose') return v.leaderId === me.id;
     if (v.phase === 'vote') return me.myVote == null;
     if (v.phase === 'quest') return onTeamIds(v).indexOf(me.id) >= 0 && !me.myQuestPlayed;
+    if (v.phase === 'excalibur') return xcHolder(v) === me.id;
     if (v.phase === 'lady') return v.ladyHolderId === me.id;
     if (v.phase === 'assassin') return v.assassinId === me.id;
     return false;
@@ -1346,26 +1576,44 @@
 
   // ---------- top bar ----------
   function topHtml(v) {
-    const n = (v.round || 0) + 1; let title = e(W.quest()) + ' ' + n, sub = '';
-    if (v.phase === 'propose') sub = (v.proposalNo || 1) + '번째 제안 · ' + e(W.leader()) + ' ' + nm(v, v.leaderId);
-    else if (v.phase === 'vote') sub = (v.proposalNo || 1) + '번째 제안 · 투표 중';
-    else if (v.phase === 'quest') sub = e(W.quest()) + ' 수행 중';
+    const n = (v.round || 0) + 1, pn = v.proposalNo || 1;
+    let title = e(W.quest()) + ' ' + n, sub = '';
+    if (v.phase === 'propose') sub = K.L(pn + '번째 제안', 'Proposal ' + pn) + ' · ' + e(W.leader()) + ' ' + nm(v, v.leaderId);
+    else if (v.phase === 'vote') sub = K.L(pn + '번째 제안 · 투표 중', 'Proposal ' + pn + ' · Voting');
+    else if (v.phase === 'quest') sub = K.L(e(W.quest()) + ' 수행 중', 'On the ' + e(W.quest()));
+    else if (v.phase === 'excalibur') sub = e(W.xc()) + ' · ' + nm(v, xcHolder(v));
     else if (v.phase === 'lady') sub = e(W.lady()) + ' · ' + nm(v, v.ladyHolderId);
-    else if (v.phase === 'assassin') { title = '마지막 ' + e(W.assassinate()); sub = '모든 것이 이 한 번에 달렸어요'; }
+    else if (v.phase === 'assassin') { title = K.L('마지막 ' + e(W.assassinate()), 'The final choice'); sub = K.L('모든 것이 이 한 번에 달렸어요', 'Everything rides on this one choice'); }
     const marks = showMarks();
     return '<div class="grow"><div class="ux-top-title">' + title + '</div><div class="ux-top-sub">' + sub + '</div></div>' +
-      '<button class="ux-icon-btn' + (marks ? ' on' : '') + '" data-act="bd-marks" aria-label="알고 있는 정보 표시" aria-pressed="' + marks + '">' + (marks ? '👁' : '🙈') + '</button>' +
-      '<button class="ux-icon-btn" data-act="bd-history" aria-label="지난 기록">📜</button>' +
-      '<button class="ux-chip ux-role-chip" data-act="bd-role" aria-label="내 역할 보기"><span class="dot">' + K.backImg() + '</span>내 역할</button>' +
+      '<button class="ux-icon-btn' + (marks ? ' on' : '') + '" data-act="bd-marks" aria-label="' + e(K.L('알고 있는 정보 표시', 'Show what I know')) + '" aria-pressed="' + marks + '">' + (marks ? '👁' : '🙈') + '</button>' +
+      '<button class="ux-icon-btn" data-act="bd-history" aria-label="' + e(K.L('지난 기록', 'History')) + '">📜</button>' +
+      '<button class="ux-chip ux-role-chip" data-act="bd-role" aria-label="' + e(K.L('내 역할 보기', 'See my role')) + '"><span class="dot">' + K.backImg() + '</span>' + e(K.L('내 역할', 'My role')) + '</button>' +
       K.soundBtn();
   }
 
-  // ---------- quest track + rejection track ----------
+  // ---------- quest track + rejection track (+ Crossroads cards at missions 3–5) ----------
+  function loyaltyHtml(v, i, fresh) {
+    if (!(v.lancelot > 0)) return '';
+    if (i < 2) return '<span class="bd-loy sp" aria-hidden="true"></span>';
+    const r = (v.loyaltyRevealed || []).filter(x => x.round === i).pop();
+    if (!r) return '<span class="bd-loy down" role="img" aria-label="' + e(W.loyalty() + ' · ' + K.L('아직 덮여 있어요', 'still face down')) + '">' + K.backImg() + '</span>';
+    const sw = r.card === 'switch';
+    const label = W.loyalty() + ': ' + (sw ? W.loySwitch() : W.loyNone());
+    return '<span class="bd-loy ' + (sw ? 'switch' : 'none') + (fresh ? ' fresh-up' : '') + '" role="img" aria-label="' + e(label) + '" title="' + e(label) + '">' +
+      K.img(K.asset('loyalty/' + (sw ? 'switch' : 'none') + '.svg'), 'loyalty-' + (sw ? 'switch' : 'none'), '') + '</span>';
+  }
+
   function trackHtml(v) {
     const qs = v.quests || [];
     const sizes = K.sizes(v);
     const prev = K.local.prevResults; const now = Date.now();
     K.local.justAt = K.local.justAt || {};
+    const prevLoy = K.local.prevLoy;
+    const nLoy = (v.loyaltyRevealed || []).length;
+    if (prevLoy != null && nLoy > prevLoy) K.local.loyAt = now;
+    const loyFresh = K.local.loyAt && now - K.local.loyAt < 1500;
+    K.local.prevLoy = nLoy;
     const fresh = [];
     let out = '<div class="ux-rose" aria-hidden="true"></div><div class="ux-track">';
     for (let i = 0; i < 5; i++) {
@@ -1375,20 +1623,30 @@
       const just = res && K.local.justAt[i] && now - K.local.justAt[i] < 1500;
       const cur = !res && i === v.round && v.phase !== 'assassin';
       const two = (q.failsNeeded || K.questFails(v, i)) >= 2;
+      const lastLoy = (v.loyaltyRevealed || []).slice(-1)[0];
       out += '<div class="bd-qwrap' + (cur ? ' cur' : '') + '"><div class="ux-quest' + (cur ? ' current' : '') + (res ? ' ' + res : '') + (just ? ' just' : '') + '" data-q="' + i + '">' +
         (res ? K.tokenImg(res === 'success' ? 'success' : 'fail', 'tok') : '<span class="sz">' + (q.size || sizes[i] || '') + '</span>') +
-        (two && !res ? '<span class="two">' + e(W.fail()) + ' 2</span>' : '') +
-        '</div><span class="bd-qn">' + (i + 1) + '</span></div>';
+        (two && !res ? '<span class="two">' + K.L(e(W.fail()) + ' 2', '2 needed') + '</span>' : '') +
+        '</div><span class="bd-qn">' + (i + 1) + '</span>' + loyaltyHtml(v, i, loyFresh && lastLoy && lastLoy.round === i) + '</div>';
     }
     out += '</div>';
     K.local.prevResults = qs.map(q => q && q.result);
     const filled = Math.max(0, Math.min(5, (v.proposalNo || 1) - 1));
     const showRej = v.phase === 'propose' || v.phase === 'vote';
-    out += '<div class="ux-rejects"><span class="bd-rejl">' + e(W.reject()) + ' 누적</span>';
+    out += '<div class="ux-rejects"><span class="bd-rejl">' + K.L(e(W.reject()) + ' 누적', 'Rejected') + '</span>';
     for (let i = 1; i <= 5; i++) out += '<span class="ux-rej' + (showRej && i <= filled ? ' on' : '') + (i === 5 ? ' last' : '') + '">' + (i === 5 ? '!' : '') + '</span>';
     out += '</div>';
+    if (v.lancelot > 0) {
+      const left = typeof v.loyaltyLeft === 'number' ? v.loyaltyLeft : null;
+      if (left != null) {
+        const h = typeof K.hint === 'function' ? K.hint('loyalty', 'left', { count: left }) : '';
+        out += '<div class="bd-loyl">🧭 ' + (h ? e(h) : '<span>' + e(K.L('남은 ' + W.loyalty(), W.loyalty() + 's left')) + '</span><b>' + K.L(left + '장', String(left)) + '</b>') + '</div>';
+      }
+    }
     if (showRej && v.proposalNo >= 5) {
-      out += '<div class="bd-warn">⚠ <b>마지막 제안</b>이에요. 이번 ' + e(jo(W.team(), '이', '가')) + ' ' + e(jo(W.reject(), '으로', '로')) + ' 무산되면 <b>' + e(jo(K.teamName('evil'), '이', '가')) + ' 승리</b>해요.</div>';
+      out += '<div class="bd-warn">⚠ ' + K.L(
+        '<b>마지막 제안</b>이에요. 이번 ' + e(jo(W.team(), '이', '가')) + ' ' + e(jo(W.reject(), '으로', '로')) + ' 무산되면 <b>' + e(jo(K.teamName('evil'), '이', '가')) + ' 승리</b>해요.',
+        'This is the <b>last proposal</b>. If this team is rejected, <b>' + e(K.teamName('evil')) + ' win</b>.') + '</div>';
     }
     return { html: out, fresh };
   }
@@ -1397,7 +1655,10 @@
   function seatItems(v, pm) {
     const me = meId(v); const marks = showMarks();
     const team = new Set(onTeamIds(v));
+    const holder = xcHolder(v);
+    const teamPhase = v.phase === 'vote' || v.phase === 'quest' || v.phase === 'excalibur';
     const done = new Set(v.phase === 'vote' ? (v.votedIds || []) : v.phase === 'quest' ? (v.questPlayedIds || []) : []);
+    const proposing = pm.kind === 'team' && xcOn(v);
     return K.players(v).map((p, i) => {
       const sel = pm.mode && pm.allowed.has(p.id);
       const dis = pm.mode && !sel;
@@ -1405,48 +1666,63 @@
       if (sel) cls.push('selectable');
       if (dis) cls.push('disabled');
       if (pm.kind === 'assassin' && sel) cls.push('evil-pick', 'ux-target-ring');
-      if (team.size && team.has(p.id) && (v.phase === 'vote' || v.phase === 'quest')) cls.push('on-team');
+      if (team.size && team.has(p.id) && teamPhase) cls.push('on-team');
       if (p.id === me) cls.push('is-me');
       let icons = '';
       if (p.id === v.leaderId && v.phase !== 'assassin') icons += '<span class="leader" title="' + e(W.leader()) + '">' + K.tokenImg('leader') + '</span>';
+      if (holder && p.id === holder && teamPhase) icons += '<span class="xc" title="' + e(W.xc()) + '">' + K.tokenImg('excalibur') + '</span>';
       if (v.ladyHolderId && p.id === v.ladyHolderId && v.phase !== 'assassin') icons += '<span class="lamp" title="' + e(W.lady()) + '">' + K.tokenImg('lady') + '</span>';
       let sub = '';
-      if (p.online === false) sub += '<span class="off">연결 끊김</span>';
+      if (p.online === false) sub += '<span class="off">' + e(K.L('연결 끊김', 'Offline')) + '</span>';
       if (cls.indexOf('on-team') >= 0) sub += '<span class="tm">' + e(W.team()) + '</span>';
       if (marks && p.id !== me) {
         K.knowOf(v, p.id).forEach(t => { sub += '<span class="knowtag ' + (t === 'merlinCandidate' ? 'merlinCandidate' : 'evil') + '">' + e(K.knowText(t)) + '</span>'; });
         const lt = K.ladyOf(v, p.id);
         if (lt) sub += '<span class="knowtag ' + (lt === 'evil' ? 'evil' : 'good') + '">🪔 ' + e(K.teamName(lt)) + '</span>';
+        // Scroll of the Word results I learned (private, behind the eye toggle like the other marks)
+        ((v.me && v.me.excaliburResults) || []).filter(r => r.targetId === p.id).forEach(r => {
+          sub += '<span class="knowtag ' + (r.original ? 'bd-kt-xc' : 'evil') + '">📜 ' + e((r.round + 1) + ' · ' + cardWord(r.original)) + '</span>';
+        });
       }
       const tag = sel ? 'button' : 'div';
       const html = '<' + tag + ' class="' + cls.join(' ') + '" style="--i:' + i + '"' + (sel ? ' type="button" data-act="bd-seat" data-id="' + e(p.id) + '"' : '') + ' data-pid="' + e(p.id) + '">' +
         K.avatar(p, true) +
-        '<div class="meta"><div class="ux-player-name">' + e(p.name) + (p.id === me ? '<small>나</small>' : '') + '</div><div class="sub">' + sub + '</div></div>' +
-        (done.has(p.id) ? '<span class="done" aria-label="완료">✓</span>' : '') +
+        '<div class="meta"><div class="ux-player-name">' + e(p.name) + (p.id === me ? '<small>' + e(meWord()) + '</small>' : '') + '</div><div class="sub">' + sub + '</div></div>' +
+        (done.has(p.id) ? '<span class="done" aria-label="' + e(K.L('완료', 'Done')) + '">✓</span>' : '') +
         (sel ? '<span class="check">✓</span>' : '') +
         (icons ? '<div class="icons">' + icons + '</div>' : '') +
+        (proposing ? '<span class="bd-xc-seat" aria-hidden="true">' + K.tokenImg('excalibur') + '</span>' : '') +
         '</' + tag + '>';
       return { key: p.id, html };
     });
   }
 
   // ---------- action panel ----------
-  const teamChips = v => '<div class="ux-team-row">' + onTeamIds(v).map(id => {
-    const p = K.player(v, id) || { id, name: '?' };
-    return '<span class="ux-team-chip">' + K.avatar(p, false) + e(p.name) + (K.isMe(v, id) ? ' <small style="opacity:.6">나</small>' : '') + '</span>';
-  }).join('') + '</div>';
+  const teamChips = v => {
+    const holder = xcHolder(v);
+    return '<div class="ux-team-row">' + onTeamIds(v).map(id => {
+      const p = K.player(v, id) || { id, name: '?' };
+      const hx = holder && id === holder;
+      return '<span class="ux-team-chip' + (hx ? ' has-xc' : '') + '">' + K.avatar(p, false) + e(p.name) + (K.isMe(v, id) ? ' <small style="opacity:.6">' + e(meWord()) + '</small>' : '') +
+        (hx ? '<span class="xc" role="img" aria-label="' + e(W.xc()) + '" title="' + e(W.xc()) + '">' + K.tokenImg('excalibur', 'xc') + '</span>' : '') + '</span>';
+    }).join('') + '</div>' + (holder && (v.phase === 'vote' || v.phase === 'quest') ? xcLine(v, holder) : '');
+  };
+  const xcLine = (v, holder) => '<p class="bd-xnote">' + K.tokenImg('excalibur') + ' ' + K.L(
+    e(W.xc()) + ': <b>' + nm(v, holder) + '</b>' + (v.phase === 'quest' ? ' · 카드가 모이면 한 장을 뒤집을 수 있어요' : ''),
+    e(W.xc()) + ': <b>' + nm(v, holder) + '</b>' + (v.phase === 'quest' ? ' · may flip one card once all are in' : '')) + '</p>';
   const hintLine = (phase, key, params) => { const h = typeof K.hint === 'function' ? K.hint(phase, key, params) : ''; return h ? '<p class="ux-muted bd-hint">' + e(h) + '</p>' : ''; };
-  const twoNote = v => K.questFails(v, v.round) >= 2 ? '<p class="bd-note">이번 ' + e(jo(W.quest(), '은', '는')) + ' ' + e(W.fail()) + ' 카드가 2장 나와야 실패해요</p>' : '';
+  const twoNote = v => K.questFails(v, v.round) >= 2 ? '<p class="bd-note">' + K.L('이번 ' + e(jo(W.quest(), '은', '는')) + ' ' + e(W.fail()) + ' 카드가 2장 나와야 실패해요', 'This ' + e(W.quest()) + ' fails only if 2 ' + e(W.fail()) + ' cards come up') + '</p>' : '';
   const waiting = (iconHtml) => '<div class="ux-waiting">' + (iconHtml ? '<div class="bd-wait-ic">' + iconHtml + '</div>' : '') + '<span class="ux-dots"><i></i><i></i><i></i></span></div>';
   const progress = (label, k, n) => '<div class="bd-prog-l"><span>' + label + '</span><b>' + k + ' / ' + n + '</b></div><div class="ux-progress"><i style="width:' + (n ? Math.round(100 * k / n) : 0) + '%"></i></div>';
   const doneSeal = t => '<div class="bd-done"><div class="seal">✓</div><div class="t">' + t + '</div></div>';
+  const pickPrompt = kind => kind === 'excalibur' ? K.L('위 자리에서 원정대원 한 명을 골라 주세요', 'Pick one team member above') : K.L('위 자리에서 한 사람을 골라 주세요', 'Pick one person above');
 
   function nextLeaders(v) {
     const ps = K.players(v); const i = ps.findIndex(p => p.id === v.leaderId);
     if (i < 0 || ps.length < 2) return '';
     const names = [];
     for (let k = 1; k <= Math.min(3, ps.length - 1); k++) names.push(ps[(i + k) % ps.length]);
-    return '<div class="bd-next"><span>다음 ' + e(W.leader()) + '</span>' + names.map((p, j) => (j ? '<span class="arr">›</span>' : '') + '<span class="ux-chip">' + e(p.name) + (K.isMe(v, p.id) ? ' (나)' : '') + '</span>').join('') + '</div>';
+    return '<div class="bd-next"><span>' + K.L('다음 ' + e(W.leader()), 'Next ' + e(W.leader())) + '</span>' + names.map((p, j) => (j ? '<span class="arr">›</span>' : '') + '<span class="ux-chip">' + e(p.name) + (K.isMe(v, p.id) ? ' (' + e(meWord()) + ')' : '') + '</span>').join('') + '</div>';
   }
 
   function choiceCards(a, b) {
@@ -1455,90 +1731,149 @@
       '<button type="button" class="ux-choice ' + b.cls + '" data-act="bd-choice" data-val="0">' + K.tokenImg(b.tok) + e(b.label) + (b.small ? '<small>' + e(b.small) + '</small>' : '') + '</button></div>';
   }
 
+  /* Leader, Scroll module: after the team is full, give the Scroll to one member who isn't me. Rendered from applyLocal. */
+  function xcPickerHtml(v, L, pm) {
+    const me = meId(v);
+    const full = L.picks.length === pm.size;
+    const head = '<div class="h">' + K.tokenImg('excalibur') + e(K.L(W.xc() + ' 맡기기', 'Give the ' + W.xc())) + '</div>';
+    if (!full) return '<div class="bd-xc wait">' + head + '<p class="s">' + e(K.L(W.team() + '을 다 고르면, 나 말고 한 명에게 두루마리를 맡겨요', 'Once the team is full, hand the Scroll to one member (not you)')) + '</p></div>';
+    const ids = K.players(v).map(p => p.id).filter(id => L.picks.indexOf(id) >= 0 && id !== me);
+    const hint = (typeof K.hint === 'function' && K.hint('propose', 'leaderExcalibur')) ||
+      K.L('두루마리를 받은 사람은 카드가 모두 모인 뒤 다른 원정대원 한 명의 카드를 뒤집을 수 있어요', 'After all cards are in, the holder may flip one other team member\'s card');
+    return '<div class="bd-xc">' + head + '<p class="s">' + e(hint) + '</p><div class="bd-xc-row">' + ids.map(id => {
+      const p = K.player(v, id) || { id, name: '?' }; const on = L.xc === id;
+      return '<button type="button" class="bd-xc-chip' + (on ? ' on' : '') + '" data-act="bd-xc" data-id="' + e(id) + '" aria-pressed="' + on + '">' + K.avatar(p, false) + e(p.name) +
+        '<span class="slot">' + (on ? K.tokenImg('excalibur') : '') + '</span></button>';
+    }).join('') + '</div></div>';
+  }
+
   /* returns { head, ctl, live, mood } — head/ctl only change with the phase key or my own progress. */
   function actionParts(v) {
     const me = v.me || {}; const ph = v.phase;
     const n = (v.players || []).length;
     const P = { head: '', ctl: '', live: '', mood: '' };
+    const qn = (v.round || 0) + 1;
     if (ph === 'propose') {
       const size = K.teamSize(v);
       if (v.leaderId === me.id) {
         P.mood = 'turn';
-        P.head = '<div class="bd-tag"><span class="ux-phase-tag">' + K.tokenImg('leader', 'bd-ti') + ' 이번 ' + e(W.leader()) + '</span></div>' +
-          '<h3 class="ux-action-title">' + e(jo(W.team(), '을', '를')) + ' 꾸려 주세요</h3>' +
-          '<p class="ux-action-sub">' + e(W.quest()) + ' ' + ((v.round || 0) + 1) + '에 함께 갈 <b>' + size + '명</b>을 위 자리에서 골라요.<br>나도 포함할 수 있어요.</p>' +
+        P.head = '<div class="bd-tag"><span class="ux-phase-tag">' + K.tokenImg('leader', 'bd-ti') + ' ' + K.L('이번 ' + e(W.leader()), 'You\'re the ' + e(W.leader())) + '</span></div>' +
+          '<h3 class="ux-action-title">' + K.L(e(jo(W.team(), '을', '를')) + ' 꾸려 주세요', 'Choose the ' + e(W.team())) + '</h3>' +
+          '<p class="ux-action-sub">' + K.L(e(W.quest()) + ' ' + qn + '에 함께 갈 <b>' + size + '명</b>을 위 자리에서 골라요.<br>나도 포함할 수 있어요.',
+            'Pick <b>' + size + ' players</b> above for ' + e(W.quest()) + ' ' + qn + '.<br>You can include yourself.') + '</p>' +
           twoNote(v);
-        P.ctl = '<div class="bd-count" data-bd="count"><b data-bd="k">0</b> / ' + size + '명 선택</div>' +
-          '<button type="button" class="ux-btn ux-btn-gold" data-act="bd-propose" data-bd="go" disabled>이 ' + e(ro(W.team())) + ' 제안하기</button>' + nextLeaders(v);
+        P.ctl = '<div class="bd-count" data-bd="count"><b data-bd="k">0</b> / ' + size + K.L('명 선택', ' chosen') + '</div>' +
+          (xcOn(v) ? '<div data-bd="xc"></div>' : '') +
+          '<button type="button" class="ux-btn ux-btn-gold" data-act="bd-propose" data-bd="go" disabled>' + K.L('이 ' + e(ro(W.team())) + ' 제안하기', 'Propose this ' + e(W.team())) + '</button>' + nextLeaders(v);
       } else {
-        P.head = '<h3 class="ux-action-title">' + e(W.leader()) + ' ' + nm(v, v.leaderId) + '님이 고르는 중</h3>' +
-          '<p class="ux-action-sub">' + e(W.quest()) + ' ' + ((v.round || 0) + 1) + '에 갈 ' + e(W.team()) + ' <b>' + size + '명</b>을 정하고 있어요.<br>누구를 보내면 좋을지 함께 이야기해 보세요.</p>' +
+        P.head = '<h3 class="ux-action-title">' + K.L(e(W.leader()) + ' ' + nm(v, v.leaderId) + '님이 고르는 중', e(W.leader()) + ' ' + nm(v, v.leaderId) + ' is choosing') + '</h3>' +
+          '<p class="ux-action-sub">' + K.L(e(W.quest()) + ' ' + qn + '에 갈 ' + e(W.team()) + ' <b>' + size + '명</b>을 정하고 있어요.<br>누구를 보내면 좋을지 함께 이야기해 보세요.',
+            'Picking <b>' + size + ' players</b> for ' + e(W.quest()) + ' ' + qn + '.<br>Talk together about who should go.') + '</p>' +
+          (xcOn(v) ? '<p class="bd-xnote">' + K.tokenImg('excalibur') + ' ' + K.L(e(jo(W.leader(), '이', '가')) + ' ' + e(W.team()) + ' 한 명에게 ' + e(W.xc()) + '도 맡겨요', 'The ' + e(W.leader()) + ' also hands the ' + e(W.xc()) + ' to one member') + '</p>' : '') +
           twoNote(v);
         P.ctl = waiting(K.tokenImg('leader')) + nextLeaders(v);
       }
     } else if (ph === 'vote') {
       const last = v.proposalNo >= 5;
-      P.head = '<h3 class="ux-action-title">이 ' + e(W.team()) + '에' + ' ' + e(W.approve()) + '하시나요?</h3>' +
-        '<p class="ux-action-sub">' + e(W.leader()) + ' ' + nm(v, v.leaderId) + '님의 제안 · ' + e(W.quest()) + ' ' + ((v.round || 0) + 1) + '</p>' + teamChips(v);
+      P.head = '<h3 class="ux-action-title">' + K.L('이 ' + e(W.team()) + '에 ' + e(W.approve()) + '하시나요?', 'Do you approve this ' + e(W.team()) + '?') + '</h3>' +
+        '<p class="ux-action-sub">' + K.L(e(W.leader()) + ' ' + nm(v, v.leaderId) + '님의 제안', e(W.leader()) + ' ' + nm(v, v.leaderId) + '\'s proposal') + ' · ' + e(W.quest()) + ' ' + qn + '</p>' + teamChips(v);
       if (me.myVote == null) {
         P.mood = 'turn';
-        P.ctl = (last ? '<div class="bd-warn" style="margin:0 0 12px">이번에 ' + e(jo(W.reject(), '이', '가')) + ' 많으면 <b>' + e(jo(K.teamName('evil'), '이', '가')) + ' 바로 승리</b>해요</div>' : '') +
-          choiceCards({ cls: 'approve', tok: 'approve', label: W.approve(), small: '이대로 출발' }, { cls: 'reject', tok: 'reject', label: W.reject(), small: '다시 꾸리기' }) +
-          '<button type="button" class="ux-btn ux-btn-gold" data-act="bd-vote" data-bd="go" disabled>투표하기</button>';
+        P.ctl = (last ? '<div class="bd-warn" style="margin:0 0 12px">' + K.L('이번에 ' + e(jo(W.reject(), '이', '가')) + ' 많으면 <b>' + e(jo(K.teamName('evil'), '이', '가')) + ' 바로 승리</b>해요',
+          'If this is rejected, <b>' + e(K.teamName('evil')) + ' win right away</b>') + '</div>' : '') +
+          choiceCards({ cls: 'approve', tok: 'approve', label: W.approve(), small: K.L('이대로 출발', 'Send them') }, { cls: 'reject', tok: 'reject', label: W.reject(), small: K.L('다시 꾸리기', 'Try another team') }) +
+          '<button type="button" class="ux-btn ux-btn-gold" data-act="bd-vote" data-bd="go" disabled>' + K.L('투표하기', 'Vote') + '</button>';
       } else {
-        P.ctl = doneSeal('투표 완료') + '<p class="ux-muted ux-center">모두 투표하면 결과가 함께 공개돼요</p>';
+        P.ctl = doneSeal(K.L('투표 완료', 'Vote in')) + '<p class="ux-muted ux-center">' + K.L('모두 투표하면 결과가 함께 공개돼요', 'All votes are shown together once everyone has voted') + '</p>';
       }
-      P.live = progress('투표한 사람', (v.votedIds || []).length, n);
+      P.live = progress(K.L('투표한 사람', 'Voted'), (v.votedIds || []).length, n);
     } else if (ph === 'quest') {
       const team = onTeamIds(v); const mine = team.indexOf(me.id) >= 0;
       if (mine && !me.myQuestPlayed) {
         P.mood = 'turn';
-        P.head = '<h3 class="ux-action-title">' + e(W.quest()) + ' 카드를 내 주세요</h3>' +
-          '<p class="ux-action-sub">몰래 한 장을 골라요. 누가 무엇을 냈는지는 아무도 몰라요.</p>' + teamChips(v) + twoNote(v);
+        P.head = '<h3 class="ux-action-title">' + K.L(e(W.quest()) + ' 카드를 내 주세요', 'Play your ' + e(W.quest()) + ' card') + '</h3>' +
+          '<p class="ux-action-sub">' + K.L('몰래 한 장을 골라요. 누가 무엇을 냈는지는 아무도 몰라요.', 'Secretly choose one. No one will know who played what.') + '</p>' + teamChips(v) + twoNote(v);
         // Both cards look identical for everyone (a neighbour must not learn my team). Good players get a toast on fail.
         P.ctl = choiceCards({ cls: 'success', tok: 'success', label: W.success() }, { cls: 'fail', tok: 'fail', label: W.fail() }) +
-          '<button type="button" class="ux-btn ux-btn-gold" data-act="bd-quest" data-bd="go" disabled>제출하기</button>';
+          '<button type="button" class="ux-btn ux-btn-gold" data-act="bd-quest" data-bd="go" disabled>' + K.L('제출하기', 'Submit') + '</button>';
       } else if (mine) {
-        P.head = '<h3 class="ux-action-title">' + e(W.team()) + ' 카드를 기다리는 중</h3>' + teamChips(v);
-        P.ctl = doneSeal('제출 완료') + hintLine('quest', 'played');
+        P.head = '<h3 class="ux-action-title">' + K.L(e(W.team()) + ' 카드를 기다리는 중', 'Waiting for the ' + e(W.team()) + '\'s cards') + '</h3>' + teamChips(v);
+        P.ctl = doneSeal(K.L('제출 완료', 'Card played')) + hintLine('quest', 'played');
       } else {
-        P.head = '<h3 class="ux-action-title">' + e(jo(W.team(), '이', '가')) + ' ' + e(jo(W.quest(), '을', '를')) + ' 수행 중이에요</h3>' +
-          '<p class="ux-action-sub">카드가 모두 모이면 섞어서 공개돼요.</p>' + teamChips(v) + twoNote(v);
+        P.head = '<h3 class="ux-action-title">' + K.L(e(jo(W.team(), '이', '가')) + ' ' + e(jo(W.quest(), '을', '를')) + ' 수행 중이에요', 'The ' + e(W.team()) + ' is on the ' + e(W.quest())) + '</h3>' +
+          '<p class="ux-action-sub">' + K.L('카드가 모두 모이면 섞어서 공개돼요.', 'Once all cards are in, they\'re shuffled and revealed.') + '</p>' + teamChips(v) + twoNote(v);
         P.ctl = waiting(K.tokenImg('success'));
       }
-      P.live = progress('카드를 낸 사람', (v.questPlayedIds || []).length, team.length || K.teamSize(v));
+      P.live = progress(K.L('카드를 낸 사람', 'Cards played'), (v.questPlayedIds || []).length, team.length || K.teamSize(v));
+    } else if (ph === 'excalibur') {
+      const holder = xcHolder(v);
+      if (holder && holder === me.id) {
+        P.mood = 'turn';
+        P.head = '<div class="bd-tag"><span class="ux-phase-tag">' + K.tokenImg('excalibur', 'bd-ti') + ' ' + e(W.xc()) + '</span></div>' +
+          '<h3 class="ux-action-title">' + K.L('카드 한 장을 뒤집을까요?', 'Flip one card?') + '</h3>' +
+          '<p class="ux-action-sub">' + K.L('다른 원정대원 한 명의 카드를 반대로 바꿀 수 있어요.<br>원래 무엇이었는지는 <b>나만</b> 알게 돼요.',
+            'You may turn one other team member\'s card to the opposite.<br><b>Only you</b> learn what it was.') + '</p>';
+        P.ctl = '<div class="bd-pickname" data-bd="pick">' + pickPrompt('excalibur') + '</div>' +
+          '<button type="button" class="ux-btn ux-btn-gold" data-act="bd-xc-flip" data-bd="go" disabled>' + e(W.xcFlip()) + '</button>' +
+          '<button type="button" class="ux-btn ux-btn-ghost bd-btn2" data-act="bd-xc-pass" data-bd="pass">' + e(W.xcPass()) + '</button>';
+      } else {
+        P.head = '<h3 class="ux-action-title">' + K.L(nm(v, holder) + '님이 ' + e(jo(W.xc(), '을', '를')) + ' 펼치는 중', nm(v, holder) + ' holds the ' + e(W.xc())) + '</h3>' +
+          '<p class="ux-action-sub">' + K.L('원정대원 한 명의 카드를 뒤집을지 고민하고 있어요.<br>누구의 카드를 뒤집었는지는 모두에게 공개돼요.',
+            'They\'re deciding whether to flip one team member\'s card.<br>Everyone will see whose card gets flipped.') + '</p>' + teamChips(v);
+        P.ctl = waiting(K.tokenImg('excalibur'));
+      }
     } else if (ph === 'lady') {
       if (v.ladyHolderId === me.id) {
         P.mood = 'turn';
         P.head = '<div class="bd-tag"><span class="ux-phase-tag">🪔 ' + e(W.lady()) + '</span></div>' +
-          '<h3 class="ux-action-title">' + e(ro(W.lady())) + ' 한 사람을 비춰 보세요</h3>' +
-          '<p class="ux-action-sub">고른 사람이 어느 편인지 <b>나만</b> 알게 돼요.<br>' + e(jo(W.lady(), '을', '를')) + ' 가졌던 사람은 고를 수 없어요.</p>' + '';
-        P.ctl = '<div class="bd-pickname" data-bd="pick">위 자리에서 한 사람을 골라 주세요</div>' +
-          '<button type="button" class="ux-btn ux-btn-gold" data-act="bd-lady" data-bd="go" disabled>' + e(ro(W.lady())) + ' 비춰보기</button>';
+          '<h3 class="ux-action-title">' + K.L(e(ro(W.lady())) + ' 한 사람을 비춰 보세요', 'Shine the ' + e(W.lady()) + ' on one person') + '</h3>' +
+          '<p class="ux-action-sub">' + K.L('고른 사람이 어느 편인지 <b>나만</b> 알게 돼요.<br>' + e(jo(W.lady(), '을', '를')) + ' 가졌던 사람은 고를 수 없어요.',
+            '<b>Only you</b> will learn which side they\'re on.<br>You can\'t pick anyone who already held the ' + e(W.lady()) + '.') + '</p>';
+        P.ctl = '<div class="bd-pickname" data-bd="pick">' + pickPrompt('lady') + '</div>' +
+          '<button type="button" class="ux-btn ux-btn-gold" data-act="bd-lady" data-bd="go" disabled>' + K.L(e(ro(W.lady())) + ' 비춰보기', 'Shine the ' + e(W.lady())) + '</button>';
       } else {
-        P.head = '<h3 class="ux-action-title">' + nm(v, v.ladyHolderId) + '님이 ' + e(jo(W.lady(), '을', '를')) + ' 비추는 중</h3>' +
-          '<p class="ux-action-sub">비춘 사람의 편은 ' + e(jo(W.lady(), '을', '를')) + ' 든 사람만 알게 돼요.</p>';
+        P.head = '<h3 class="ux-action-title">' + K.L(nm(v, v.ladyHolderId) + '님이 ' + e(jo(W.lady(), '을', '를')) + ' 비추는 중', nm(v, v.ladyHolderId) + ' is shining the ' + e(W.lady())) + '</h3>' +
+          '<p class="ux-action-sub">' + K.L('비춘 사람의 편은 ' + e(jo(W.lady(), '을', '를')) + ' 든 사람만 알게 돼요.', 'Only the one holding the ' + e(W.lady()) + ' learns that person\'s side.') + '</p>';
         P.ctl = waiting(K.tokenImg('lady'));
       }
     } else if (ph === 'assassin') {
       P.mood = 'dark';
-      const seer = K.roleName('merlin') || '선지자';
+      const seer = W.seer();
       if (v.assassinId && v.assassinId === me.id) {
-        P.head = '<h3 class="ux-action-title">' + e(jo(seer, '을', '를')) + ' 찾아내세요</h3>' +
-          '<p class="ux-action-sub">맞히면 <b>' + e(jo(K.teamName('evil'), '이', '가')) + ' 승리</b>해요.<br>동료들과 의논한 뒤 신중하게 한 명을 고르세요.</p>';
-        P.ctl = '<div class="bd-pickname" data-bd="pick">위 자리에서 한 사람을 골라 주세요</div>' +
-          '<button type="button" class="ux-btn ux-btn-evil" data-act="bd-assassin" data-bd="go" disabled>' + e(W.assassinate()) + '하기</button>';
+        P.head = '<h3 class="ux-action-title">' + K.L(e(jo(seer, '을', '를')) + ' 찾아내세요', 'Find the ' + e(seer)) + '</h3>' +
+          '<p class="ux-action-sub">' + K.L('맞히면 <b>' + e(jo(K.teamName('evil'), '이', '가')) + ' 승리</b>해요.<br>동료들과 의논한 뒤 신중하게 한 명을 고르세요.',
+            'If you\'re right, <b>' + e(K.teamName('evil')) + ' win</b>.<br>Talk with your partners, then choose one person carefully.') + '</p>';
+        P.ctl = '<div class="bd-pickname" data-bd="pick">' + pickPrompt('assassin') + '</div>' +
+          '<button type="button" class="ux-btn ux-btn-evil" data-act="bd-assassin" data-bd="go" disabled>' + K.L(e(W.assassinate()) + '하기', e(W.assassinate())) + '</button>';
       } else if (me.team === 'evil') {
-        P.head = '<h3 class="ux-action-title">' + nm(v, v.assassinId) + '님이 고르는 중</h3>' +
-          '<p class="ux-action-sub">누가 ' + e(seer) + '인지' + ' 함께 의논해 보세요.<br>최종 ' + e(jo(W.assassinate(), '은', '는')) + ' ' + nm(v, v.assassinId) + '님이 해요.</p>' + hintLine('assassin', 'others');
+        P.head = '<h3 class="ux-action-title">' + K.L(nm(v, v.assassinId) + '님이 고르는 중', nm(v, v.assassinId) + ' is choosing') + '</h3>' +
+          '<p class="ux-action-sub">' + K.L('누가 ' + e(seer) + '인지 함께 의논해 보세요.<br>최종 ' + e(jo(W.assassinate(), '은', '는')) + ' ' + nm(v, v.assassinId) + '님이 해요.',
+            'Talk together about who the ' + e(seer) + ' is.<br>' + nm(v, v.assassinId) + ' makes the final call.') + '</p>' + hintLine('assassin', 'others');
         P.ctl = waiting('');
       } else {
-        P.head = '<h3 class="ux-action-title">마지막 ' + e(jo(W.assassinate(), '을', '를')) + ' 기다리는 중</h3>' +
-          '<p class="ux-action-sub">' + e(jo(K.teamName('evil'), '이', '가')) + ' 정체를 드러내고 의논하고 있어요.<br>숨을 고르고 조용히 기다려 주세요.</p>' + hintLine('assassin', 'others');
+        P.head = '<h3 class="ux-action-title">' + K.L('마지막 ' + e(jo(W.assassinate(), '을', '를')) + ' 기다리는 중', 'Waiting for the final choice') + '</h3>' +
+          '<p class="ux-action-sub">' + K.L(e(jo(K.teamName('evil'), '이', '가')) + ' 정체를 드러내고 의논하고 있어요.<br>숨을 고르고 조용히 기다려 주세요.',
+            e(K.teamName('evil')) + ' have revealed themselves and are talking it over.<br>Take a breath and wait quietly.') + '</p>' + hintLine('assassin', 'others');
         P.ctl = waiting('');
       }
     }
     return P;
+  }
+
+  /* Holder's private Scroll result: a folded note (tap to open, closes by itself) shown only on the holder's phone,
+     for the mission just played. Nothing readable at a glance. */
+  function privateNoteHtml(v) {
+    const rs = (v.me && v.me.excaliburResults) || [];
+    const r = rs.length ? rs[rs.length - 1] : null;
+    if (!r || r.round < (v.round || 0) - 1) return '';
+    const k = r.round + '|' + r.targetId;
+    const open = K.local.pvOpen === k;
+    if (!open) return '<button type="button" class="bd-pv" data-act="bd-pv" data-k="' + e(k) + '" aria-expanded="false">' + K.tokenImg('excalibur') +
+      '<span>' + e(K.L('나만 보는 두루마리 결과 · 눌러서 확인', 'Your private Scroll result · tap to see')) + '</span></button>';
+    const name = K.pname(v, r.targetId), card = cardWord(r.original);
+    const h = typeof K.hint === 'function' ? K.hint('excalibur', 'result', { targetName: name, card }) : '';
+    const txt = h ? e(h) : K.L(e(name) + '님의 원래 카드는 <b>' + e(card) + '</b>였어요. 지금은 반대로 뒤집혔어요.', e(name) + '\'s card was originally <b>' + e(card) + '</b>. It has now been flipped.');
+    return '<button type="button" class="bd-pv open" data-act="bd-pv" data-k="' + e(k) + '" aria-expanded="true">' + K.tokenImg('excalibur') + '<span>' + txt + '</span></button>';
   }
 
   // ---------- local picks → classes (no re-render, so transitions play) ----------
@@ -1551,11 +1886,22 @@
       const k = K.$('[data-bd="k"]', el);
       if (k && k.textContent !== String(L.picks.length)) { k.textContent = L.picks.length; k.classList.add('bump'); setTimeout(() => k.classList.remove('bump'), 220); }
       const c = K.$('[data-bd="count"]', el); if (c) c.classList.toggle('full', L.picks.length === pm.size);
-      if (go) go.disabled = L.picks.length !== pm.size || K.busy('propose');
+      let needXc = false;
+      if (xcOn(v)) {
+        const me = meId(v); const full = L.picks.length === pm.size;
+        const elig = L.picks.filter(id => id !== me);
+        if (!full || elig.indexOf(L.xc) < 0) L.xc = null;
+        if (full && !L.xc && elig.length === 1) L.xc = elig[0];   // only one choice: hand it over already
+        needXc = !L.xc;
+        K.patch(K.$('[data-bd="xc"]', el), xcPickerHtml(v, L, pm));
+        K.$$('.ux-seat', el).forEach(s => s.classList.toggle('bd-xc-on', !!L.xc && s.dataset.pid === L.xc));
+      }
+      if (go) go.disabled = L.picks.length !== pm.size || needXc || K.busy('propose');
     } else if (pm.mode === 'single') {
       const pk = K.$('[data-bd="pick"]', el);
-      if (pk) pk.innerHTML = L.picks.length ? '<b>' + nm(v, L.picks[0]) + '</b>님을 골랐어요' : '위 자리에서 한 사람을 골라 주세요';
-      if (go) go.disabled = !L.picks.length || K.busy(pm.kind === 'lady' ? 'lady' : 'assassinate');
+      if (pk) pk.innerHTML = L.picks.length ? K.L('<b>' + nm(v, L.picks[0]) + '</b>님을 골랐어요', 'You picked <b>' + nm(v, L.picks[0]) + '</b>') : pickPrompt(pm.kind);
+      if (go) go.disabled = !L.picks.length || K.busy(pm.kind === 'lady' ? 'lady' : pm.kind === 'excalibur' ? 'excalibur' : 'assassinate');
+      const ps = K.$('[data-bd="pass"]', el); if (ps) ps.disabled = K.busy('excalibur');
     } else if (go) {
       go.disabled = L.choice == null || K.busy(v.phase === 'vote' ? 'vote' : 'quest');
     }
@@ -1566,6 +1912,7 @@
       c.classList.toggle('dim', L.choice != null && L.choice !== val);
       c.setAttribute('aria-pressed', String(L.choice === val));
     });
+    K.patch(K.$('[data-bd="pv"]', el), v.phase === 'excalibur' ? '' : privateNoteHtml(v));
   }
 
   // ---------- screen ----------
@@ -1576,7 +1923,7 @@
       '<div class="ux-top bd-top" data-bd="top"></div>' +
       '<div class="ux-panel bd-trackp" data-bd="track"></div>' +
       '<div class="ux-table" data-bd="table"></div>' +
-      '<div class="ux-panel ux-action bd-action" data-bd="action"><div class="bd-glow" aria-hidden="true"></div><div data-bd="head"></div><div data-bd="ctl"></div><div class="bd-live" data-bd="live"></div></div>' +
+      '<div class="ux-panel ux-action bd-action" data-bd="action"><div class="bd-glow" aria-hidden="true"></div><div data-bd="head"></div><div data-bd="ctl"></div><div class="bd-live" data-bd="live"></div><div class="bd-pvs" data-bd="pv"></div></div>' +
       '</div>');
   }
 
@@ -1585,7 +1932,7 @@
     const L = K.local;
     const key = keyOf(v);
     const newKey = L.key !== key;
-    if (newKey) { L.key = key; L.picks = []; L.choice = null; }
+    if (newKey) { L.key = key; L.picks = []; L.choice = null; L.xc = null; }
     L.pm = pickMode(v);
 
     // veil
@@ -1621,16 +1968,17 @@
   }
 
   K.screens.board = { build, update };
+  /* Phase 'excalibur' is drawn by this board screen too (core's K.screenFor maps every in-game phase to 'board'). */
 
   // ---------- actions ----------
   const scr = () => K.screenEl();
   K.actions['bd-marks'] = () => {
     const on = !showMarks(); K.store.set('showMarks', on); K.fb('tap');
-    K.toast(on ? '알고 있는 정보를 표시했어요. 옆 사람이 화면을 보지 않게 조심하세요.' : '알고 있는 정보를 숨겼어요', 'info');
+    K.toast(on ? K.L('알고 있는 정보를 표시했어요. 옆 사람이 화면을 보지 않게 조심하세요.', 'Showing what you know. Make sure no one can see your screen.') : K.L('알고 있는 정보를 숨겼어요', 'Hid what you know'), 'info');
     K.rerender();
   };
-  K.actions['bd-history'] = () => { K.fb('tap'); if (typeof K.openHistory === 'function') K.openHistory(); else K.toast('기록을 준비 중이에요', 'info'); };
-  K.actions['bd-role'] = () => { K.fb('tap'); if (typeof K.openRoleSheet === 'function') K.openRoleSheet(); else K.toast('역할 카드를 준비 중이에요', 'info'); };
+  K.actions['bd-history'] = () => { K.fb('tap'); if (typeof K.openHistory === 'function') K.openHistory(); else K.toast(K.L('기록을 준비 중이에요', 'History is coming soon'), 'info'); };
+  K.actions['bd-role'] = () => { K.fb('tap'); if (typeof K.openRoleSheet === 'function') K.openRoleSheet(); else K.toast(K.L('역할 카드를 준비 중이에요', 'Role card is coming soon'), 'info'); };
 
   K.actions['bd-seat'] = (d, node) => {
     const L = K.local; const pm = L.pm; if (!pm || !pm.mode || !pm.allowed.has(d.id)) return;
@@ -1638,17 +1986,33 @@
     const i = L.picks.indexOf(d.id);
     if (pm.mode === 'single') L.picks = i >= 0 ? [] : [d.id];
     else if (i >= 0) L.picks.splice(i, 1);
-    else if (L.picks.length >= pm.size) { K.toast(pm.size + '명까지 고를 수 있어요. 먼저 한 명을 빼 주세요.', 'info'); K.shake(node); K.buzz('tick'); return; }
+    else if (L.picks.length >= pm.size) { K.toast(K.L(pm.size + '명까지 고를 수 있어요. 먼저 한 명을 빼 주세요.', 'You can pick up to ' + pm.size + '. Remove someone first.'), 'info'); K.shake(node); K.buzz('tick'); return; }
     else L.picks.push(d.id);
     K.fb('pick');
     applyLocal(scr(), K.view);
+  };
+
+  K.actions['bd-xc'] = (d, node) => {
+    const L = K.local; if (!L.pm || L.pm.mode !== 'multi') return;
+    L.xc = L.xc === d.id ? null : d.id;
+    K.fb('pick');
+    applyLocal(scr(), K.view);
+  };
+
+  K.actions['bd-pv'] = (d) => {
+    const L = K.local;
+    L.pvOpen = L.pvOpen === d.k ? null : d.k;
+    K.fb('tap');
+    clearTimeout(L.pvT);
+    if (L.pvOpen) L.pvT = setTimeout(() => { if (K.local === L && L.pvOpen) { L.pvOpen = null; const s = scr(); if (s && K.view) applyLocal(s, K.view); } }, 6000);
+    const s = scr(); if (s && K.view) applyLocal(s, K.view);
   };
 
   K.actions['bd-choice'] = (d, node) => {
     const v = K.view; const val = d.val === '1';
     if (v.phase === 'quest' && !val && v.me && v.me.team === 'good') {
       K.shake(node); K.buzz('tick');
-      K.toast(jo(K.teamName('good'), '은', '는') + ' ' + W.success() + '만' + ' 낼 수 있어요', 'info');
+      K.toast(K.L(jo(K.teamName('good'), '은', '는') + ' ' + W.success() + '만 낼 수 있어요', K.teamName('good') + ' can only play ' + W.success()), 'info');
       return;
     }
     K.local.choice = K.local.choice === val ? null : val;
@@ -1656,10 +2020,10 @@
     applyLocal(scr(), v);
   };
 
-  async function send(btn, name, arg) {
+  async function send(btn, name, ...args) {
     if (btn) btn.disabled = true;
     K.fb('tap');
-    const r = await K.call(name, arg);
+    const r = await K.call(name, ...args);
     if (r && r.ok !== false) {
       if (btn && (name === 'vote' || name === 'quest')) K.fx.burstAt(btn, { n: 22, speed: 160, life: .9, size: 6 });
     }
@@ -1667,9 +2031,13 @@
     return r;
   }
   K.actions['bd-propose'] = (d, btn) => {
-    const L = K.local; if (!L.pm || L.pm.mode !== 'multi' || L.picks.length !== L.pm.size) return;
-    const team = K.players(K.view).map(p => p.id).filter(id => L.picks.indexOf(id) >= 0);   // seat order
-    send(btn, 'propose', team);
+    const L = K.local; const v = K.view;
+    if (!L.pm || L.pm.mode !== 'multi' || L.picks.length !== L.pm.size) return;
+    const team = K.players(v).map(p => p.id).filter(id => L.picks.indexOf(id) >= 0);   // seat order
+    if (xcOn(v)) {
+      if (!L.xc || team.indexOf(L.xc) < 0 || L.xc === meId(v)) { K.toast(K.L(W.xc() + '을 맡길 사람을 골라 주세요', 'Choose who gets the ' + W.xc()), 'info'); return; }
+      send(btn, 'propose', team, L.xc);
+    } else send(btn, 'propose', team);
   };
   K.actions['bd-vote'] = (d, btn) => { if (K.local.choice == null) return; send(btn, 'vote', !!K.local.choice); };
   K.actions['bd-quest'] = (d, btn) => {
@@ -1678,10 +2046,32 @@
     send(btn, 'quest', !!c);
   };
   K.actions['bd-lady'] = (d, btn) => { const id = (K.local.picks || [])[0]; if (id) send(btn, 'lady', id); };
+  K.actions['bd-xc-flip'] = async (d, btn) => {
+    const id = (K.local.picks || [])[0]; if (!id || K.view.phase !== 'excalibur') return;
+    const raw = K.pname(K.view, id), name = K.esc(raw);
+    const ok = await K.confirm(K.L(raw + '님의 카드를 뒤집을까요?', 'Flip ' + raw + '\'s card?'),
+      K.L('<b>' + name + '</b>님의 카드가 반대로 바뀌어요.<br>원래 무엇이었는지는 나만 알게 되고, 누구의 카드를 뒤집었는지는 모두에게 공개돼요.',
+        '<b>' + name + '</b>\'s card turns to the opposite.<br>Only you learn what it was; everyone sees whose card you flipped.'),
+      { ok: W.xcFlip(), cancel: K.L('취소', 'Cancel') });
+    if (!ok) return;
+    send(btn, 'excalibur', id);
+  };
+  K.actions['bd-xc-pass'] = async (d, btn) => {
+    if (K.view.phase !== 'excalibur') return;
+    const ok = await K.confirm(K.L('카드를 그대로 둘까요?', 'Leave every card as it is?'),
+      K.L('아무 카드도 뒤집지 않고 결과를 공개해요.', 'No card is flipped and the result is revealed.'),
+      { ok: W.xcPass(), cancel: K.L('취소', 'Cancel') });
+    if (!ok) return;
+    send(btn, 'excalibur');
+  };
   K.actions['bd-assassin'] = async (d, btn) => {
     const id = (K.local.picks || [])[0]; if (!id) return;
     const raw = K.pname(K.view, id); const name = K.esc(raw);
-    const ok = await K.confirm(raw + '님을 ' + W.assassinate() + '할까요?', '<b>' + name + '</b>님이 ' + K.esc(jo(K.roleName('merlin') || '선지자', '이', '가')) + ' 맞다면 ' + K.esc(jo(K.teamName('evil'), '이', '가')) + ' 승리해요.<br>한 번 정하면 되돌릴 수 없어요.', { ok: W.assassinate() + '하기', danger: true });
+    const seer = W.seer(), evil = K.teamName('evil');
+    const ok = await K.confirm(K.L(raw + '님을 ' + W.assassinate() + '할까요?', 'Name ' + raw + '?'),
+      K.L('<b>' + name + '</b>님이 ' + K.esc(jo(seer, '이', '가')) + ' 맞다면 ' + K.esc(jo(evil, '이', '가')) + ' 승리해요.<br>한 번 정하면 되돌릴 수 없어요.',
+        'If <b>' + name + '</b> is the ' + K.esc(seer) + ', ' + K.esc(evil) + ' win.<br>This can\'t be undone.'),
+      { ok: K.L(W.assassinate() + '하기', W.assassinate()), cancel: K.L('취소', 'Cancel'), danger: true });
     if (!ok) return;
     send(btn, 'assassinate', id);
   };
@@ -1899,9 +2289,9 @@
 
 /* excalibur (Scroll of the Word) */
 .cn-xc .cn-emblem { width: 92px; height: 92px; }
-.cn-xpair { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; }
-.cn-xpair .ux-team-chip { animation: cnRise .6s both; max-width: 40%; }
-.cn-xpair .ux-team-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cn-xpair { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; }
+.cn-xpair .ux-team-chip { animation: cnRise .6s both; max-width: calc(50% - 62px); min-width: 0; flex: 0 1 auto; }
+.cn-xpair .ux-team-chip > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cn-xarrow { font-size: 22px; color: var(--gold-hi); animation: cnRise .6s .25s both; }
 .cn-xcard { position: relative; width: 64px; height: 90px; flex: none; perspective: 700px; }
 .cn-xcard .c { position: absolute; inset: 0; transform-style: preserve-3d; transition: transform .9s var(--ease-spring); }
@@ -1915,7 +2305,7 @@
 .ux-en .cn-res .ux-banner { font-size: min(28px, 7.2vw); }
 .ux-en .ux-banner.cn-long { font-size: min(23px, 6.2vw); }
 .ux-en .cn-win .ux-banner { font-size: min(30px, 7.6vw); }
-.ux-en .cn-scroll .sh { font-size: 15px; }
+.ux-en .cn-scroll .sh { font-size: 14px; }
 .ux-en .cn-t2 { font-size: 20px; }
 .ux-en .cn-ask { font-size: 19px; }
 .ux-en .cn-tap { letter-spacing: .08em; }
@@ -2129,9 +2519,9 @@
     ctx.set('<div class="cn-wrap cn-begin">' +
       '<div class="cn-emblem">' + K.tokenImg('leader') + '</div>' +
       '<div class="ux-banner good">' + E(Q()) + ' ' + r + '</div>' +
-      scroll('첫 ' + E(LEADER()) + ' · <b>' + nm(v, v.leaderId) + '</b>' + (K.isMe(v, v.leaderId) ? ' (나)' : '')) +
-      '<div class="ux-cine-sub cn-pre">' + EP(LEADER(), '이') + ' ' + E(TEAMW()) + ' ' + size + '명을 제안해요</div>' +
-      verse('너희는 세상의 빛이라', '마 5:14', true) + TAP() + '</div>');
+      scroll(L('첫 ', 'First ') + E(LEADER()) + ' · <b>' + nm(v, v.leaderId) + '</b>' + (K.isMe(v, v.leaderId) ? ' ' + ME() : '')) +
+      '<div class="ux-cine-sub cn-pre">' + L(EP(LEADER(), '이') + ' ' + E(TEAMW()) + ' ' + size + '명을 제안해요', 'The ' + E(LEADER()) + ' proposes ' + size + ' players for the ' + E(TEAMW())) + '</div>' +
+      V('너희는 세상의 빛이라', '마 5:14', 'You are the light of the world', 'Matthew 5:14', true) + TAP() + '</div>');
     S.scene('light', S.y(S.q('.ux-banner')), { rays: true });
     S.fb('chime');
     S.burst(S.q('.cn-emblem'), { n: 36, speed: 190 });
@@ -2156,17 +2546,17 @@
     const ok = typeof d.approved === 'boolean' ? d.approved : yes * 2 > n;
     const cols = n <= 4 ? Math.max(1, n) : n <= 6 ? 3 : n <= 8 ? 4 : 5;
     const pNo = d.proposalNo || 1, round = (d.round || 0) + 1;
-    const A = term('approve', '찬성'), X = term('reject', '반대');
+    const A = term('approve', L('찬성', 'Approve')), X = term('reject', L('반대', 'Reject'));
     const cards = ids.map((id, i) => {
       const y = votes[id] === true;
       return '<div class="ux-vcard' + (id === d.leaderId ? ' lead' : '') + (team.indexOf(id) >= 0 ? ' cn-onteam' : '') + '" data-y="' + (y ? 1 : 0) + '" style="animation-delay:' + (250 + i * 55) + 'ms">' +
         '<div class="c"><div class="b"></div><div class="f ' + (y ? 'yes' : 'no') + '">' + K.tokenImg(y ? 'approve' : 'reject') + '<span>' + E(y ? A : X) + '</span></div></div>' +
-        '<div class="n">' + nm(v, id) + (K.isMe(v, id) ? ' (나)' : '') + '</div></div>';
+        '<div class="n">' + nm(v, id) + (K.isMe(v, id) ? ' ' + ME() : '') + '</div></div>';
     }).join('');
     ctx.set('<div class="cn-wrap cn-vote">' +
       '<div class="ux-ornament">✦</div>' +
-      '<div class="ux-cine-title">투표 공개</div>' +
-      '<div class="ux-cine-sub">' + E(Q()) + ' ' + round + ' · ' + pNo + '번째 제안 · ' + E(LEADER()) + ' ' + who(v, d.leaderId) + '</div>' +
+      '<div class="ux-cine-title">' + L('투표 공개', 'The votes') + '</div>' +
+      '<div class="ux-cine-sub">' + E(Q()) + ' ' + round + ' · ' + L(pNo + '번째 제안', 'Proposal ' + pNo) + ' · ' + E(LEADER()) + ' ' + who(v, d.leaderId) + '</div>' +
       chips(v, team) +
       '<div class="cn-vgw"><div class="cn-vg' + (n >= 9 ? ' sm' : '') + '" style="--cols:' + cols + '">' + cards + '</div><div class="cn-count" aria-hidden="true"></div></div>' +
       '<div class="ux-tally cn-pre"><div class="y"><b>0</b>' + E(A) + '</div><div class="x"><b>0</b>' + E(X) + '</div></div>' +
@@ -2199,19 +2589,20 @@
     // result
     const res = S.q('.cn-res');
     if (ok) {
-      res.innerHTML = '<div class="ux-banner good">' + E(TEAMW()) + ' 출발!</div>' +
-        '<div class="cn-note">' + E(TEAMW()) + ' ' + team.length + '명이 ' + E(Q()) + ' ' + round + EP('', '') + '에 나서요</div>' +
-        verse('한마음과 한뜻이 되어', '행 4:32');
+      res.innerHTML = '<div class="ux-banner good">' + L(E(TEAMW()) + ' 출발!', 'The ' + E(TEAMW()) + ' sets out!') + '</div>' +
+        '<div class="cn-note">' + L(E(TEAMW()) + ' ' + team.length + '명이 ' + E(Q()) + ' ' + round + '에 나서요', team.length + ' ' + pl1(team.length, 'player goes', 'players go') + ' on ' + E(Q()) + ' ' + round) + '</div>' +
+        V('한마음과 한뜻이 되어', '행 4:32', 'Of one heart and soul', 'Acts 4:32');
       S.scene('light', S.y(res.firstElementChild), { rays: true });
       S.flash('good'); S.fb('good');
       S.burst(res.firstElementChild, { n: 44, speed: 210 });
     } else {
       const last = pNo >= 5;
       const pips = '<div class="cn-pips">' + [1, 2, 3, 4, 5].map(i => '<i class="' + (i <= pNo ? 'on' : '') + (i === pNo ? ' last' : '') + '"></i>').join('') + '</div>';
-      res.innerHTML = '<div class="ux-banner evil cn-dusky">부결</div>' + pips +
+      res.innerHTML = '<div class="ux-banner evil cn-dusky">' + L('부결', 'Rejected') + '</div>' + pips +
         (last
-          ? '<div class="cn-note evil"><b>다섯 번째 연속 부결!</b><br>이 부결로 승부가 결정돼요</div>'
-          : '<div class="cn-note">연속 부결 ' + pNo + '/5 · ' + EP(LEADER(), '이') + ' 다음 사람에게 넘어가요</div>' + verse('범사에 헤아려 좋은 것을 취하라', '살전 5:21'));
+          ? '<div class="cn-note evil">' + L('<b>다섯 번째 연속 부결!</b><br>이 부결로 승부가 결정돼요', '<b>Fifth rejection in a row!</b><br>This rejection decides the game') + '</div>'
+          : '<div class="cn-note">' + L('연속 부결 ' + pNo + '/5 · ' + EP(LEADER(), '이') + ' 다음 사람에게 넘어가요', 'Rejected in a row ' + pNo + '/5 · The next player becomes ' + E(LEADER())) + '</div>' +
+            V('범사에 헤아려 좋은 것을 취하라', '살전 5:21', 'Test all things, and hold firmly that which is good', '1 Thessalonians 5:21'));
       S.scene('dusk', S.y(res.firstElementChild));
       S.fb('evil');
       if (last) { S.flash('evil'); S.shake(); S.burst(res.firstElementChild, { n: 36, colors: DUSK, speed: 200 }); }
@@ -2230,15 +2621,19 @@
     const succ = d.successes | 0, fails = d.fails | 0, n = Math.max(1, succ + fails);
     const need = K.questFails(v, ri) || 1;
     const ok = d.result ? d.result === 'success' : fails < need;
-    const SU = term('success', '축복'), FA = term('fail', '방해');
+    const SU = term('success', L('축복', 'Blessing')), FA = term('fail', L('방해', 'Hindrance'));
+    const xc = d.excalibur, flipped = !!(xc && xc.targetId);
+    const FAn = k => L(E(FA) + ' ' + k + '장', k + ' ' + E(FA) + ' ' + pl1(k, 'card', 'cards'));
     const list = []; for (let i = 0; i < succ; i++) list.push('ok'); for (let i = 0; i < fails; i++) list.push('bad');
     const faces = K.shuffle(list.length ? list : ['ok']);
     const cards = faces.map((f, i) => '<div class="ux-qcard shuffle" style="transform:translate(' + ((i - (n - 1) / 2) * 4).toFixed(1) + 'px,' + (-i * 2) + 'px) rotate(' + ((i % 2 ? 1 : -1) * (i * 1.6)).toFixed(1) + 'deg);animation-delay:' + (-i * 0.17).toFixed(2) + 's">' +
       '<div class="c"><div class="b">' + K.backImg() + '</div><div class="f ' + f + '">' + K.tokenImg(f === 'ok' ? 'success' : 'fail') + '<span>' + E(f === 'ok' ? SU : FA) + '</span></div></div></div>').join('');
     ctx.set('<div class="cn-wrap cn-quest">' +
       '<div class="ux-ornament">✦</div>' +
-      '<div class="ux-cine-title">' + E(Q()) + ' ' + round + ' 결과</div>' +
-      '<div class="ux-cine-sub">' + E(TEAMW()) + ' ' + team.length + '명이 낸 카드를 섞고 있어요' + (need > 1 ? '<br>이번엔 ' + E(FA) + ' ' + need + '장이 있어야 실패해요' : '') + '</div>' +
+      '<div class="ux-cine-title">' + L(E(Q()) + ' ' + round + ' 결과', E(Q()) + ' ' + round + ' result') + '</div>' +
+      '<div class="ux-cine-sub">' + L(E(TEAMW()) + ' ' + team.length + '명이 낸 카드를 섞고 있어요', 'Shuffling the ' + team.length + ' ' + pl1(team.length, 'card', 'cards') + ' the ' + E(TEAMW()) + ' played') +
+        (need > 1 ? '<br>' + L('이번엔 ' + FAn(need) + '이 있어야 실패해요', 'This time it takes ' + FAn(need) + ' to fail') : '') +
+        (flipped ? '<br>' + L(EP(XC(), '으로') + ' 카드 한 장이 뒤집혔어요', 'One card was flipped with the ' + E(XC())) : '') + '</div>' +
       chips(v, team) +
       '<div class="ux-pile cn-qp">' + cards + '</div>' +
       '<div class="cn-qt cn-pre"><span class="ux-chip s">' + E(SU) + ' <b>0</b></span><span class="ux-chip x">' + E(FA) + ' <b>0</b></span></div>' +
@@ -2267,16 +2662,17 @@
     await ctx.sleep(S.M(350));
     const res = S.q('.cn-res');
     if (ok) {
-      res.innerHTML = '<div class="ux-banner good">' + E(Q()) + ' 성공!</div>' +
-        (fails ? '<div class="cn-note">' + E(FA) + ' ' + fails + '장 · ' + need + '장이 있어야 실패해요</div>' : '<div class="cn-note">모두 ' + E(SU) + ' 카드였어요</div>') +
-        verse('선을 행하다가 낙심하지 말자', '갈 6:9');
+      res.innerHTML = '<div class="ux-banner good">' + L(E(Q()) + ' 성공!', E(Q()) + ' succeeded!') + '</div>' +
+        (fails ? '<div class="cn-note">' + L(FAn(fails) + ' · ' + need + '장이 있어야 실패해요', FAn(fails) + ' · it takes ' + need + ' to fail') + '</div>'
+          : '<div class="cn-note">' + L('모두 ' + E(SU) + ' 카드였어요', 'Every card was a ' + E(SU)) + '</div>') +
+        V('선을 행하다가 낙심하지 말자', '갈 6:9', 'Let\'s not be weary in doing good', 'Galatians 6:9');
       S.scene('light', S.y(res.firstElementChild), { rays: true });
       S.flash('good'); S.fb('good');
       S.burst(res.firstElementChild, { n: 46, speed: 220 });
     } else {
-      res.innerHTML = '<div class="ux-banner evil cn-dusky">' + E(Q()) + ' 실패</div>' +
-        '<div class="cn-note evil">' + E(FA) + ' <b>' + fails + '장</b></div>' +
-        verse('시험에 들지 않게 깨어 기도하라', '마 26:41');
+      res.innerHTML = '<div class="ux-banner evil cn-dusky">' + L(E(Q()) + ' 실패', E(Q()) + ' failed') + '</div>' +
+        '<div class="cn-note evil">' + L(E(FA) + ' <b>' + fails + '장</b>', '<b>' + fails + '</b> ' + E(FA) + ' ' + pl1(fails, 'card', 'cards')) + '</div>' +
+        V('시험에 들지 않게 깨어 기도하라', '마 26:41', 'Watch and pray, that you don\'t enter into temptation', 'Matthew 26:41');
       S.scene('dusk', S.y(res.firstElementChild), { rays: true });
       S.fb('evil');
       S.burst(res.firstElementChild, { n: 40, colors: DUSK, speed: 200 });
@@ -2291,18 +2687,18 @@
   // =====================================================================
   C.lady = async (ctx, ev, v) => {
     const S = stage(ctx);
-    const d = ev.d || {}, L = term('lady', '등불');
+    const d = ev.d || {}, LA = term('lady', L('등불', 'Lamp'));
     if (ev.result) {
       // Private: neutral candle light, no full-screen team tint or team sound (neighbours can see/hear).
       const team = ev.result.team === 'evil' ? 'evil' : 'good';
       const tid = ev.result.targetId || d.targetId;
       ctx.set('<div class="cn-wrap cn-lady">' +
-        '<div class="ux-cine-sub">' + E(L) + ' · 나에게만 보이는 결과예요</div>' +
+        '<div class="ux-cine-sub">' + E(LA) + ' · ' + L('나에게만 보이는 결과예요', 'Only you can see this result') + '</div>' +
         '<div class="ux-lamp-big">' + K.tokenImg('lady') + '</div>' +
-        '<div class="cn-ask">' + nm(v, tid) + '님을 비춰보니<span class="ux-dots"><i></i><i></i><i></i></span></div>' +
+        '<div class="cn-ask">' + L(nm(v, tid) + '님을 비춰보니', 'Shining on ' + nm(v, tid)) + '<span class="ux-dots"><i></i><i></i><i></i></span></div>' +
         '<div class="cn-res cn-lres"></div>' +
-        '<div class="cn-secret cn-pre">이 결과는 나만 알아요. 비밀로 간직하거나 지혜롭게 사용하세요.</div>' +
-        verse('주의 말씀은 내 발에 등이요 내 길에 빛이니이다', '시 119:105', true) + TAP() + '</div>');
+        '<div class="cn-secret cn-pre">' + L('이 결과는 나만 알아요. 비밀로 간직하거나 지혜롭게 사용하세요.', 'Only you know this. Keep it secret or use it wisely.') + '</div>' +
+        V('주의 말씀은 내 발에 등이요 내 길에 빛이니이다', '시 119:105', 'Your word is a lamp to my feet, and a light for my path', 'Psalm 119:105', true) + TAP() + '</div>');
       const lamp = S.q('.ux-lamp-big');
       S.scene('candle', S.y(lamp));
       S.fb('whoosh');
@@ -2310,8 +2706,8 @@
       const dots = S.q('.cn-ask .ux-dots'); if (dots) dots.remove();
       const res = S.q('.cn-lres');
       res.innerHTML = '<div class="cn-emb">' + K.img(K.asset('team-' + team + '.svg'), team === 'evil' ? 'fail' : 'success', '') + '</div>' +
-        '<div class="ux-lady-result cn-' + team + '">' + E(K.teamName(team)) + '</div>' +
-        '<div class="cn-note">' + nm(v, tid) + '님은 <b>' + EP(K.teamName(team), '이에요') + '</b></div>';
+        '<div class="ux-lady-result cn-' + team + '">' + E(TEAMN(team)) + '</div>' +
+        '<div class="cn-note">' + L(nm(v, tid) + '님은 <b>' + EP(TEAMN(team), '이에요') + '</b>', nm(v, tid) + ' is one of <b>' + E(theTeam(team)) + '</b>') + '</div>';
       S.sfx('chime'); S.buzz('pick');
       S.burst(res.firstElementChild, { n: 16, colors: colOf(team), speed: 120 });
       await ctx.sleep(S.M(700));
@@ -2326,8 +2722,10 @@
     const hid = d.holderId, tid = d.targetId;
     ctx.set('<div class="cn-wrap cn-lady">' +
       '<div class="ux-lamp-big sm">' + K.tokenImg('lady') + '</div>' +
-      '<div class="ux-cine-title cn-t2">' + (K.isMe(v, hid) ? '내가' : nm(v, hid) + '님이') + ' ' + EP(L, '으로') + '<br>' + (K.isMe(v, tid) ? '나를' : nm(v, tid) + '님을') + ' 비춰보았어요</div>' +
-      '<div class="ux-cine-sub">결과는 ' + (K.isMe(v, hid) ? '나만' : nm(v, hid) + '님만') + ' 알 수 있어요 · ' + EP(L, '은') + ' 이제 ' + (K.isMe(v, tid) ? '나에게' : nm(v, tid) + '님에게') + ' 넘어가요</div>' +
+      '<div class="ux-cine-title cn-t2">' + L((K.isMe(v, hid) ? '내가' : nm(v, hid) + '님이') + ' ' + EP(LA, '으로') + '<br>' + (K.isMe(v, tid) ? '나를' : nm(v, tid) + '님을') + ' 비춰보았어요',
+        enSubj(v, hid) + ' shone the ' + E(LA) + '<br>on ' + enObj(v, tid)) + '</div>' +
+      '<div class="ux-cine-sub">' + L('결과는 ' + (K.isMe(v, hid) ? '나만' : nm(v, hid) + '님만') + ' 알 수 있어요 · ' + EP(LA, '은') + ' 이제 ' + (K.isMe(v, tid) ? '나에게' : nm(v, tid) + '님에게') + ' 넘어가요',
+        (K.isMe(v, hid) ? 'Only you know the result' : 'Only ' + nm(v, hid) + ' knows the result') + ' · The ' + E(LA) + ' now passes to ' + enObj(v, tid)) + '</div>' +
       TAP() + '</div>');
     S.scene('candle', S.y(S.q('.ux-lamp-big')));
     S.fb('chime');
@@ -2337,15 +2735,142 @@
   };
 
   // =====================================================================
+  // loyalty (Lancelot module): a Crossroads card is turned face up at the start of missions 3–5.
+  // ev = { d: {round, card:'none'|'switch'}, n: cards revealed so far, all: [entries so far] }.
+  // Public: only the card. Never says who the pilgrims are (that stays secret on every phone).
+  // =====================================================================
+  C.loyalty = async (ctx, ev, v) => {
+    const S = stage(ctx);
+    const d = (ev && ev.d) || {};
+    const lr = (v && v.loyaltyRevealed) || [];
+    const card = d.card === 'switch' ? 'switch' : 'none';
+    const ri = typeof d.round === 'number' ? d.round : (v && v.round) || 0, round = ri + 1;
+    const all = (ev && Array.isArray(ev.all) && ev.all.length) ? ev.all : (lr.length ? lr : [d]);
+    const idx = Math.max(0, all.length - 1);
+    const slots = Math.max(3, all.length);
+    const hist = '<div class="cn-lohist cn-pre" aria-hidden="true">' + Array.from({ length: slots }, (_, i) => {
+      const e = all[i];
+      if (!e) return '<i>' + K.backImg() + '</i>';
+      const c = e.card === 'switch' ? 'switch' : 'none';
+      return '<i class="' + (i === idx ? 'cur' : '') + '">' + (i === idx ? K.backImg() : K.img(K.asset('loyalty/' + c + '.svg'), 'back', '')) + '</i>';
+    }).join('') + '</div>';
+    const name = card === 'switch' ? term('loyaltySwitch', L('편이 바뀜', 'Sides switch')) : term('loyaltyNone', L('그대로', 'No change'));
+    ctx.set('<div class="cn-wrap cn-lo">' +
+      '<div class="ux-ornament">✦</div>' +
+      '<div class="ux-cine-title">' + E(LOY()) + '</div>' +
+      '<div class="ux-cine-sub">' + L(E(Q()) + ' ' + round + ' 시작 · 카드 한 장을 펼쳐요', E(Q()) + ' ' + round + ' begins · One card is turned over') + '</div>' +
+      '<div class="cn-tcard ' + card + '"><div class="cn-beat"><div class="c"><div class="b">' + K.backImg() + '</div><div class="f">' +
+        K.img(K.asset('loyalty/' + card + '.svg'), 'back', '') + '</div></div></div></div>' +
+      '<div class="cn-res"></div>' + hist + TAP() + '</div>');
+    const tc = S.q('.cn-tcard'), beat = S.q('.cn-beat');
+    S.scene('candle', S.y(tc));
+    S.fb('whoosh');
+    await ctx.sleep(S.M(700));
+    S.on(S.q('.cn-lohist'));
+    // three slow beats, then the turn
+    for (const b of [520, 440, 380]) {
+      if (ctx.skipped) break;
+      S.sfx('drum'); S.buzz('tick');
+      if (!S.R && beat && beat.animate) beat.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.05)' }, { transform: 'scale(1)' }], { duration: 220, easing: 'ease-out' });
+      await ctx.sleep(S.M(b));
+    }
+    tc.classList.add('flip'); S.fb('flip');
+    const cur = S.q('.cn-lohist i.cur'); if (cur) cur.innerHTML = K.img(K.asset('loyalty/' + card + '.svg'), 'back', '');
+    await ctx.sleep(S.M(650));
+    const res = S.q('.cn-res');
+    if (card === 'switch') {
+      tc.classList.add('cn-swap');
+      res.innerHTML = '<div class="ux-banner cn-sw">' + E(name) + '</div>' +
+        '<div class="cn-note">' + L('<b>' + E(LANC()) + ' 두 사람의 편이 서로 바뀌어요</b><br>누가 순례자인지는 여전히 비밀이에요',
+          '<b>Both ' + E(LANC()) + ' players switch sides</b><br>Who they are stays secret') + '</div>' +
+        V('너희가 섬길 자를 오늘 택하라', '수 24:15', 'Choose today whom you will serve', 'Joshua 24:15');
+      S.scene('candle', S.y(tc), { rays: true });
+      S.fb('whoosh'); S.shake(tc);
+      S.burst(tc, { n: 34, colors: [GOLD[0], DUSK[0], GOLD[2], DUSK[1]], speed: 190 });
+    } else {
+      res.innerHTML = '<div class="ux-banner good">' + E(name) + '</div>' +
+        '<div class="cn-note">' + L(EP(LANC(), '은') + ' 지금 편 그대로 가요<br>누가 순례자인지는 여전히 비밀이에요',
+          'The ' + E(LANC()) + ' players stay on their current sides<br>Who they are stays secret') + '</div>' +
+        V('예수 그리스도는 어제나 오늘이나 영원토록 동일하시니라', '히 13:8', 'Jesus Christ is the same yesterday, today, and forever', 'Hebrews 13:8');
+      S.sfx('chime'); S.buzz('pick');
+      S.burst(tc, { n: 18, speed: 120 });
+    }
+    await ctx.sleep(S.M(1000));
+    S.tap();
+    await ctx.tapOrWait(3000);
+  };
+
+  // =====================================================================
+  // excalibur (Scroll of the Word): plays just before the mission result.
+  // ev = { d: {round, holderId, targetId|null}, result: {round, targetId, original}|null (holder's phone only) }.
+  // Public: who used the Scroll on whom (or kept the cards as they are). Never what the card was.
+  // =====================================================================
+  C.excalibur = async (ctx, ev, v) => {
+    const S = stage(ctx);
+    const d = (ev && ev.d) || (v && v.lastExcalibur) || {};
+    const hid = d.holderId || null, tid = d.targetId || null;
+    const ri = typeof d.round === 'number' ? d.round : (v && v.round) || 0, round = ri + 1;
+    const res = ev && ev.result && (!tid || ev.result.targetId === tid) ? ev.result : null;
+    const mineH = !!(hid && K.isMe(v, hid));
+    const chip = id => '<span class="ux-team-chip">' + K.avatar(pl(v, id)) + '<span>' + nm(v, id) + (K.isMe(v, id) ? ' ' + ME() : '') + '</span></span>';
+    let line, sub, mid;
+    if (tid) {
+      line = hid
+        ? L((mineH ? '내가' : nm(v, hid) + '님이') + ' ' + EP(XC(), '으로') + '<br>' + (K.isMe(v, tid) ? '내' : nm(v, tid) + '님의') + ' 카드를 뒤집었어요',
+            enSubj(v, hid) + ' used the ' + E(XC()) + '<br>to flip ' + (K.isMe(v, tid) ? 'your' : nm(v, tid) + '\'s') + ' card')
+        : L(EP(XC(), '으로') + '<br>' + nm(v, tid) + '님의 카드가 뒤집혔어요', nm(v, tid) + '\'s card was flipped<br>with the ' + E(XC()));
+      sub = hid
+        ? L('원래 무슨 카드였는지는 ' + (mineH ? '나만' : nm(v, hid) + '님만') + ' 알아요', (mineH ? 'Only you know' : 'Only ' + nm(v, hid) + ' knows') + ' what the card was before')
+        : L('원래 무슨 카드였는지는 비밀이에요', 'What the card was before stays secret');
+      mid = '<div class="cn-xpair">' + (hid ? chip(hid) + '<span class="cn-xarrow" aria-hidden="true">➜</span>' : '') +
+        '<div class="cn-xcard"><div class="c"><div class="b">' + K.backImg() + '</div><div class="f">' + K.backImg() + '</div></div></div>' +
+        '<span class="cn-xarrow" aria-hidden="true">➜</span>' + chip(tid) + '</div>';
+    } else {
+      line = hid
+        ? L((mineH ? '나는' : nm(v, hid) + '님은') + ' 카드를 뒤집지 않고<br>그대로 두었어요', enSubj(v, hid) + ' kept the cards<br>as they are')
+        : L('카드를 뒤집지 않고<br>그대로 두었어요', 'The cards were kept<br>as they are');
+      sub = L('낸 카드 그대로 공개돼요', 'The cards are revealed as they were played');
+      mid = '<div class="cn-xpair">' + (hid ? chip(hid) : '') + '<div class="cn-xcard kept"><div class="c"><div class="b">' + K.backImg() + '</div><div class="f">' + K.backImg() + '</div></div></div></div>';
+    }
+    const SU = term('success', L('축복', 'Blessing')), FA = term('fail', L('방해', 'Hindrance'));
+    const secret = res && tid
+      ? '<div class="cn-secret cn-pre">' + L('나에게만 보여요 · 뒤집기 전 카드는 <b>' + EP(res.original ? SU : FA, '이었어요') + '</b>',
+          'Only you see this · Before the flip it was <b>' + 'a ' + E(res.original ? SU : FA) + '</b> card') + '</div>'
+      : '';
+    ctx.set('<div class="cn-wrap cn-xc">' +
+      '<div class="cn-emblem">' + K.img(K.asset('excalibur.svg'), 'success', '') + '</div>' +
+      '<div class="ux-cine-sub">' + E(XC()) + ' · ' + E(Q()) + ' ' + round + '</div>' +
+      '<div class="ux-cine-title cn-t2">' + line + '</div>' +
+      mid +
+      '<div class="ux-cine-sub cn-pre cn-xsub">' + sub + '</div>' + secret +
+      V('하나님의 말씀은 살아 있고 활력이 있어', '히 4:12', 'The word of God is living and active', 'Hebrews 4:12', true) + TAP() + '</div>');
+    const em = S.q('.cn-emblem');
+    S.scene('candle', S.y(em), { rays: true });
+    S.fb('chime');
+    S.burst(em, { n: 24, speed: 150 });
+    await ctx.sleep(S.M(900));
+    const xc = S.q('.cn-xcard');
+    if (tid && xc) { xc.classList.add('flip'); S.fb('flip'); S.burst(xc, { n: 16, speed: 120, size: 8 }); }
+    await ctx.sleep(S.M(700));
+    S.on(S.q('.cn-xsub'));
+    await ctx.sleep(S.M(300));
+    if (secret) { S.on(S.q('.cn-secret')); S.buzz('pick'); await ctx.sleep(S.M(300)); }
+    S.on(S.q('.ux-verse'));
+    await ctx.sleep(S.M(400));
+    S.tap();
+    await ctx.tapOrWait(secret ? 3400 : 2600);
+  };
+
+  // =====================================================================
   // assassin: 3 successes reached, entering the assassination phase
   // =====================================================================
   C.assassin = async (ctx, ev, v) => {
     const S = stage(ctx);
-    const A = K.roleName('assassin') || '정탐꾼', M = K.roleName('merlin') || '선지자';
+    const A = SPY(), M = PROPHET();
     ctx.set('<div class="cn-wrap cn-assa">' +
       '<div class="cn-first">' +
         '<div class="cn-toks">' + [0, 1, 2].map(i => '<div class="cn-tok" style="animation-delay:' + (0.15 + i * 0.24).toFixed(2) + 's">' + K.tokenImg('success') + '</div>').join('') + '</div>' +
-        '<div class="ux-banner good cn-long">' + EP(K.teamName('good'), '이') + '<br>' + EP(Q(), '을') + ' 완수했어요</div>' +
+        '<div class="ux-banner good cn-long">' + L(EP(TEAMN('good'), '이') + '<br>' + EP(Q(), '을') + ' 완수했어요', E(cap(theTeam('good'))) + '<br>completed three ' + E(Q()) + 's') + '</div>' +
       '</div>' +
       '<div class="cn-turn"></div>' + TAP() + '</div>');
     const first = S.q('.cn-first');
@@ -2358,10 +2883,10 @@
     first.classList.add('cn-dim');
     const turn = S.q('.cn-turn');
     const aid = v.assassinId;
-    turn.innerHTML = '<div class="cn-but">하지만…</div>' +
-      '<div class="ux-banner evil cn-long cn-dusky">' + EP(A, '이') + ' ' + EP(M, '을') + '<br>찾고 있어요</div>' +
+    turn.innerHTML = '<div class="cn-but">' + L('하지만…', 'But…') + '</div>' +
+      '<div class="ux-banner evil cn-long cn-dusky">' + L(EP(A, '이') + ' ' + EP(M, '을') + '<br>찾고 있어요', 'The ' + E(A) + ' is searching<br>for the ' + E(M)) + '</div>' +
       (aid ? '<div class="cn-who">' + K.avatar(pl(v, aid)) + '<span><small>' + E(A) + '</small><b>' + who(v, aid) + '</b></span></div>' : '') +
-      '<div class="cn-note evil">' + EP(M, '을') + ' 정확히 지목하면 ' + EP(K.teamName('evil'), '이') + ' 승리해요</div>';
+      '<div class="cn-note evil">' + L(EP(M, '을') + ' 정확히 지목하면 ' + EP(TEAMN('evil'), '이') + ' 승리해요', 'If the ' + E(A) + ' names the ' + E(M) + ', ' + E(theTeam('evil')) + ' win') + '</div>';
     S.scene('dusk', S.y(turn), { rays: true });
     S.fb('evil'); S.shake();
     await ctx.sleep(S.M(1500));
@@ -2375,13 +2900,13 @@
   C.end = async (ctx, ev, v) => {
     const S = stage(ctx);
     const win = v.winner === 'evil' ? 'evil' : 'good', reason = v.winReason;
-    const A = K.roleName('assassin') || '정탐꾼', M = K.roleName('merlin') || '선지자';
+    const A = SPY(), M = PROPHET();
     const tid = v.assassinTargetId;
     if ((reason === 'assassinHit' || reason === 'assassinFailed') && tid) {
       const role = v.revealed && v.revealed[tid];
       const hit = role ? role === 'merlin' : reason === 'assassinHit';
       ctx.set('<div class="cn-wrap cn-pick">' +
-        '<div class="ux-cine-title">' + E(A) + '의 선택은…</div>' +
+        '<div class="ux-cine-title">' + L(E(A) + '의 선택은…', 'The ' + E(A) + '\'s choice…') + '</div>' +
         '<div class="cn-tcard"><div class="cn-beat"><div class="c"><div class="b">' + K.backImg() + '</div><div class="f">' + (role ? K.roleImg(role) : K.backImg()) + '</div></div></div></div>' +
         '<div class="cn-tname"></div>' +
         '<div class="cn-res"></div></div>');
@@ -2402,17 +2927,18 @@
       await ctx.sleep(S.M(1300));
       // reveal
       card.classList.remove('ux-target-ring');
-      if (role) { card.classList.add('flip', K.teamOf(role) === 'evil' ? 'evil' : 'good'); S.sfx('flip'); await ctx.sleep(S.M(550)); }
+      const side = (v.finalTeams && v.finalTeams[tid]) || (role ? K.teamOf(role) : 'good');
+      if (role) { card.classList.add('flip', side === 'evil' ? 'evil' : 'good'); S.sfx('flip'); await ctx.sleep(S.M(550)); }
       const res = S.q('.cn-res');
       if (hit) {
-        res.innerHTML = '<div class="ux-banner evil cn-dusky">' + EP(M, '이었어요') + '!</div>' +
-          '<div class="cn-note evil">' + EP(A, '이') + ' ' + EP(M, '을') + ' 찾아냈어요</div>';
+        res.innerHTML = '<div class="ux-banner evil cn-dusky">' + L(EP(M, '이었어요') + '!', 'It was the ' + E(M) + '!') + '</div>' +
+          '<div class="cn-note evil">' + L(EP(A, '이') + ' ' + EP(M, '을') + ' 찾아냈어요', 'The ' + E(A) + ' found the ' + E(M)) + '</div>';
         S.scene('dusk', S.y(card), { rays: true });
         S.flash('evil'); S.shake(); S.fb('evil');
         S.burst(card, { n: 40, colors: DUSK, speed: 210 });
       } else {
-        res.innerHTML = '<div class="ux-banner good">' + EP(M, '이') + ' 아니었어요</div>' +
-          (role ? '<div class="cn-note">' + nm(v, tid) + '님은 <b>' + EP(K.roleName(role), '이에요') + '</b></div>' : '');
+        res.innerHTML = '<div class="ux-banner good">' + L(EP(M, '이') + ' 아니었어요', 'Not the ' + E(M)) + '</div>' +
+          (role ? '<div class="cn-note">' + L(nm(v, tid) + '님은 <b>' + EP(K.roleName(role), '이에요') + '</b>', nm(v, tid) + ' is ' + (role === 'servant' || role === 'minion' ? 'a' : 'the') + ' <b>' + E(K.roleName(role)) + '</b>') + '</div>' : '');
         S.scene('light', S.y(card), { rays: true });
         S.flash('good'); S.fb('good');
         S.burst(card, { n: 40, speed: 210 });
@@ -2425,21 +2951,29 @@
 
   async function winner(ctx, S, v, win, reason, M) {
     const QQ = Q();
-    const why = {
+    const why = (EN() ? {
+      quests: 'Three ' + E(QQ) + 's completed',
+      fails: 'Three ' + E(QQ) + 's hindered',
+      rejections: 'Five rejections in a row',
+      assassinFailed: 'The ' + E(M) + ' was kept safe',
+      assassinHit: 'The ' + E(M) + ' was found'
+    } : {
       quests: '세 번의 ' + E(QQ) + ' 완수',
       fails: EP(QQ, '이') + ' 세 번 방해받음',
       rejections: '다섯 번 연속 부결',
       assassinFailed: EP(M, '을') + ' 지켜냄',
       assassinHit: EP(M, '이') + ' 들킴'
-    }[reason] || '';
-    const mine = v.me && v.me.team;
+    })[reason] || '';
+    // my side at the finish (a switched pilgrim plays for the current side)
+    const mine = v.me && ((v.finalTeams && v.finalTeams[v.me.id]) || v.me.team);
     const won = mine ? mine === win : null;
     ctx.set('<div class="cn-wrap cn-win">' +
       '<div class="cn-crest">' + K.img(K.asset('team-' + win + '.svg'), win === 'evil' ? 'fail' : 'success', '') + '</div>' +
-      '<div class="ux-banner ' + win + (win === 'evil' ? ' cn-dusky' : '') + '">' + E(K.teamName(win)) + ' 승리!</div>' +
+      '<div class="ux-banner ' + win + (win === 'evil' ? ' cn-dusky' : '') + '">' + L(E(TEAMN(win)) + ' 승리!', E(TEAMN(win)) + ' win!') + '</div>' +
       (why ? scroll(why) : '') +
-      (won === null ? '' : '<div class="cn-mine ' + (won ? 'w' : 'l') + '">' + (won ? '우리 팀 승리!' : '아쉽게도 패배') + '</div>') +
-      (win === 'evil' ? verse('일곱 번 넘어질지라도 다시 일어나리라', '잠 24:16') : verse('빛이 어둠에 비치되 어둠이 이기지 못하더라', '요 1:5')) +
+      (won === null ? '' : '<div class="cn-mine ' + (won ? 'w' : 'l') + '">' + (won ? L('우리 팀 승리!', 'Your side won!') : L('아쉽게도 패배', 'Your side lost this time')) + '</div>') +
+      (win === 'evil' ? V('일곱 번 넘어질지라도 다시 일어나리라', '잠 24:16', 'A righteous man falls seven times and rises up again', 'Proverbs 24:16')
+        : V('빛이 어둠에 비치되 어둠이 이기지 못하더라', '요 1:5', 'The light shines in the darkness, and the darkness hasn\'t overcome it', 'John 1:5')) +
       TAP() + '</div>');
     const crest = S.q('.cn-crest');
     S.scene(win === 'evil' ? 'dusk' : 'light', S.y(crest), { rays: true });
@@ -2824,46 +3358,70 @@
   'use strict';
   const K = window.UI._k, esc = K.esc;
 
-  const REASON = {
-    quests: '세 번의 사명을 모두 이뤘어요', assassinFailed: '정탐꾼이 선지자를 찾지 못했어요', assassinHit: '정탐꾼이 선지자를 찾아냈어요',
-    rejections: '한 사명에서 다섯 번 연속 부결됐어요', fails: '사명이 세 번 방해받았어요'
-  };
+  const REASON = () => ({
+    quests: K.L('세 번의 사명을 모두 이뤘어요', 'Three missions were completed'),
+    assassinFailed: K.L('정탐꾼이 선지자를 찾지 못했어요', 'The Spy couldn\'t find the Prophet'),
+    assassinHit: K.L('정탐꾼이 선지자를 찾아냈어요', 'The Spy found the Prophet'),
+    rejections: K.L('한 사명에서 다섯 번 연속 부결됐어요', 'Five teams in a row were rejected on one mission'),
+    fails: K.L('사명이 세 번 방해받았어요', 'Three missions were hindered')
+  });
+  /* One line on why the game ended, in the current language (THEME winText → guide end hints → fallback). */
   K.winLine = v => {
-    const T = K.T(), r = v.winReason;
+    const T = K.T(), r = v && v.winReason;
+    if (!r) return '';
     if (T.winText && T.winText[r]) return T.winText[r];
     const g = K.G(), e = g && g.phaseHints && g.phaseHints.end; const t = e && e[v.winner] && e[v.winner][r];
-    return t || REASON[r] || '';
+    return t || REASON()[r] || '';
+  };
+  const short = t => { const tm = K.T().teams && K.T().teams[t]; return (tm && tm.short) || K.teamName(t); };
+  const teamWord = t => (K.isEn() ? K.teamName(t).replace(/^The /, '') : K.teamName(t));   // for "…with the {team}"
+  /* Each player's start side (from the role) and final side (view.finalTeams, which moves for a switched Lancelot). */
+  const sides = (v, id) => {
+    const r = (v.revealed || {})[id], start = r ? K.teamOf(r) : null;
+    const fin = (v.finalTeams && v.finalTeams[id]) || start || 'good';
+    return { role: r, start: start || fin, fin, lan: r === 'lancelotGood' || r === 'lancelotEvil' };
   };
 
   K.screens.end = {
     build(v) {
       return K.el('<section class="uxe">' +
-        '<div class="ux-top"><div class="grow"><span class="ux-phase-tag">✦ 게임 끝</span></div><button class="ux-icon-btn" data-act="cm-history" aria-label="기록">📜</button>' + K.soundBtn() + '</div>' +
+        '<div class="ux-top"><div class="grow"><span class="ux-phase-tag">✦ ' + esc(K.L('게임 끝', 'Game over')) + '</span></div>' +
+        '<button class="ux-icon-btn" data-act="cm-seats" aria-label="' + esc(K.L('함께하는 사람', 'Players')) + '">👥</button>' +
+        '<button class="ux-icon-btn" data-act="cm-history" aria-label="' + esc(K.L('기록', 'History')) + '">📜</button>' + K.soundBtn() + '</div>' +
+        '<div data-slot="seat"></div>' +
         '<div data-slot="hero"></div><div class="ux-panel plain" data-slot="track"></div>' +
-        '<div class="ux-panel"><div class="ux-ornament" style="margin-bottom:12px">모든 역할 공개</div><div class="ux-reveal-grid" data-slot="grid"></div></div>' +
+        '<div class="ux-panel"><div class="ux-ornament" style="margin-bottom:12px">' + esc(K.L('모든 역할 공개', 'All roles revealed')) + '</div><div class="ux-reveal-grid" data-slot="grid"></div></div>' +
         '<div data-slot="after"></div><div class="ux-spacer"></div><div class="ux-dock" data-slot="dock"></div></section>');
     },
     update(v, K_, el) {
-      const w = v.winner || 'good', me = v.me || {}, mine = me.team && me.team === w;
+      const w = v.winner || 'good', me = v.me || {};
+      const myFin = (v.finalTeams && me.id && v.finalTeams[me.id]) || me.team, mine = myFin && myFin === w;
+      K.patch(el.querySelector('[data-slot=seat]'), K.seatNotice ? K.seatNotice(v) : '');
       K.patch(el.querySelector('[data-slot=hero]'),
         '<div class="ux-end-hero ' + w + '"><div class="uxe-crest ' + w + '"><div class="ux-rose"></div><span class="crest">' + (w === 'evil' ? '🌒' : '🕊️') + '</span></div>' +
-        '<div class="ux-banner ' + w + '">' + esc(K.teamName(w)) + ' 승리!</div>' +
+        '<div class="ux-banner ' + w + '">' + esc(K.L(K.teamName(w) + ' 승리!', K.teamName(w) + ' win!')) + '</div>' +
         '<p class="ux-p ux-center">' + esc(K.winLine(v)) + '</p>' +
-        (me.team ? '<span class="ux-badge ' + (mine ? 'gold' : '') + '" style="margin-top:4px">' + (mine ? '🎉 우리 팀이 이겼어요' : '아쉽지만 다음 판에서!') + '</span>' : '') +
+        (myFin ? '<span class="ux-badge ' + (mine ? 'gold' : '') + '" style="margin-top:4px">' + esc(mine ? K.L('🎉 우리 팀이 이겼어요', '🎉 Your side won!') : K.L('아쉽지만 다음 판에서!', 'So close. Next time!')) + '</span>' : '') +
         K.verse(w === 'evil' ? 'evil' : 'end') + '</div>');
       K.patch(el.querySelector('[data-slot=track]'), '<div class="ux-track">' + (v.quests || []).map((q, i) => '<div class="ux-quest ' + (q.result || '') + '">' +
         (q.result ? K.tokenImg(q.result === 'success' ? 'success' : 'fail', 'tok') : '<span class="sz">' + (q.size || '') + '</span>') + '</div>').join('') + '</div>');
-      const rev = v.revealed || {};
       K.patch(el.querySelector('[data-slot=grid]'), K.players(v).map((p, i) => {
-        const r = rev[p.id], t = r ? K.teamOf(r) : 'good', hit = v.assassinTargetId === p.id, ass = v.assassinId === p.id;
-        return '<div class="ux-rv ' + t + (K.isMe(v, p.id) ? ' me' : '') + '" style="animation-delay:' + (300 + i * 110) + 'ms"><div class="art">' + (r ? K.roleImg(r) : K.backImg()) + (hit ? '<div class="x">🎯</div>' : '') + '</div>' +
-          '<div class="pn">' + esc(p.name) + '</div><div class="rn">' + esc(r ? K.roleName(r) : '?') + (ass ? ' · 지목한 사람' : '') + (hit ? ' · 지목됨' : '') + '</div></div>';
+        const sd = sides(v, p.id), r = sd.role, hit = v.assassinTargetId === p.id, ass = v.assassinId === p.id;
+        const moved = sd.lan && sd.start !== sd.fin;
+        return '<div class="ux-rv ' + sd.fin + (K.isMe(v, p.id) ? ' me' : '') + '" style="animation-delay:' + (300 + i * 110) + 'ms"><div class="art">' + (r ? K.roleImg(r) : K.backImg()) + (hit ? '<div class="x">🎯</div>' : '') + '</div>' +
+          '<div class="pn">' + esc(p.name) + '</div><div class="rn">' + esc(r ? K.roleName(r) : '?') + esc(ass ? K.L(' · 지목한 사람', ' · made the call') : '') + esc(hit ? K.L(' · 지목됨', ' · was named') : '') + '</div>' +
+          (sd.lan ? '<div class="uxe-sw ' + (moved ? 'moved ' : '') + sd.fin + '" title="' + esc(moved ? K.L(K.teamName(sd.start) + ' → ' + K.teamName(sd.fin), K.teamName(sd.start) + ' → ' + K.teamName(sd.fin)) : K.teamName(sd.fin)) + '">🧭 ' +
+            (moved ? '<s>' + esc(short(sd.start)) + '</s> → <b>' + esc(short(sd.fin)) + '</b>' : '<b>' + esc(short(sd.fin)) + '</b>') + '</div>' : '') + '</div>';
       }).join(''));
-      const g = K.G(), after = g && g.phaseHints && g.phaseHints.end && g.phaseHints.end.after;
-      K.patch(el.querySelector('[data-slot=after]'), after ? '<div class="ux-stack">' + after.map(a => '<p class="ux-p ux-center">' + esc(a) + '</p>').join('') + '</div>' : '');
+      const g = K.G(), eh = g && g.phaseHints && g.phaseHints.end, after = (eh && eh.after) || [];
+      const sw = K.players(v).map(p => ({ p, sd: sides(v, p.id) })).filter(x => x.sd.lan && x.sd.start !== x.sd.fin).map(x =>
+        eh && eh.switchedNote ? K.fmt(eh.switchedNote, { name: x.p.name, team: teamWord(x.sd.fin) })
+          : K.L(x.p.name + '님은 갈림길에서 편이 바뀌어 ' + K.teamName(x.sd.fin) + ' 편으로 끝났어요.', x.p.name + ' switched sides at the crossroads and finished with ' + K.teamName(x.sd.fin) + '.'));
+      const lines = sw.concat(after);
+      K.patch(el.querySelector('[data-slot=after]'), lines.length ? '<div class="ux-stack">' + lines.map(a => '<p class="ux-p ux-center">' + esc(a) + '</p>').join('') + '</div>' : '');
       const hasHome = typeof (K.api || {}).home === 'function';
-      K.patch(el.querySelector('[data-slot=dock]'), (me.isHost ? '<button class="ux-btn ux-btn-gold" data-act="e-restart">🔁 같은 멤버로 다시 하기</button>' : '<p class="ux-muted ux-center">방장이 다시 시작하면 대기실로 이동해요 <span class="ux-dots"><i></i><i></i><i></i></span></p>') +
-        (hasHome ? '<button class="ux-btn ux-btn-sm ux-btn-ghost" data-act="e-home" style="align-self:center">처음 화면으로</button>' : ''));
+      K.patch(el.querySelector('[data-slot=dock]'), (me.isHost ? '<button class="ux-btn ux-btn-gold" data-act="e-restart">🔁 ' + esc(K.L('같은 멤버로 다시 하기', 'Play again with the same group')) + '</button>' : '<p class="ux-muted ux-center">' + esc(K.L('방장이 다시 시작하면 대기실로 이동해요', 'When the host starts again, everyone moves to the lobby')) + ' <span class="ux-dots"><i></i><i></i><i></i></span></p>') +
+        (hasHome ? '<button class="ux-btn ux-btn-sm ux-btn-ghost" data-act="e-home" style="align-self:center">' + esc(K.L('처음 화면으로', 'Back to home')) + '</button>' : ''));
       if (!K.local.celebrated) {
         K.local.celebrated = true;
         setTimeout(() => { K.fx.rain(w, mine ? 3.5 : 2); const c = el.querySelector('.crest'); if (c) K.fx.burstAt(c, { n: 70, speed: 380, colors: w === 'evil' ? ['rgba(255,110,140,1)', 'rgba(170,120,255,1)', 'rgba(255,220,230,1)'] : undefined }); }, 350);
@@ -2871,12 +3429,13 @@
     }
   };
   K.actions['e-restart'] = () => { K.fb('chime'); K.call('restart'); };
-  K.actions['e-home'] = async () => { if (await K.confirm('처음 화면으로 갈까요?', '이 방에서 나가요.', { ok: '나가기' })) { await K.call('home'); window.UI.render(null); } };
+  K.actions['e-home'] = async () => { if (await K.confirm(K.L('처음 화면으로 갈까요?', 'Go back to the home screen?'), esc(K.L('이 방에서 나가요.', 'You\'ll leave this room.')), { ok: K.L('나가기', 'Leave'), cancel: K.L('취소', 'Cancel') })) { await K.call('home'); window.UI.render(null); } };
 
   const css = `
 .uxe-crest { position: relative; width: 140px; height: 140px; display: grid; place-items: center; }
 .uxe-crest .ux-rose { transform: scale(.62); }
 .uxe-crest .crest { position: relative; font-size: 64px; animation: bannerIn 1.2s var(--ease-spring) both, uxeBob 3s 1.2s ease-in-out infinite; }
+.uxe-sw { font-size: 11.5px; color: var(--text-mute); text-align: center; line-height: 1.3; } .uxe-sw b { color: var(--text-dim); } .uxe-sw.good b { color: var(--gold-hi); } .uxe-sw.evil b { color: #ff9db5; } .uxe-sw s { opacity: .7; }
 @keyframes uxeBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 .uxe-crest.good::before { content: ''; position: absolute; inset: -30px; border-radius: 50%; background: radial-gradient(circle, rgba(255,215,122,.55), transparent 62%); animation: breathe 2.6s ease-in-out infinite; }
 .uxe-crest.evil::before { content: ''; position: absolute; inset: -30px; border-radius: 50%; background: radial-gradient(circle, rgba(224,72,110,.5), transparent 62%); animation: breathe 2.6s ease-in-out infinite; }

@@ -208,9 +208,9 @@
 
 /* excalibur (Scroll of the Word) */
 .cn-xc .cn-emblem { width: 92px; height: 92px; }
-.cn-xpair { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; }
-.cn-xpair .ux-team-chip { animation: cnRise .6s both; max-width: 40%; }
-.cn-xpair .ux-team-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cn-xpair { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; }
+.cn-xpair .ux-team-chip { animation: cnRise .6s both; max-width: calc(50% - 62px); min-width: 0; flex: 0 1 auto; }
+.cn-xpair .ux-team-chip > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cn-xarrow { font-size: 22px; color: var(--gold-hi); animation: cnRise .6s .25s both; }
 .cn-xcard { position: relative; width: 64px; height: 90px; flex: none; perspective: 700px; }
 .cn-xcard .c { position: absolute; inset: 0; transform-style: preserve-3d; transition: transform .9s var(--ease-spring); }
@@ -224,7 +224,7 @@
 .ux-en .cn-res .ux-banner { font-size: min(28px, 7.2vw); }
 .ux-en .ux-banner.cn-long { font-size: min(23px, 6.2vw); }
 .ux-en .cn-win .ux-banner { font-size: min(30px, 7.6vw); }
-.ux-en .cn-scroll .sh { font-size: 15px; }
+.ux-en .cn-scroll .sh { font-size: 14px; }
 .ux-en .cn-t2 { font-size: 20px; }
 .ux-en .cn-ask { font-size: 19px; }
 .ux-en .cn-tap { letter-spacing: .08em; }
@@ -465,7 +465,7 @@
     const ok = typeof d.approved === 'boolean' ? d.approved : yes * 2 > n;
     const cols = n <= 4 ? Math.max(1, n) : n <= 6 ? 3 : n <= 8 ? 4 : 5;
     const pNo = d.proposalNo || 1, round = (d.round || 0) + 1;
-    const A = term('approve', '찬성'), X = term('reject', '반대');
+    const A = term('approve', L('찬성', 'Approve')), X = term('reject', L('반대', 'Reject'));
     const cards = ids.map((id, i) => {
       const y = votes[id] === true;
       return '<div class="ux-vcard' + (id === d.leaderId ? ' lead' : '') + (team.indexOf(id) >= 0 ? ' cn-onteam' : '') + '" data-y="' + (y ? 1 : 0) + '" style="animation-delay:' + (250 + i * 55) + 'ms">' +
@@ -654,15 +654,142 @@
   };
 
   // =====================================================================
+  // loyalty (Lancelot module): a Crossroads card is turned face up at the start of missions 3–5.
+  // ev = { d: {round, card:'none'|'switch'}, n: cards revealed so far, all: [entries so far] }.
+  // Public: only the card. Never says who the pilgrims are (that stays secret on every phone).
+  // =====================================================================
+  C.loyalty = async (ctx, ev, v) => {
+    const S = stage(ctx);
+    const d = (ev && ev.d) || {};
+    const lr = (v && v.loyaltyRevealed) || [];
+    const card = d.card === 'switch' ? 'switch' : 'none';
+    const ri = typeof d.round === 'number' ? d.round : (v && v.round) || 0, round = ri + 1;
+    const all = (ev && Array.isArray(ev.all) && ev.all.length) ? ev.all : (lr.length ? lr : [d]);
+    const idx = Math.max(0, all.length - 1);
+    const slots = Math.max(3, all.length);
+    const hist = '<div class="cn-lohist cn-pre" aria-hidden="true">' + Array.from({ length: slots }, (_, i) => {
+      const e = all[i];
+      if (!e) return '<i>' + K.backImg() + '</i>';
+      const c = e.card === 'switch' ? 'switch' : 'none';
+      return '<i class="' + (i === idx ? 'cur' : '') + '">' + (i === idx ? K.backImg() : K.img(K.asset('loyalty/' + c + '.svg'), 'back', '')) + '</i>';
+    }).join('') + '</div>';
+    const name = card === 'switch' ? term('loyaltySwitch', L('편이 바뀜', 'Sides switch')) : term('loyaltyNone', L('그대로', 'No change'));
+    ctx.set('<div class="cn-wrap cn-lo">' +
+      '<div class="ux-ornament">✦</div>' +
+      '<div class="ux-cine-title">' + E(LOY()) + '</div>' +
+      '<div class="ux-cine-sub">' + L(E(Q()) + ' ' + round + ' 시작 · 카드 한 장을 펼쳐요', E(Q()) + ' ' + round + ' begins · One card is turned over') + '</div>' +
+      '<div class="cn-tcard ' + card + '"><div class="cn-beat"><div class="c"><div class="b">' + K.backImg() + '</div><div class="f">' +
+        K.img(K.asset('loyalty/' + card + '.svg'), 'back', '') + '</div></div></div></div>' +
+      '<div class="cn-res"></div>' + hist + TAP() + '</div>');
+    const tc = S.q('.cn-tcard'), beat = S.q('.cn-beat');
+    S.scene('candle', S.y(tc));
+    S.fb('whoosh');
+    await ctx.sleep(S.M(700));
+    S.on(S.q('.cn-lohist'));
+    // three slow beats, then the turn
+    for (const b of [520, 440, 380]) {
+      if (ctx.skipped) break;
+      S.sfx('drum'); S.buzz('tick');
+      if (!S.R && beat && beat.animate) beat.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.05)' }, { transform: 'scale(1)' }], { duration: 220, easing: 'ease-out' });
+      await ctx.sleep(S.M(b));
+    }
+    tc.classList.add('flip'); S.fb('flip');
+    const cur = S.q('.cn-lohist i.cur'); if (cur) cur.innerHTML = K.img(K.asset('loyalty/' + card + '.svg'), 'back', '');
+    await ctx.sleep(S.M(650));
+    const res = S.q('.cn-res');
+    if (card === 'switch') {
+      tc.classList.add('cn-swap');
+      res.innerHTML = '<div class="ux-banner cn-sw">' + E(name) + '</div>' +
+        '<div class="cn-note">' + L('<b>' + E(LANC()) + ' 두 사람의 편이 서로 바뀌어요</b><br>누가 순례자인지는 여전히 비밀이에요',
+          '<b>Both ' + E(LANC()) + ' players switch sides</b><br>Who they are stays secret') + '</div>' +
+        V('너희가 섬길 자를 오늘 택하라', '수 24:15', 'Choose today whom you will serve', 'Joshua 24:15');
+      S.scene('candle', S.y(tc), { rays: true });
+      S.fb('whoosh'); S.shake(tc);
+      S.burst(tc, { n: 34, colors: [GOLD[0], DUSK[0], GOLD[2], DUSK[1]], speed: 190 });
+    } else {
+      res.innerHTML = '<div class="ux-banner good">' + E(name) + '</div>' +
+        '<div class="cn-note">' + L(EP(LANC(), '은') + ' 지금 편 그대로 가요<br>누가 순례자인지는 여전히 비밀이에요',
+          'The ' + E(LANC()) + ' players stay on their current sides<br>Who they are stays secret') + '</div>' +
+        V('예수 그리스도는 어제나 오늘이나 영원토록 동일하시니라', '히 13:8', 'Jesus Christ is the same yesterday, today, and forever', 'Hebrews 13:8');
+      S.sfx('chime'); S.buzz('pick');
+      S.burst(tc, { n: 18, speed: 120 });
+    }
+    await ctx.sleep(S.M(1000));
+    S.tap();
+    await ctx.tapOrWait(3000);
+  };
+
+  // =====================================================================
+  // excalibur (Scroll of the Word): plays just before the mission result.
+  // ev = { d: {round, holderId, targetId|null}, result: {round, targetId, original}|null (holder's phone only) }.
+  // Public: who used the Scroll on whom (or kept the cards as they are). Never what the card was.
+  // =====================================================================
+  C.excalibur = async (ctx, ev, v) => {
+    const S = stage(ctx);
+    const d = (ev && ev.d) || (v && v.lastExcalibur) || {};
+    const hid = d.holderId || null, tid = d.targetId || null;
+    const ri = typeof d.round === 'number' ? d.round : (v && v.round) || 0, round = ri + 1;
+    const res = ev && ev.result && (!tid || ev.result.targetId === tid) ? ev.result : null;
+    const mineH = !!(hid && K.isMe(v, hid));
+    const chip = id => '<span class="ux-team-chip">' + K.avatar(pl(v, id)) + '<span>' + nm(v, id) + (K.isMe(v, id) ? ' ' + ME() : '') + '</span></span>';
+    let line, sub, mid;
+    if (tid) {
+      line = hid
+        ? L((mineH ? '내가' : nm(v, hid) + '님이') + ' ' + EP(XC(), '으로') + '<br>' + (K.isMe(v, tid) ? '내' : nm(v, tid) + '님의') + ' 카드를 뒤집었어요',
+            enSubj(v, hid) + ' used the ' + E(XC()) + '<br>to flip ' + (K.isMe(v, tid) ? 'your' : nm(v, tid) + '\'s') + ' card')
+        : L(EP(XC(), '으로') + '<br>' + nm(v, tid) + '님의 카드가 뒤집혔어요', nm(v, tid) + '\'s card was flipped<br>with the ' + E(XC()));
+      sub = hid
+        ? L('원래 무슨 카드였는지는 ' + (mineH ? '나만' : nm(v, hid) + '님만') + ' 알아요', (mineH ? 'Only you know' : 'Only ' + nm(v, hid) + ' knows') + ' what the card was before')
+        : L('원래 무슨 카드였는지는 비밀이에요', 'What the card was before stays secret');
+      mid = '<div class="cn-xpair">' + (hid ? chip(hid) + '<span class="cn-xarrow" aria-hidden="true">➜</span>' : '') +
+        '<div class="cn-xcard"><div class="c"><div class="b">' + K.backImg() + '</div><div class="f">' + K.backImg() + '</div></div></div>' +
+        '<span class="cn-xarrow" aria-hidden="true">➜</span>' + chip(tid) + '</div>';
+    } else {
+      line = hid
+        ? L((mineH ? '나는' : nm(v, hid) + '님은') + ' 카드를 뒤집지 않고<br>그대로 두었어요', enSubj(v, hid) + ' kept the cards<br>as they are')
+        : L('카드를 뒤집지 않고<br>그대로 두었어요', 'The cards were kept<br>as they are');
+      sub = L('낸 카드 그대로 공개돼요', 'The cards are revealed as they were played');
+      mid = '<div class="cn-xpair">' + (hid ? chip(hid) : '') + '<div class="cn-xcard kept"><div class="c"><div class="b">' + K.backImg() + '</div><div class="f">' + K.backImg() + '</div></div></div></div>';
+    }
+    const SU = term('success', L('축복', 'Blessing')), FA = term('fail', L('방해', 'Hindrance'));
+    const secret = res && tid
+      ? '<div class="cn-secret cn-pre">' + L('나에게만 보여요 · 뒤집기 전 카드는 <b>' + EP(res.original ? SU : FA, '이었어요') + '</b>',
+          'Only you see this · Before the flip it was <b>' + 'a ' + E(res.original ? SU : FA) + '</b> card') + '</div>'
+      : '';
+    ctx.set('<div class="cn-wrap cn-xc">' +
+      '<div class="cn-emblem">' + K.img(K.asset('excalibur.svg'), 'success', '') + '</div>' +
+      '<div class="ux-cine-sub">' + E(XC()) + ' · ' + E(Q()) + ' ' + round + '</div>' +
+      '<div class="ux-cine-title cn-t2">' + line + '</div>' +
+      mid +
+      '<div class="ux-cine-sub cn-pre cn-xsub">' + sub + '</div>' + secret +
+      V('하나님의 말씀은 살아 있고 활력이 있어', '히 4:12', 'The word of God is living and active', 'Hebrews 4:12', true) + TAP() + '</div>');
+    const em = S.q('.cn-emblem');
+    S.scene('candle', S.y(em), { rays: true });
+    S.fb('chime');
+    S.burst(em, { n: 24, speed: 150 });
+    await ctx.sleep(S.M(900));
+    const xc = S.q('.cn-xcard');
+    if (tid && xc) { xc.classList.add('flip'); S.fb('flip'); S.burst(xc, { n: 16, speed: 120, size: 8 }); }
+    await ctx.sleep(S.M(700));
+    S.on(S.q('.cn-xsub'));
+    await ctx.sleep(S.M(300));
+    if (secret) { S.on(S.q('.cn-secret')); S.buzz('pick'); await ctx.sleep(S.M(300)); }
+    S.on(S.q('.ux-verse'));
+    await ctx.sleep(S.M(400));
+    S.tap();
+    await ctx.tapOrWait(secret ? 3400 : 2600);
+  };
+
+  // =====================================================================
   // assassin: 3 successes reached, entering the assassination phase
   // =====================================================================
   C.assassin = async (ctx, ev, v) => {
     const S = stage(ctx);
-    const A = K.roleName('assassin') || '정탐꾼', M = K.roleName('merlin') || '선지자';
+    const A = SPY(), M = PROPHET();
     ctx.set('<div class="cn-wrap cn-assa">' +
       '<div class="cn-first">' +
         '<div class="cn-toks">' + [0, 1, 2].map(i => '<div class="cn-tok" style="animation-delay:' + (0.15 + i * 0.24).toFixed(2) + 's">' + K.tokenImg('success') + '</div>').join('') + '</div>' +
-        '<div class="ux-banner good cn-long">' + EP(K.teamName('good'), '이') + '<br>' + EP(Q(), '을') + ' 완수했어요</div>' +
+        '<div class="ux-banner good cn-long">' + L(EP(TEAMN('good'), '이') + '<br>' + EP(Q(), '을') + ' 완수했어요', E(cap(theTeam('good'))) + '<br>completed three ' + E(Q()) + 's') + '</div>' +
       '</div>' +
       '<div class="cn-turn"></div>' + TAP() + '</div>');
     const first = S.q('.cn-first');
@@ -675,10 +802,10 @@
     first.classList.add('cn-dim');
     const turn = S.q('.cn-turn');
     const aid = v.assassinId;
-    turn.innerHTML = '<div class="cn-but">하지만…</div>' +
-      '<div class="ux-banner evil cn-long cn-dusky">' + EP(A, '이') + ' ' + EP(M, '을') + '<br>찾고 있어요</div>' +
+    turn.innerHTML = '<div class="cn-but">' + L('하지만…', 'But…') + '</div>' +
+      '<div class="ux-banner evil cn-long cn-dusky">' + L(EP(A, '이') + ' ' + EP(M, '을') + '<br>찾고 있어요', 'The ' + E(A) + ' is searching<br>for the ' + E(M)) + '</div>' +
       (aid ? '<div class="cn-who">' + K.avatar(pl(v, aid)) + '<span><small>' + E(A) + '</small><b>' + who(v, aid) + '</b></span></div>' : '') +
-      '<div class="cn-note evil">' + EP(M, '을') + ' 정확히 지목하면 ' + EP(K.teamName('evil'), '이') + ' 승리해요</div>';
+      '<div class="cn-note evil">' + L(EP(M, '을') + ' 정확히 지목하면 ' + EP(TEAMN('evil'), '이') + ' 승리해요', 'If the ' + E(A) + ' names the ' + E(M) + ', ' + E(theTeam('evil')) + ' win') + '</div>';
     S.scene('dusk', S.y(turn), { rays: true });
     S.fb('evil'); S.shake();
     await ctx.sleep(S.M(1500));
@@ -692,13 +819,13 @@
   C.end = async (ctx, ev, v) => {
     const S = stage(ctx);
     const win = v.winner === 'evil' ? 'evil' : 'good', reason = v.winReason;
-    const A = K.roleName('assassin') || '정탐꾼', M = K.roleName('merlin') || '선지자';
+    const A = SPY(), M = PROPHET();
     const tid = v.assassinTargetId;
     if ((reason === 'assassinHit' || reason === 'assassinFailed') && tid) {
       const role = v.revealed && v.revealed[tid];
       const hit = role ? role === 'merlin' : reason === 'assassinHit';
       ctx.set('<div class="cn-wrap cn-pick">' +
-        '<div class="ux-cine-title">' + E(A) + '의 선택은…</div>' +
+        '<div class="ux-cine-title">' + L(E(A) + '의 선택은…', 'The ' + E(A) + '\'s choice…') + '</div>' +
         '<div class="cn-tcard"><div class="cn-beat"><div class="c"><div class="b">' + K.backImg() + '</div><div class="f">' + (role ? K.roleImg(role) : K.backImg()) + '</div></div></div></div>' +
         '<div class="cn-tname"></div>' +
         '<div class="cn-res"></div></div>');
@@ -719,17 +846,18 @@
       await ctx.sleep(S.M(1300));
       // reveal
       card.classList.remove('ux-target-ring');
-      if (role) { card.classList.add('flip', K.teamOf(role) === 'evil' ? 'evil' : 'good'); S.sfx('flip'); await ctx.sleep(S.M(550)); }
+      const side = (v.finalTeams && v.finalTeams[tid]) || (role ? K.teamOf(role) : 'good');
+      if (role) { card.classList.add('flip', side === 'evil' ? 'evil' : 'good'); S.sfx('flip'); await ctx.sleep(S.M(550)); }
       const res = S.q('.cn-res');
       if (hit) {
-        res.innerHTML = '<div class="ux-banner evil cn-dusky">' + EP(M, '이었어요') + '!</div>' +
-          '<div class="cn-note evil">' + EP(A, '이') + ' ' + EP(M, '을') + ' 찾아냈어요</div>';
+        res.innerHTML = '<div class="ux-banner evil cn-dusky">' + L(EP(M, '이었어요') + '!', 'It was the ' + E(M) + '!') + '</div>' +
+          '<div class="cn-note evil">' + L(EP(A, '이') + ' ' + EP(M, '을') + ' 찾아냈어요', 'The ' + E(A) + ' found the ' + E(M)) + '</div>';
         S.scene('dusk', S.y(card), { rays: true });
         S.flash('evil'); S.shake(); S.fb('evil');
         S.burst(card, { n: 40, colors: DUSK, speed: 210 });
       } else {
-        res.innerHTML = '<div class="ux-banner good">' + EP(M, '이') + ' 아니었어요</div>' +
-          (role ? '<div class="cn-note">' + nm(v, tid) + '님은 <b>' + EP(K.roleName(role), '이에요') + '</b></div>' : '');
+        res.innerHTML = '<div class="ux-banner good">' + L(EP(M, '이') + ' 아니었어요', 'Not the ' + E(M)) + '</div>' +
+          (role ? '<div class="cn-note">' + L(nm(v, tid) + '님은 <b>' + EP(K.roleName(role), '이에요') + '</b>', nm(v, tid) + ' is ' + (role === 'servant' || role === 'minion' ? 'a' : 'the') + ' <b>' + E(K.roleName(role)) + '</b>') + '</div>' : '');
         S.scene('light', S.y(card), { rays: true });
         S.flash('good'); S.fb('good');
         S.burst(card, { n: 40, speed: 210 });
@@ -742,21 +870,29 @@
 
   async function winner(ctx, S, v, win, reason, M) {
     const QQ = Q();
-    const why = {
+    const why = (EN() ? {
+      quests: 'Three ' + E(QQ) + 's completed',
+      fails: 'Three ' + E(QQ) + 's hindered',
+      rejections: 'Five rejections in a row',
+      assassinFailed: 'The ' + E(M) + ' was kept safe',
+      assassinHit: 'The ' + E(M) + ' was found'
+    } : {
       quests: '세 번의 ' + E(QQ) + ' 완수',
       fails: EP(QQ, '이') + ' 세 번 방해받음',
       rejections: '다섯 번 연속 부결',
       assassinFailed: EP(M, '을') + ' 지켜냄',
       assassinHit: EP(M, '이') + ' 들킴'
-    }[reason] || '';
-    const mine = v.me && v.me.team;
+    })[reason] || '';
+    // my side at the finish (a switched pilgrim plays for the current side)
+    const mine = v.me && ((v.finalTeams && v.finalTeams[v.me.id]) || v.me.team);
     const won = mine ? mine === win : null;
     ctx.set('<div class="cn-wrap cn-win">' +
       '<div class="cn-crest">' + K.img(K.asset('team-' + win + '.svg'), win === 'evil' ? 'fail' : 'success', '') + '</div>' +
-      '<div class="ux-banner ' + win + (win === 'evil' ? ' cn-dusky' : '') + '">' + E(K.teamName(win)) + ' 승리!</div>' +
+      '<div class="ux-banner ' + win + (win === 'evil' ? ' cn-dusky' : '') + '">' + L(E(TEAMN(win)) + ' 승리!', E(TEAMN(win)) + ' win!') + '</div>' +
       (why ? scroll(why) : '') +
-      (won === null ? '' : '<div class="cn-mine ' + (won ? 'w' : 'l') + '">' + (won ? '우리 팀 승리!' : '아쉽게도 패배') + '</div>') +
-      (win === 'evil' ? verse('일곱 번 넘어질지라도 다시 일어나리라', '잠 24:16') : verse('빛이 어둠에 비치되 어둠이 이기지 못하더라', '요 1:5')) +
+      (won === null ? '' : '<div class="cn-mine ' + (won ? 'w' : 'l') + '">' + (won ? L('우리 팀 승리!', 'Your side won!') : L('아쉽게도 패배', 'Your side lost this time')) + '</div>') +
+      (win === 'evil' ? V('일곱 번 넘어질지라도 다시 일어나리라', '잠 24:16', 'A righteous man falls seven times and rises up again', 'Proverbs 24:16')
+        : V('빛이 어둠에 비치되 어둠이 이기지 못하더라', '요 1:5', 'The light shines in the darkness, and the darkness hasn\'t overcome it', 'John 1:5')) +
       TAP() + '</div>');
     const crest = S.q('.cn-crest');
     S.scene(win === 'evil' ? 'dusk' : 'light', S.y(crest), { rays: true });

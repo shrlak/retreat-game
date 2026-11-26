@@ -2,17 +2,19 @@
 (function () {
   'use strict';
   const K = window.UI._k, esc = K.esc;
+  const TOPK = ['lady', 'balance', 'excalibur'];   // top-level boolean settings (the rest are settings.roles)
+  const ui = (k, ko, en) => { const g = K.G(), u = g && g.ui; return (u && u[k]) || K.L(ko, en); };
 
   K.screens.lobby = {
     build(v) {
       return K.el('<section class="uxl">' +
-        '<div class="ux-top"><div class="grow"><div class="ux-top-title">' + esc(K.T().title || '빛의 원정대') + '</div><div class="ux-top-sub">대기실</div></div>' +
-        '<button class="ux-icon-btn" data-act="cm-guide" aria-label="설명서">📖</button>' + K.soundBtn() +
-        '<button class="ux-icon-btn" data-act="l-leave" aria-label="나가기">🚪</button></div>' +
-        '<div class="ux-panel ux-code-card uxl-in" style="animation-delay:.05s"><div class="ux-label">참가 코드</div><div class="ux-code" data-slot="code"></div>' +
-        '<div class="ux-row" style="justify-content:center"><button class="ux-btn ux-btn-sm ux-btn-ghost" data-act="l-copy">📋 복사</button><button class="ux-btn ux-btn-sm ux-btn-ghost" data-act="l-share">📨 초대하기</button></div></div>' +
-        '<div data-slot="hint"></div>' +
-        '<div class="ux-panel uxl-in" style="animation-delay:.12s"><div class="ux-panel-head"><h3 class="ux-h3">함께하는 사람</h3><span class="ux-chip" data-slot="count"></span></div>' +
+        '<div class="ux-top"><div class="grow"><div class="ux-top-title">' + esc(K.T().title || K.L('빛의 원정대', 'Light Expedition')) + '</div><div class="ux-top-sub">' + esc(K.L('대기실', 'Lobby')) + '</div></div>' +
+        '<button class="ux-icon-btn" data-act="cm-guide" aria-label="' + esc(ui('helpButton', '설명서', 'Guide')) + '">📖</button>' + K.soundBtn() +
+        '<button class="ux-icon-btn" data-act="l-leave" aria-label="' + esc(K.L('나가기', 'Leave')) + '">🚪</button></div>' +
+        '<div class="ux-panel ux-code-card uxl-in" style="animation-delay:.05s"><div class="ux-label">' + esc(K.L('참가 코드', 'Room code')) + '</div><div class="ux-code" data-slot="code"></div>' +
+        '<div class="ux-row" style="justify-content:center"><button class="ux-btn ux-btn-sm ux-btn-ghost" data-act="l-copy">📋 ' + esc(K.L('복사', 'Copy')) + '</button><button class="ux-btn ux-btn-sm ux-btn-ghost" data-act="l-share">📨 ' + esc(K.L('초대하기', 'Invite')) + '</button></div></div>' +
+        '<div data-slot="seat"></div><div data-slot="hint"></div>' +
+        '<div class="ux-panel uxl-in" style="animation-delay:.12s"><div class="ux-panel-head"><h3 class="ux-h3">' + esc(K.L('함께하는 사람', 'Players')) + '</h3><span class="ux-chip" data-slot="count"></span></div>' +
         '<div class="ux-players" data-slot="players"></div><div data-slot="balance" style="margin-top:12px"></div></div>' +
         '<div class="ux-panel uxl-in" style="animation-delay:.2s" data-slot="settings"></div>' +
         K.verse('lobby') +
@@ -25,16 +27,17 @@
       K.patch(el.querySelector('[data-slot=code]'), esc(v.code || ''));
       K.patch(el.querySelector('[data-slot=count]'), '<b>' + n + '</b> / ' + max);
       const hint = K.hint('lobby', isHost ? 'host' : 'guest', {}, n < 5 ? 0 : (isHost ? 2 : 2));
+      K.patch(el.querySelector('[data-slot=seat]'), K.seatNotice ? K.seatNotice(v) : '');
       K.patch(el.querySelector('[data-slot=hint]'), hint ? '<p class="ux-p ux-center uxl-hint">' + esc(hint) + '</p>' : '');
 
       // players
       const items = ps.map(p => ({
         key: p.id, html: '<div class="ux-player' + (K.isMe(v, p.id) ? ' is-me' : '') + (p.ready || p.isHost ? ' is-ready' : '') + '">' + K.avatar(p, true) +
-          '<div class="ux-player-name">' + esc(p.name) + (K.isMe(v, p.id) ? '<small>나</small>' : '') + '</div>' +
-          (p.isHost ? '<span class="ux-badge gold">👑 방장</span>' : (p.ready ? '<span class="ux-badge ok">✓ 준비 완료</span>' : '<span class="ux-badge">기다리는 중</span>')) +
-          (isHost && !p.isHost ? '<button class="ux-kick" data-act="l-kick" data-id="' + esc(p.id) + '" aria-label="내보내기">✕</button>' : '') + '</div>'
+          '<div class="ux-player-name">' + esc(p.name) + (K.isMe(v, p.id) ? '<small>' + esc(K.L('나', 'me')) + '</small>' : '') + '</div>' +
+          (p.isHost ? '<span class="ux-badge gold">👑 ' + esc(K.term('host', K.L('방장', 'Host'))) + '</span>' : (p.ready ? '<span class="ux-badge ok">✓ ' + esc(K.term('ready', K.L('준비 완료', 'Ready'))) + '</span>' : '<span class="ux-badge">' + esc(K.L('기다리는 중', 'Waiting')) + '</span>')) +
+          (isHost && !p.isHost ? '<button class="ux-kick" data-act="l-kick" data-id="' + esc(p.id) + '" aria-label="' + esc(K.L('내보내기', 'Remove') + ' ' + p.name) + '">✕</button>' : '') + '</div>'
       }));
-      for (let i = n; i < Math.max(5, Math.min(max, n + 1)); i++) items.push({ key: 'empty' + i, html: '<div class="ux-player ux-empty-seat">' + (i < 5 ? '빈 자리 · 최소 5명' : '빈 자리') + '</div>' });
+      for (let i = n; i < Math.max(5, Math.min(max, n + 1)); i++) items.push({ key: 'empty' + i, html: '<div class="ux-player ux-empty-seat">' + esc(i < 5 ? K.L('빈 자리 · 최소 5명', 'Empty seat · min. 5') : K.L('빈 자리', 'Empty seat')) + '</div>' });
       K.patchList(el.querySelector('[data-slot=players]'), items);
 
       // balance
@@ -44,26 +47,41 @@
       const rig = Array.isArray(v.rolesInGame) && v.rolesInGame.length ? '<div class="ux-roles-strip" style="margin-top:10px">' + v.rolesInGame.map(r => '<span class="ux-role-pill ' + K.teamOf(r) + '"><i>' + K.roleImg(r) + '</i>' + esc(K.roleName(r)) + '</span>').join('') + '</div>' : '';
       K.patch(el.querySelector('[data-slot=balance]'),
         '<div class="ux-balance"><div class="g"><b>' + (cnt - evil) + '</b>' + esc(K.teamName('good')) + '</div><div class="e"><b>' + evil + '</b>' + esc(K.teamName('evil')) + '</div></div>' +
-        '<p class="ux-muted ux-center" style="margin-top:8px">' + (n < 5 ? cnt + '명 기준 · ' : '') + esc(K.term('quest', '사명')) + ' 인원 ' + sizes.join(' · ') + (cnt >= 7 ? ' · 4번째는 ' + esc(K.term('fail', '방해')) + ' 2장' : '') + '</p>' + rig);
+        '<p class="ux-muted ux-center" style="margin-top:8px">' + esc(K.L((n < 5 ? cnt + '명 기준 · ' : '') + K.term('quest', '사명') + ' 인원 ' + sizes.join(' · ') + (cnt >= 7 ? ' · 4번째는 ' + K.term('fail', '방해') + ' 2장' : ''),
+          (n < 5 ? 'For ' + cnt + ' players · ' : '') + K.term('quest', 'Mission') + ' sizes ' + sizes.join(' · ') + (cnt >= 7 ? ' · 4th needs 2 ' + K.term('fail', 'Hindrance') + ' cards' : ''))) + '</p>' + rig);
 
       // settings
-      const val = (k) => (k in pend ? pend[k] : (k === 'lady' || k === 'balance' ? !!s[k] : !!roles[k]));
+      const sw = (k, label) => '<button class="ux-switch' + (val(k) ? ' on' : '') + '" data-act="l-toggle" data-k="' + k + '"' + (isHost ? '' : ' disabled') + ' aria-pressed="' + val(k) + '" aria-label="' + esc(label) + '"></button>';
+      const val = (k) => (k in pend ? pend[k] : (TOPK.indexOf(k) >= 0 ? !!s[k] : !!roles[k]));
       const g = K.G(), presets = g && g.presets;
-      let h = '<div class="ux-panel-head"><h3 class="ux-h3">역할과 규칙</h3>' + (isHost ? '' : '<span class="ux-muted">방장이 정해요</span>') + '</div>';
+      let h = '<div class="ux-panel-head"><h3 class="ux-h3">' + esc(K.L('역할과 규칙', 'Roles & rules')) + '</h3>' + (isHost ? '' : '<span class="ux-muted">' + esc(K.L('방장이 정해요', 'The host decides')) + '</span>') + '</div>';
       if (isHost && presets) h += '<div class="uxl-presets">' + Object.keys(presets).map(k => '<button class="ux-chip" data-act="l-preset" data-k="' + esc(k) + '">✨ ' + esc(presets[k].label || k) + '</button>').join('') + '</div>';
-      h += '<div class="ux-setting"><div class="txt"><div class="name">최대 인원</div><div class="desc">5~10명</div></div><div class="ux-stepper">' +
-        (isHost ? '<button data-act="l-max" data-d="-1"' + (max <= Math.max(5, n) ? ' disabled' : '') + '>−</button>' : '') + '<span class="val">' + max + '</span>' +
-        (isHost ? '<button data-act="l-max" data-d="1"' + (max >= 10 ? ' disabled' : '') + '>+</button>' : '') + '</div></div>';
+      h += '<div class="ux-setting"><div class="txt"><div class="name">' + esc(K.L('최대 인원', 'Max players')) + '</div><div class="desc">' + esc(K.L('5~10명', '5–10 players')) + '</div></div><div class="ux-stepper">' +
+        (isHost ? '<button data-act="l-max" data-d="-1" aria-label="' + esc(K.L('줄이기', 'Fewer')) + '"' + (max <= Math.max(5, n) ? ' disabled' : '') + '>−</button>' : '') + '<span class="val">' + max + '</span>' +
+        (isHost ? '<button data-act="l-max" data-d="1" aria-label="' + esc(K.L('늘리기', 'More')) + '"' + (max >= 10 ? ' disabled' : '') + '>+</button>' : '') + '</div></div>';
       K.OPTIONAL_ROLES.forEach(k => {
         const on = val(k), ev = K.teamOf(k) === 'evil';
         h += '<div class="ux-setting"><div class="thumb">' + K.roleImg(k) + '</div><div class="txt"><div class="name">' + esc(K.roleName(k)) + ' <span class="ux-badge ' + (ev ? 'evil' : 'gold') + '" style="padding:2px 7px">' + esc(ev ? K.teamName('evil') : K.teamName('good')) + '</span></div><div class="desc">' + esc(K.roleDesc(k)) + '</div></div>' +
           '<button class="ux-switch' + (on ? ' on' : '') + (ev ? ' evil' : '') + '" data-act="l-toggle" data-k="' + k + '"' + (isHost ? '' : ' disabled') + ' aria-pressed="' + on + '" aria-label="' + esc(K.roleName(k)) + '"></button></div>';
       });
-      h += '<div class="ux-setting"><div class="thumb" style="display:grid;place-items:center">' + K.tokenImg('lady') + '</div><div class="txt"><div class="name">' + esc(K.term('lady', '등불')) + '</div><div class="desc">2·3·4번째 ' + esc(K.term('quest', '사명')) + ' 뒤에 한 사람의 진영을 몰래 확인해요. 7명 이상 추천.</div></div>' +
-        '<button class="ux-switch' + (val('lady') ? ' on' : '') + '" data-act="l-toggle" data-k="lady"' + (isHost ? '' : ' disabled') + '></button></div>';
-      h += '<div class="ux-setting"><div class="txt"><div class="name">균형 모드</div><div class="desc">5명·7명일 때 ' + esc(K.term('quest', '사명')) + ' 인원을 바꿔 균형을 맞춰요.</div></div>' +
-        '<button class="ux-switch' + (val('balance') ? ' on' : '') + '" data-act="l-toggle" data-k="balance"' + (isHost ? '' : ' disabled') + '></button></div>';
-      if (v.setupError) h += '<div class="ux-warn" style="margin-top:8px">⚠️ ' + esc(v.setupError) + '</div>';
+      h += '<div class="ux-setting"><div class="thumb" style="display:grid;place-items:center">' + K.tokenImg('lady') + '</div><div class="txt"><div class="name">' + esc(K.term('lady', K.L('등불', 'Lamp'))) + '</div><div class="desc">' + esc(K.L('2·3·4번째 ' + K.term('quest', '사명') + ' 뒤에 한 사람의 진영을 몰래 확인해요. 7명 이상 추천.', 'After the 2nd, 3rd and 4th ' + K.term('quest', 'Mission') + 's, secretly check one player\'s side. Best with 7+.')) + '</div></div>' +
+        sw('lady', K.term('lady', K.L('등불', 'Lamp'))) + '</div>';
+      h += '<div class="ux-setting"><div class="txt"><div class="name">' + esc(K.L('균형 모드', 'Balance mode')) + '</div><div class="desc">' + esc(K.L('5명·7명일 때 ' + K.term('quest', '사명') + ' 인원을 바꿔 균형을 맞춰요.', 'With 5 or 7 players, ' + K.term('quest', 'Mission') + ' sizes change for a fairer game.')) + '</div></div>' +
+        sw('balance', K.L('균형 모드', 'Balance mode')) + '</div>';
+      // expansions
+      const modTag = '<span class="ux-badge" style="padding:2px 7px">' + esc(ui('moduleTag', '확장', 'Expansion')) + '</span>';
+      const lan = 'lancelot' in pend ? pend.lancelot : (Number(s.lancelot) || 0);
+      const vshort = i => String(K.term('lancelotVariant' + i, i === 1 ? K.L('조용한 갈림길', 'Quiet crossroads') : K.L('알려진 갈림길', 'Known crossroads'))).split(' (')[0];
+      const lanDesc = lan === 2 ? K.L('두 순례자가 서로 알아보고, ' + K.teamName('evil') + '는 ' + K.roleName('lancelotEvil') + '를 알아요.', 'The two Lancelots see each other, and ' + K.teamName('evil') + ' see the ' + K.roleName('lancelotEvil') + '.')
+        : lan === 1 ? K.L('순례자끼리 서로 모르고, ' + K.roleName('lancelotEvil') + '와 ' + K.teamName('evil') + '도 서로 몰라요.', 'The Lancelots don\'t know each other, and the ' + K.roleName('lancelotEvil') + ' and ' + K.teamName('evil') + ' don\'t know each other.')
+        : K.L('3번째 ' + K.term('quest', '사명') + '부터 ' + K.term('loyalty', '갈림길 카드') + '에 따라 두 순례자의 편이 바뀔 수 있어요.', 'From the 3rd ' + K.term('quest', 'Mission') + ', a ' + K.term('loyalty', 'Crossroads card') + ' can switch the two Lancelots\' sides.');
+      h += '<div class="ux-setting uxl-mod"><div class="thumb">' + K.roleImg(lan ? 'lancelotEvil' : 'lancelotGood') + '</div><div class="txt"><div class="name">' + esc(K.term('lancelot', K.L('갈림길의 순례자', 'Lancelot'))) + ' ' + modTag + '</div><div class="desc">' + esc(lanDesc) + '</div>' +
+        '<div class="uxl-seg" role="group" aria-label="' + esc(K.term('lancelot', K.L('갈림길의 순례자', 'Lancelot'))) + '">' + [0, 1, 2].map(i => '<button class="' + (lan === i ? 'on' : '') + '" data-act="l-lan" data-n="' + i + '"' + (isHost ? '' : ' disabled') + ' aria-pressed="' + (lan === i) + '">' + esc(i ? vshort(i) : K.L('끔', 'Off')) + '</button>').join('') + '</div></div></div>';
+      h += '<div class="ux-setting"><div class="thumb" style="display:grid;place-items:center">' + K.img(K.asset('excalibur.svg'), 'excalibur', '') + '</div><div class="txt"><div class="name">' + esc(K.term('excalibur', K.L('말씀 두루마리', 'Scroll of the Word'))) + ' ' + modTag + '</div><div class="desc">' +
+        esc(K.L(K.term('leader', '조장') + '이 원정대원 한 명에게 주면, 카드를 다 낸 뒤 다른 대원 한 명의 카드를 뒤집을 수 있어요.', 'The ' + K.term('leader', 'Leader') + ' gives it to one team member, who may flip one other member\'s card after all cards are in.')) + '</div></div>' +
+        sw('excalibur', K.term('excalibur', K.L('말씀 두루마리', 'Scroll of the Word'))) + '</div>';
+      const se = v.setupError ? (K.isEn() ? (v.setupErrorEn || K.trMsg(v.setupError)) : v.setupError) : '';
+      if (se) h += '<div class="ux-warn" style="margin-top:8px">⚠️ ' + esc(se) + '</div>';
       K.patch(el.querySelector('[data-slot=settings]'), h);
 
       // dock
@@ -72,13 +90,13 @@
       let d;
       if (isHost) {
         const can = n >= 5 && n <= 10 && allReady && !v.setupError;
-        const why = n < 5 ? (5 - n) + '명이 더 필요해요' : !allReady ? '모두 준비하면 시작할 수 있어요 (' + readyN + '/' + others.length + ')' : v.setupError ? '설정을 확인해 주세요' : '모두 준비됐어요!';
+        const why = n < 5 ? K.L((5 - n) + '명이 더 필요해요', (5 - n) + ' more needed') : !allReady ? K.L('모두 준비하면 시작할 수 있어요 (' + readyN + '/' + others.length + ')', 'You can start when everyone is ready (' + readyN + '/' + others.length + ')') : v.setupError ? K.L('설정을 확인해 주세요', 'Please check the settings') : K.L('모두 준비됐어요!', 'Everyone is ready!');
         d = '<div class="ux-progress"><i style="width:' + (others.length ? Math.round(100 * readyN / others.length) : 0) + '%"></i></div><p class="ux-muted ux-center">' + esc(why) + '</p>' +
-          '<button class="ux-btn ux-btn-gold uxl-start' + (can ? ' can' : '') + '" data-act="l-start"' + (can ? '' : ' disabled') + '>✝️ 게임 시작</button>';
+          '<button class="ux-btn ux-btn-gold uxl-start' + (can ? ' can' : '') + '" data-act="l-start"' + (can ? '' : ' disabled') + '>✝️ ' + esc(K.L('게임 시작', 'Start game')) + '</button>';
       } else {
         const r = !!me.ready;
-        d = '<p class="ux-muted ux-center">' + (r ? '방장이 시작하기를 기다리는 중 <span class="ux-dots"><i></i><i></i><i></i></span>' : '준비되면 아래 버튼을 눌러 주세요') + ' · ' + readyN + '/' + others.length + ' 준비</p>' +
-          '<button class="ux-btn ux-ready-btn ' + (r ? 'is-ready' : 'ux-btn-gold') + '" data-act="l-ready">' + (r ? '준비 완료' : '준비하기') + '</button>';
+        d = '<p class="ux-muted ux-center">' + (r ? esc(K.L('방장이 시작하기를 기다리는 중', 'Waiting for the host to start')) + ' <span class="ux-dots"><i></i><i></i><i></i></span>' : esc(K.L('준비되면 아래 버튼을 눌러 주세요', 'Tap the button below when you\'re ready'))) + ' · ' + readyN + '/' + others.length + ' ' + esc(K.L('준비', 'ready')) + '</p>' +
+          '<button class="ux-btn ux-ready-btn ' + (r ? 'is-ready' : 'ux-btn-gold') + '" data-act="l-ready">' + esc(r ? K.term('ready', K.L('준비 완료', 'Ready')) : K.term('notReady', K.L('준비하기', 'Get ready'))) + '</button>';
       }
       K.patch(el.querySelector('[data-slot=dock]'), d);
 
@@ -92,39 +110,46 @@
 
   K.actions['l-copy'] = async () => {
     const c = K.view && K.view.code; if (!c) return;
-    try { await navigator.clipboard.writeText(c); K.toast('코드를 복사했어요', 'info'); } catch (e) { K.toast('코드: ' + c, 'info'); }
+    try { await navigator.clipboard.writeText(c); K.toast(K.L('코드를 복사했어요', 'Code copied'), 'info'); } catch (e) { K.toast(K.L('코드: ', 'Code: ') + c, 'info'); }
     K.fb('tap');
   };
   K.actions['l-share'] = async () => {
     const c = K.view && K.view.code; if (!c) return;
     const url = location.origin + location.pathname + '?code=' + encodeURIComponent(c);
-    const text = (K.T().title || '빛의 원정대') + '에 초대해요! 코드 ' + c;
-    if (navigator.share) { try { await navigator.share({ title: K.T().title || '빛의 원정대', text, url }); } catch (e) { } }
-    else { try { await navigator.clipboard.writeText(text + '\n' + url); K.toast('초대 링크를 복사했어요', 'info'); } catch (e) { K.toast(url, 'info'); } }
+    const title = K.T().title || K.L('빛의 원정대', 'Light Expedition');
+    const text = K.L(title + '에 초대해요! 코드 ' + c, 'Join me for ' + title + '! Code ' + c);
+    if (navigator.share) { try { await navigator.share({ title, text, url }); } catch (e) { } }
+    else { try { await navigator.clipboard.writeText(text + '\n' + url); K.toast(K.L('초대 링크를 복사했어요', 'Invite link copied'), 'info'); } catch (e) { K.toast(url, 'info'); } }
   };
   K.actions['l-ready'] = (d, btn) => { const r = !(K.view.me && K.view.me.ready); K.fb(r ? 'good' : 'tap'); if (r) K.fx.burstAt(btn, { n: 24, speed: 200 }); K.call('ready', r); };
   K.actions['l-start'] = (d, btn) => { K.fb('chime'); K.fx.burstAt(btn, { n: 50, speed: 320 }); K.call('start'); };
   K.actions['l-kick'] = async d => {
     const nm = K.pname(K.view, d.id);
-    if (await K.confirm(nm + '님을 내보낼까요?', '', { ok: '내보내기', danger: true })) K.call('kick', d.id);
+    if (await K.confirm(K.L(nm + '님을 내보낼까요?', 'Remove ' + nm + ' from the room?'), '', { ok: K.L('내보내기', 'Remove'), cancel: K.L('취소', 'Cancel'), danger: true })) K.call('kick', d.id);
   };
   K.actions['l-leave'] = async () => {
-    if (await K.confirm('대기실에서 나갈까요?', '나가면 코드를 다시 입력해 들어올 수 있어요.', { ok: '나가기', danger: true })) K.call('leave');
+    if (await K.confirm(K.L('대기실에서 나갈까요?', 'Leave the lobby?'), esc(K.L('나가면 코드를 다시 입력해 들어올 수 있어요.', 'You can come back by entering the code again.')), { ok: K.L('나가기', 'Leave'), cancel: K.L('취소', 'Cancel'), danger: true })) K.call('leave');
   };
   K.actions['l-max'] = d => { const s = K.view.settings || {}; const m = Math.max(5, Math.min(10, (s.maxPlayers || 10) + Number(d.d))); K.fb('tick'); K.call('settings', { maxPlayers: m }); };
   K.actions['l-toggle'] = (d, btn) => {
     const v = K.view, s = v.settings || {}, k = d.k;
-    const cur = k === 'lady' || k === 'balance' ? !!s[k] : !!(s.roles || {})[k];
+    const cur = TOPK.indexOf(k) >= 0 ? !!s[k] : !!(s.roles || {})[k];
     btn.classList.toggle('on', !cur); K.fb('pick');
     K.local.pend = Object.assign({}, K.local.pend, { [k]: !cur });
-    if (k === 'lady' || k === 'balance') K.call('settings', { [k]: !cur });
+    if (TOPK.indexOf(k) >= 0) K.call('settings', { [k]: !cur });
     else K.call('settings', { roles: Object.assign({}, s.roles || {}, { [k]: !cur }) });
+  };
+  K.actions['l-lan'] = (d, btn) => {
+    const n = Number(d.n) || 0, cur = Number((K.view.settings || {}).lancelot) || 0; if (n === cur) return;
+    const seg = btn.parentNode; Array.prototype.forEach.call(seg.children, b => b.classList.toggle('on', b === btn));
+    K.fb('pick'); K.local.pend = Object.assign({}, K.local.pend, { lancelot: n });
+    K.call('settings', { lancelot: n });
   };
   K.actions['l-preset'] = d => {
     const g = K.G(), p = g && g.presets && g.presets[d.k]; if (!p) return;
     const n = Math.max(5, Math.min(10, K.players(K.view).length));
     const c = (p.byCount && (p.byCount[n] || p.byCount[String(n)])) || null; if (!c) return;
-    K.fb('chime'); K.toast((p.label || '추천 구성') + ' 적용' + (c.note ? ' · ' + c.note : ''), 'info');
+    K.fb('chime'); K.toast(K.L((p.label || '추천 구성') + ' 적용', (p.label || 'Recommended setup') + ' applied') + (c.note ? ' · ' + c.note : ''), 'info');
     K.call('settings', c);
   };
 
@@ -132,6 +157,11 @@
 .uxl-in { animation: uxhCard .7s var(--ease-out) both; }
 .uxl-hint { margin: -2px 6px 0; font-size: 13px; animation: uxhFade .6s both; }
 .uxl-presets { display: flex; flex-wrap: wrap; gap: 6px; margin: -2px 0 8px; } .uxl-presets .ux-chip { color: var(--gold-hi); }
+.uxl-seg { display: flex; gap: 4px; margin-top: 8px; padding: 3px; border-radius: 12px; background: rgba(255,255,255,.06); border: 1px solid var(--line); }
+.uxl-seg button { flex: 1; min-width: 0; min-height: 34px; padding: 4px 6px; border-radius: 9px; font-size: 13px; font-weight: 700; color: var(--text-dim); line-height: 1.2; transition: background .25s, color .25s; }
+.uxl-seg button.on { color: #2a1a02; background: linear-gradient(180deg, var(--gold-hi), var(--gold)); }
+.uxl-seg button:disabled:not(.on) { opacity: .55; }
+.ux-en .uxl-seg button { font-size: 12px; }
 .uxl-start.can { animation: uxlGlow 1.6s ease-in-out infinite; }
 @keyframes uxlGlow { 0%,100% { box-shadow: 0 8px 28px rgba(244,201,107,.35); } 50% { box-shadow: 0 8px 44px rgba(244,201,107,.8), 0 0 0 6px rgba(244,201,107,.15); } }
 `;
