@@ -41,6 +41,8 @@ export const MSG = {
   notQuestPhase: { ko: "지금은 사명 카드를 낼 때가 아니에요", en: "It's not time to play mission cards" },
   teamOnlyQuest: { ko: "원정대원만 카드를 낼 수 있어요", en: "Only team members can play a card" },
   alreadyPlayed: { ko: "이미 카드를 냈어요", en: "You've already played a card" },
+  lancelotMustFail: { ko: "지금 유혹의 편인 랜슬롯은 방해 카드만 낼 수 있어요", en: "As the Lancelot now on the Tempters' side, you must play Hindrance" },
+  lancelotMustSucceed: { ko: "지금 빛의 편인 랜슬롯은 축복 카드만 낼 수 있어요", en: "As the Lancelot now on the Light's side, you must play Blessing" },
   goodOnlySuccess: { ko: "빛의 일꾼은 축복 카드만 낼 수 있어요", en: "The Light team can only play Blessing" },
   notExcaliburPhase: { ko: "지금은 말씀 두루마리를 쓸 때가 아니에요", en: "It's not time to use the Scroll of the Word" },
   excaliburHolderOnly: { ko: "두루마리를 받은 사람만 쓸 수 있어요", en: "Only the person holding the scroll can use it" },
