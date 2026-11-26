@@ -7,7 +7,7 @@
 //
 // Setups cycled round-robin per player count (so every setup gets the same share):
 //   optional roles (merlin, percival, morgana, mordred, oberon; assassin follows merlin) ×
-//   lady on/off × Lancelot off/quiet/known × Excalibur on/off × balance on/off (5 and 7 only),
+//   lady on/off × Lancelot off / official variant 1 / 2 / 3 × Excalibur on/off × balance on/off (5 and 7 only),
 //   keeping only setups the rules allow.
 // Each game draws its own pacing from its seed: approve rate, evil fail rate and how often bots
 // try illegal moves (chaos). Every view every bot receives is checked (see lib/harness.mjs).
@@ -28,7 +28,7 @@ export function setupsFor(n) {
   const out = [];
   for (const roles of allRoleCombos())
     for (const lady of [false, true])
-      for (const lancelot of [0, 1, 2])
+      for (const lancelot of [0, 1, 2, 3])
         for (const excalibur of [false, true])
           for (const balance of BALANCE_SIZES[n] ? [false, true] : [false])
             if (comboLegal(n, roles, lancelot)) out.push({ roles, lady, lancelot, excalibur, balance });
@@ -58,7 +58,7 @@ async function runOne(n, i) {
 async function runWorker(n, from, to) {
   const s = {
     n, games: 0, setups: setupsFor(n).length, refused: 0, winners: {}, reasons: {},
-    cover: { hammer: 0, twoFailSaved: 0, twoFailFailed: 0, assassinHit: 0, assassinMiss: 0, ladyUses: 0, switches: 0, lancelotSwitchedGames: 0, balance: 0, lancelot1: 0, lancelot2: 0, excalibur: 0 },
+    cover: { hammer: 0, twoFailSaved: 0, twoFailFailed: 0, assassinHit: 0, assassinMiss: 0, ladyUses: 0, switches: 0, lancelotSwitchedGames: 0, balance: 0, lancelot1: 0, lancelot2: 0, lancelot3: 0, forcedLancelotRounds: 0, excalibur: 0 },
     findings: {}, steps: 0,
   };
   for (let i = from; i < to; i++) {
@@ -83,6 +83,8 @@ async function runWorker(n, from, to) {
     if (opts.balance) c.balance++;
     if (opts.lancelot === 1) c.lancelot1++;
     if (opts.lancelot === 2) c.lancelot2++;
+    if (opts.lancelot === 3) c.lancelot3++;
+    if (opts.lancelot === 2) c.forcedLancelotRounds += (e.quests || []).filter((q) => q.result && q.team.some((id) => e.revealed && e.revealed[id] && e.revealed[id].startsWith("lancelot"))).length;
     if (opts.excalibur) c.excalibur++;
     for (const f of res.findings) {
       const k = `${f.id}|${f.msg}`;

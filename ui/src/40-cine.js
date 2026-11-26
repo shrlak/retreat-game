@@ -204,6 +204,15 @@
 .cn-lohist i { width: 24px; height: 34px; border-radius: 4px; overflow: hidden; opacity: .55; box-shadow: 0 2px 6px rgba(0,0,0,.45); }
 .cn-lohist i.cur { opacity: 1; box-shadow: 0 0 0 1.5px var(--gold-hi), 0 2px 8px rgba(0,0,0,.5); }
 .cn-lohist img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cn-loplan { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.cn-loplan > small { font-size: 12px; color: var(--text-mute); letter-spacing: .04em; }
+.cn-loplan > div { display: flex; gap: 7px; justify-content: center; }
+.cn-loplan .pc { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 11px; color: var(--text-mute); }
+.cn-loplan .pc i { display: block; width: 40px; height: 56px; border-radius: 5px; overflow: hidden; opacity: .6; box-shadow: 0 2px 6px rgba(0,0,0,.45); transition: transform .5s var(--ease-spring), opacity .4s ease, box-shadow .4s ease; }
+.cn-loplan .pc i img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cn-loplan .pc.past i { opacity: .3; }
+.cn-loplan .pc.cur b { color: var(--gold-hi); }
+.cn-loplan.cn-hl .pc.cur i { opacity: 1; transform: translateY(-5px) scale(1.12); box-shadow: 0 0 0 2px var(--gold-hi), 0 0 18px rgba(244,201,107,.6), 0 4px 10px rgba(0,0,0,.5); }
 .ux-banner.cn-sw { color: #eadcff; text-shadow: 0 0 24px rgba(180,140,224,.85), 0 0 50px rgba(244,201,107,.35); }
 
 /* excalibur (Scroll of the Word) */
@@ -674,28 +683,48 @@
       return '<i class="' + (i === idx ? 'cur' : '') + '">' + (i === idx ? K.backImg() : K.img(K.asset('loyalty/' + c + '.svg'), 'back', '')) + '</i>';
     }).join('') + '</div>';
     const name = card === 'switch' ? term('loyaltySwitch', L('편이 바뀜', 'Sides switch')) : term('loyaltyNone', L('그대로', 'No change'));
+    /* Variant 2: all five cards lie face up from the start (view.loyaltyPlan, card i = mission i+1), so this is not a
+       surprise flip: the card is shown face up and highlighted in the plan row as it takes effect. */
+    const plan = v && Array.isArray(v.loyaltyPlan) && v.loyaltyPlan.length ? v.loyaltyPlan : null;
+    const cimg = c => K.img(K.asset('loyalty/' + (c === 'switch' ? 'switch' : 'none') + '.svg'), 'back', '');
+    const row = plan
+      ? '<div class="cn-loplan cn-pre" aria-hidden="true"><small>' + E(term('loyaltyPlan', L('펼쳐 둔 갈림길 카드', 'Crossroads cards on the table'))) + '</small><div>' +
+        plan.map((c, i) => '<span class="pc' + (i === ri ? ' cur' : i < ri ? ' past' : '') + '"><i>' + cimg(c) + '</i><b>' + (i + 1) + '</b></span>').join('') + '</div></div>'
+      : hist;
+    const subTxt = plan
+      ? L(E(Q()) + ' ' + round + ' 시작 · 이번 사명의 카드가 적용돼요', E(Q()) + ' ' + round + ' begins · This mission\'s card takes effect')
+      : L(E(Q()) + ' ' + round + ' 시작 · 카드 한 장을 펼쳐요', E(Q()) + ' ' + round + ' begins · One card is turned over');
     ctx.set('<div class="cn-wrap cn-lo">' +
       '<div class="ux-ornament">✦</div>' +
       '<div class="ux-cine-title">' + E(LOY()) + '</div>' +
-      '<div class="ux-cine-sub">' + L(E(Q()) + ' ' + round + ' 시작 · 카드 한 장을 펼쳐요', E(Q()) + ' ' + round + ' begins · One card is turned over') + '</div>' +
-      '<div class="cn-tcard ' + card + '"><div class="cn-beat"><div class="c"><div class="b">' + K.backImg() + '</div><div class="f">' +
-        K.img(K.asset('loyalty/' + card + '.svg'), 'back', '') + '</div></div></div></div>' +
-      '<div class="cn-res"></div>' + hist + TAP() + '</div>');
+      '<div class="ux-cine-sub">' + subTxt + '</div>' +
+      '<div class="cn-tcard ' + card + (plan ? ' flip' : '') + '"><div class="cn-beat"><div class="c"><div class="b">' + K.backImg() + '</div><div class="f">' +
+        cimg(card) + '</div></div></div></div>' +
+      '<div class="cn-res"></div>' + row + TAP() + '</div>');
     const tc = S.q('.cn-tcard'), beat = S.q('.cn-beat');
     S.scene('candle', S.y(tc));
     S.fb('whoosh');
     await ctx.sleep(S.M(700));
-    S.on(S.q('.cn-lohist'));
-    // three slow beats, then the turn
-    for (const b of [520, 440, 380]) {
-      if (ctx.skipped) break;
-      S.sfx('drum'); S.buzz('tick');
-      if (!S.R && beat && beat.animate) beat.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.05)' }, { transform: 'scale(1)' }], { duration: 220, easing: 'ease-out' });
-      await ctx.sleep(S.M(b));
+    if (plan) {
+      const pr = S.q('.cn-loplan'); S.on(pr);
+      await ctx.sleep(S.M(500));
+      pr.classList.add('cn-hl'); S.sfx('pick'); S.buzz('tick');
+      S.burst(S.q('.cn-loplan .pc.cur i'), { n: 12, speed: 90, size: 7 });
+      if (!S.R && beat && beat.animate) beat.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.07)' }, { transform: 'scale(1)' }], { duration: 520, easing: 'ease-out' });
+      await ctx.sleep(S.M(800));
+    } else {
+      S.on(S.q('.cn-lohist'));
+      // three slow beats, then the turn
+      for (const b of [520, 440, 380]) {
+        if (ctx.skipped) break;
+        S.sfx('drum'); S.buzz('tick');
+        if (!S.R && beat && beat.animate) beat.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.05)' }, { transform: 'scale(1)' }], { duration: 220, easing: 'ease-out' });
+        await ctx.sleep(S.M(b));
+      }
+      tc.classList.add('flip'); S.fb('flip');
+      const cur = S.q('.cn-lohist i.cur'); if (cur) cur.innerHTML = cimg(card);
+      await ctx.sleep(S.M(650));
     }
-    tc.classList.add('flip'); S.fb('flip');
-    const cur = S.q('.cn-lohist i.cur'); if (cur) cur.innerHTML = K.img(K.asset('loyalty/' + card + '.svg'), 'back', '');
-    await ctx.sleep(S.M(650));
     const res = S.q('.cn-res');
     if (card === 'switch') {
       tc.classList.add('cn-swap');

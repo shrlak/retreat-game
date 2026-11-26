@@ -56,7 +56,7 @@
     const s = v.settings || {}, a = [];
     if (s.lady) a.push(K.term('lady', K.L('등불', 'Lamp')));
     if (v.excalibur || s.excalibur) a.push(K.term('excalibur', K.L('말씀 두루마리', 'Scroll of the Word')));
-    if (v.lancelot || s.lancelot) a.push(K.term('loyalty', K.L('갈림길 카드', 'Crossroads card')) + ' (' + String(K.term('lancelotVariant' + ((v.lancelot || s.lancelot) === 2 ? 2 : 1), '')).split(' (')[0] + ')');
+    if (v.lancelot || s.lancelot) a.push(K.term('lancelot', K.L('갈림길의 순례자 (랜슬롯)', 'Lancelot')) + ' · ' + K.lanVarShort(K.lanVariant(v)));
     return a.length ? '<p class="ux-muted" style="margin-top:8px">' + esc(K.L('함께 쓰는 규칙: ', 'Also in this game: ') + a.join(' · ')) + '</p>' : '';
   }
   K.actions['r-flip'] = (d, card) => {

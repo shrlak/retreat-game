@@ -14,14 +14,16 @@ const only = args.includes("--n") ? [Number(args[args.indexOf("--n") + 1])] : [5
 let transport;
 if (http) transport = (await import("./lib/transport-http.mjs")).httpTransport();
 
-// Expansion modules: Lancelot (1 = quiet, 2 = known) × Excalibur. Base setup gets `games` per cell, each expansion setup `expGames`.
+// Expansion modules: Lancelot official variant 1/2/3 × Excalibur. Base setup gets `games` per cell, each expansion setup `expGames`.
 const EXPANSIONS = [
   { lancelot: 0, excalibur: false },
   { lancelot: 1, excalibur: false },
   { lancelot: 2, excalibur: false },
+  { lancelot: 3, excalibur: false },
   { lancelot: 0, excalibur: true },
   { lancelot: 1, excalibur: true },
   { lancelot: 2, excalibur: true },
+  { lancelot: 3, excalibur: true },
 ];
 export async function runMatrix({ transport: tr, games = 3, expGames = 1, ns = [5, 6, 7, 8, 9, 10], quiet = false, engine, expansions = EXPANSIONS } = {}) {
   const findings = new Map();

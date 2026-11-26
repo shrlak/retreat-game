@@ -215,7 +215,12 @@ export async function playGame(transport, opts = {}) {
           if (x.ok) bad("D2", "good player was allowed to play a fail card");
           if (x.ok) { truth.cardsPlayed[`${v.round}`] = (truth.cardsPlayed[`${v.round}`] || 0) + 1; continue; }
         }
-        const success = bv.me.team === "good" ? true : !(rng() < evilFailProb);
+        const forced = lancelot === 2 && bv.me.role.startsWith("lancelot");
+        if (forced && rng() < chaos * 2) {
+          const y = await act(b, "quest", { success: bv.me.team !== "good" });
+          if (y.ok) { bad("L6", `variant 2: ${bv.me.role} on side ${bv.me.team} could play the other card`); (truth.played[v.round] ||= {})[id] = bv.me.team !== "good"; if (bv.me.team === "good") truth.cardsPlayed[`${v.round}`] = (truth.cardsPlayed[`${v.round}`] || 0) + 1; continue; }
+        }
+        const success = bv.me.team === "good" ? true : forced ? false : !(rng() < evilFailProb);
         const x = await act(b, "quest", { success });
         if (x.ok) (truth.played[v.round] ||= {})[id] = success;
         if (!x.ok) bad("D1", "legal quest card refused", x.error);
@@ -317,10 +322,24 @@ function verify({ bots, end, n, roles, lady, lancelot = 0, excalibur = false, ba
     const lr = end.loyaltyRevealed || [];
     const played = end.quests.filter((q) => q.result).length;
     const expCards = Math.max(0, Math.min(played, 4) - 1) + (end.winReason === "rejections" && played >= 2 ? 1 : 0);
-    if (lr.length > 3) bad("L4", `${lr.length} loyalty cards revealed`);
-    if (lr.some((c) => c.round < 2)) bad("L4", "loyalty card revealed before the 3rd quest");
+    const R = end.round;
     if (lr.filter((c) => c.card === "switch").length > 2) bad("L4", "more than 2 switch cards");
     if (new Set(lr.map((c) => c.round)).size !== lr.length) bad("L4", "two loyalty cards in one round");
+    if (lancelot === 1) {
+      const exp = R >= 2 ? R - 1 : 0;
+      if (lr.length !== exp) bad("L4", `variant 1: ${lr.length} loyalty cards turned by round ${R + 1}, expected ${exp}`);
+      if (lr.some((c, i) => c.round !== i + 2)) bad("L4", "variant 1: loyalty card turned outside rounds 3-5");
+      if (lr.filter((c) => c.card === "none").length > 3) bad("L4", "variant 1: more than 3 no-change cards");
+      if (end.loyaltyPlan) bad("L5", "variant 1 shows a loyalty plan");
+    } else if (lancelot === 2) {
+      const plan = end.loyaltyPlan || [];
+      if (plan.length !== 5) bad("L5", `variant 2: loyalty plan has ${plan.length} cards`);
+      if (plan.filter((c) => c === "switch").length > 2 || plan.filter((c) => c === "none").length < 3) bad("L5", "variant 2: plan is not 5 of (5 no-change + 2 switch)");
+      if (lr.length !== Math.min(R + 1, 5)) bad("L5", `variant 2: ${lr.length} cards in effect by round ${R + 1}`);
+      if (lr.some((c, i) => c.round !== i || c.card !== plan[i])) bad("L5", "variant 2: card in effect differs from the dealt plan");
+    } else if (lancelot === 3) {
+      if (lr.length || end.loyaltyPlan) bad("L11", "variant 3 has loyalty cards");
+    }
     if (end.finalTeams) for (const [id, r] of Object.entries(roleOf))
       if (end.finalTeams[id] !== allegianceAt(r, lr)) bad("L7", `${r} final team ${end.finalTeams[id]}, expected ${allegianceAt(r, lr)}`);
     void expCards;
@@ -400,6 +419,7 @@ function verify({ bots, end, n, roles, lady, lancelot = 0, excalibur = false, ba
       if (view.phase !== "end" && view.phase !== "assassin" && view.assassinId) bad("B6", `${b.name} saw assassinId during ${view.phase}`);
       if (inGame) {
         if (view.me.role !== roleOf[b.id]) bad("B6", `${b.name} me.role changed`);
+        if (lancelot === 2 && JSON.stringify(view.loyaltyPlan) !== JSON.stringify(end.loyaltyPlan)) bad("L5", `${b.name} saw a different loyalty plan`);
         const curTeam = allegianceAt(roleOf[b.id], view.loyaltyRevealed);
         if (view.me.team !== curTeam) bad("L8", `${b.name} me.team ${view.me.team}, expected ${curTeam}`);
         if ("startTeam" in view.me && view.me.startTeam !== teamOf(roleOf[b.id])) bad("L8", `${b.name} me.startTeam wrong`);

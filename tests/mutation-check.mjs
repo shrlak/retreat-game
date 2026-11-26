@@ -8,7 +8,7 @@ import { runMatrix } from "./run-matrix.mjs";
 const src = readFileSync(new URL("../server/engine.js", import.meta.url), "utf8");
 const MUTANTS = {
   "merlin sees mordred": [`teamOf(r) === "evil" && r !== "mordred") me.knowledge`, `teamOf(r) === "evil") me.knowledge`],
-  "oberon sees evil": [`role === "oberon" ||`, `role === "__none__" ||`],
+  "oberon sees evil": [`const blindEvil = myRole === "oberon" ||`, `const blindEvil = myRole === "__none__" ||`],
   "no 2-fail quest at 7": [`n >= 7 ? 2 : 1`, `n >= 8 ? 2 : 1`],
   "hammer at 4": [`g.proposalNo >= 5`, `g.proposalNo >= 4`],
   "tie approves": [`yes * 2 > state.players.length`, `yes * 2 >= state.players.length`],
@@ -22,9 +22,12 @@ const MUTANTS = {
   // expansions (Lancelot / Excalibur)
   "quest rule ignores switch": [`if (curTeam(g, me.id) === "good" && !success) return err`, `if (teamOf(g.roleOf[me.id]) === "good" && !success) return err`],
   "switch never flips": [`g.allegiance[id] = g.allegiance[id] === "good" ? "evil" : "good";`, `g.allegiance[id] = g.allegiance[id];`],
-  "loyalty card in round 2": [`g.round >= 2 && g.loyaltyDeck.length`, `g.round >= 1 && g.loyaltyDeck.length`],
-  "quiet lancelot visible to evil": [`(quietLancelot && role === "lancelotEvil")`, `(quietLancelot && role === "lancelotEvil" && false)`],
-  "known lancelots blind": [`if (g.lancelot === 2 && (myRole`, `if (g.lancelot === 3 && (myRole`],
+  "evil lancelot hidden from evil": [`teamOf(r) === "evil" && r !== "oberon")\n      me.knowledge`, `teamOf(r) === "evil" && r !== "oberon" && r !== "lancelotEvil")\n      me.knowledge`],
+  "evil lancelot sees evil": [`const blindEvil = myRole === "oberon" || myRole === "lancelotEvil";`, `const blindEvil = myRole === "oberon";`],
+  "v2 lancelot free choice": [`if (g.lancelot === 2 && isLancelot(g.roleOf[me.id])) {`, `if (false) {`],
+  "v2 plan ignored": [`else if (g.lancelot === 2 && g.loyaltyPlan && g.loyaltyPlan[g.round]) card = g.loyaltyPlan[g.round];`, `else if (g.lancelot === 2 && g.loyaltyPlan && g.loyaltyPlan[g.round]) card = "none";`],
+  "v1 deck from round 2": [`if (g.lancelot === 1 && g.round >= 2 && g.loyaltyDeck.length)`, `if (g.lancelot === 1 && g.round >= 1 && g.loyaltyDeck.length)`],
+  "v3 lancelots blind": [`if (g.lancelot === 3 && (myRole`, `if (g.lancelot === 4 && (myRole`],
   "lady shows start team": [`team: curTeam(g, t.id) }`, `team: teamOf(g.roleOf[t.id]) }`],
   "leader keeps excalibur": [`|| excaliburTo === me.id)`, `)`],
   "excalibur on self": [`if (targetId === me.id || !g.proposal.team.includes(targetId))`, `if (!g.proposal.team.includes(targetId))`],

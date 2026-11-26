@@ -762,7 +762,7 @@
       const p = K.player(v, k.id) || { id: k.id, name: '?' };
       return '<div class="ux-know ' + esc(k.tag) + (k.tag === 'lancelot' ? ' uxc-lan' : '') + '" style="animation-delay:' + (i * 90) + 'ms">' + K.avatar(p) +
         '<span class="nm">' + esc(p.name) + '</span><span class="tag">' + (k.tag === 'lancelot' ? '🧭 ' : '') + esc(K.knowText(k.tag)) + '</span></div>';
-    }).join('') + (list.some(k => k.tag === 'lancelot') ? '<p class="ux-muted ux-center" style="margin-top:2px">' + esc(K.L('서로 알아보지만, 누가 지금 어느 편인지는 몰라요.', 'You know each other, but not which side the other is on now.')) + '</p>' : '') + '</div>';
+    }).join('') + (list.some(k => k.tag === 'lancelot') ? '<p class="ux-muted ux-center" style="margin-top:2px">' + esc(K.L('두 랜슬롯은 늘 서로 반대편이에요.', 'The two Lancelots are always on opposite sides.')) + '</p>' : '') + '</div>';
   };
   K.ladyList = v => {
     const r = (v.me && v.me.ladyResults) || []; if (!r.length) return '';
@@ -773,19 +773,43 @@
     }).join('') + '</div>';
   };
   /* Lancelot: what my side is now, and the Crossroads cards turned so far. */
+  /* Lancelot variants (settings.lancelot 1|2|3, official rules). Short label ("Variant 1") and one-line rule. */
+  K.lanVariant = v => Number((v && (v.lancelot || (v.settings && v.settings.lancelot))) || 0);
+  K.lanVarFull = n => String(K.term('lancelotVariant' + n, K.L('변형 ' + n, 'Variant ' + n)));
+  K.lanVarShort = n => K.lanVarFull(n).split(/[:：(]/)[0].trim() || K.L('변형 ' + n, 'Variant ' + n);
+  K.lanVarRule = n => {
+    const q = K.term('quest', K.L('사명', 'Mission')), loy = K.term('loyalty', K.L('갈림길 카드', 'Crossroads card')), sw = K.term('loyaltySwitch', K.L('편이 바뀜', 'Sides switch'));
+    if (n === 1) return K.L('3·4·5번째 ' + q + '을 시작할 때 ' + loy + '를 한 장씩 뒤집어요. "' + sw + '"이면 두 랜슬롯의 편이 서로 바뀌어요.',
+      'At the start of ' + q + 's 3, 4 and 5 one ' + loy + ' turns over. On "' + sw + '", the two Lancelots swap sides.');
+    if (n === 2) return K.L(loy + ' 5장을 처음부터 ' + q + '마다 한 장씩 펼쳐 둬요. "' + sw + '"은 그 ' + q + ' 시작에 적용되고, 랜슬롯은 지금 편대로만 카드를 내요.',
+      'Five ' + loy + 's are laid face up at the start, one per ' + q + '. A "' + sw + '" takes effect at the start of its ' + q + ', and Lancelots must play for their current side.');
+    if (n === 3) return K.L(loy + ' 없이 편이 바뀌지 않아요. 두 랜슬롯은 서로 알아봐요.', 'No ' + loy + 's and no switching. The two Lancelots know each other.');
+    return '';
+  };
+  const loyCard = (card, round, cls) => '<span class="uxc-loy-c ' + (card === 'switch' ? 'sw ' : '') + (cls || '') + '">' + K.img(K.asset('loyalty/' + (card === 'switch' ? 'switch' : 'none') + '.svg'), 'loyalty', '') +
+    '<small>' + esc(K.term('quest', K.L('사명', 'Mission'))) + ' ' + (round + 1) + '</small></span>';
+  /* The face-up plan (variant 2): card i belongs to mission i; past/current ones are marked done. */
+  K.loyaltyPlanHtml = v => {
+    const plan = v && v.loyaltyPlan; if (!Array.isArray(plan) || !plan.length) return '';
+    const cur = v.phase === 'lobby' || v.phase === 'reveal' ? -1 : (v.round || 0);
+    return '<div class="uxc-loy">' + plan.map((c, i) => loyCard(c, i, i <= cur ? 'done' : '')).join('') + '</div>';
+  };
+  /* Lancelot: what my side is now, and the Crossroads cards (by variant). */
   K.lancelotNote = v => {
     const me = (v && v.me) || {}; if (!isLan(me.role)) return '';
+    const n = K.lanVariant(v) || 1;
     const start = me.startTeam || K.teamOf(me.role), now = me.team || start, moved = start !== now;
-    const revealed = (v.loyaltyRevealed || []), loy = K.term('loyalty', K.L('갈림길 카드', 'Crossroads card'));
-    const cards = revealed.length ? '<div class="uxc-loy">' + revealed.map(x => '<span class="uxc-loy-c ' + (x.card === 'switch' ? 'sw' : '') + '">' + K.img(K.asset('loyalty/' + (x.card === 'switch' ? 'switch' : 'none') + '.svg'), 'loyalty', '') +
-      '<small>' + esc(K.term('quest', K.L('사명', 'Mission'))) + ' ' + ((x.round || 0) + 1) + '</small></span>').join('') + '</div>' : '';
+    const revealed = (v.loyaltyRevealed || []);
+    let cards = '';
+    if (n === 2) cards = v.loyaltyPlan ? '<div class="uxc-loy-t">' + esc(K.term('loyaltyPlan', K.L('펼쳐 둔 갈림길 카드', 'Crossroads cards on the table'))) + '</div>' + K.loyaltyPlanHtml(v) : '';
+    else if (n === 1 && revealed.length) cards = '<div class="uxc-loy">' + revealed.map(x => loyCard(x.card, x.round || 0)).join('') + '</div>';
     const g = K.G(), sec = g && g.phaseHints && g.phaseHints.loyalty && g.phaseHints.loyalty.mySwitchSecret;
     const line = moved
       ? (sec ? K.fmt(sec, { team: K.isEn() ? K.teamName(now).replace(/^The /, '') : K.teamName(now) }) : K.L(K.teamName(start) + ' 편으로 시작했지만, 지금은 ' + K.teamName(now) + ' 편이에요.', 'You started with ' + K.teamName(start) + ', but now you\'re with ' + K.teamName(now) + '.'))
       : K.L('지금 내 편: ' + K.teamName(now), 'Your side now: ' + K.teamName(now));
-    const how = K.L('3번째 ' + K.term('quest', '사명') + '부터 ' + loy + '가 한 장씩 뒤집혀요. "' + K.term('loyaltySwitch', '편이 바뀜') + '"이 나오면 두 사람의 편이 서로 바뀌어요. 늘 지금 내 편으로 카드를 내세요.',
-      'From the 3rd ' + K.term('quest', 'Mission') + ', one ' + loy + ' turns over each round. On "' + K.term('loyaltySwitch', 'Sides switch') + '", both Lancelots swap sides. Always play for your current side.');
-    return '<div class="uxc-lnote ' + now + '"><b>🧭 ' + esc(line) + '</b><span>' + esc(how) + '</span>' + cards + '</div>';
+    const how = n === 3 ? K.L('이번 게임은 ' + K.term('loyalty', '갈림길 카드') + '가 없어서 편이 바뀌지 않아요.', 'There are no ' + K.term('loyalty', 'Crossroads card') + 's this game, so your side won\'t change.')
+      : K.lanVarRule(n) + ' ' + (n === 2 ? '' : K.L('늘 지금 내 편으로 카드를 내세요.', 'Always play for your current side.'));
+    return '<div class="uxc-lnote ' + now + '"><b>🧭 ' + esc(line) + '</b><span class="uxc-lvar">' + esc(K.lanVarFull(n)) + '</span><span>' + esc(how.trim()) + '</span>' + cards + '</div>';
   };
   K.roleTips = role => {
     const g = K.G(), r = g && g.roles && g.roles[role]; if (!r) return '';
@@ -1006,6 +1030,8 @@
 .uxc-lnote b { color: var(--text); font-size: 14px; } .uxc-lnote.good b { color: var(--gold-hi); } .uxc-lnote.evil b { color: #ff9db5; }
 .uxc-loy { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
 .uxc-loy-c { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 11px; color: var(--text-mute); }
+.uxc-loy-t { margin-top: 6px; font-size: 12px; color: var(--gold-hi); font-weight: 700; } .uxc-lvar { font-size: 12px; color: var(--text-mute); }
+.uxc-loy-c.done { opacity: .5; }
 .uxc-loy-c img { width: 34px; height: 48px; object-fit: cover; border-radius: 6px; box-shadow: 0 0 0 1px var(--line); } .uxc-loy-c.sw img { box-shadow: 0 0 0 1.5px var(--gold); }
 .uxc-seatnote { display: flex; align-items: center; gap: 10px; margin: 8px 0; padding: 10px 12px; border-radius: 12px; font-size: 13px; line-height: 1.45; color: #ffcf8a; background: rgba(255,170,60,.1); border: 1px solid rgba(255,170,60,.25); }
 .uxc-seatnote.ok { color: var(--ok); background: rgba(111,227,166,.08); border-color: rgba(111,227,166,.3); }
@@ -1198,12 +1224,10 @@
       // expansions
       const modTag = '<span class="ux-badge" style="padding:2px 7px">' + esc(ui('moduleTag', '확장', 'Expansion')) + '</span>';
       const lan = 'lancelot' in pend ? pend.lancelot : (Number(s.lancelot) || 0);
-      const vshort = i => String(K.term('lancelotVariant' + i, i === 1 ? K.L('조용한 갈림길', 'Quiet crossroads') : K.L('알려진 갈림길', 'Known crossroads'))).split(' (')[0];
-      const lanDesc = lan === 2 ? K.L('두 순례자가 서로 알아보고, ' + K.teamName('evil') + '는 ' + K.roleName('lancelotEvil') + '를 알아요.', 'The two Lancelots see each other, and ' + K.teamName('evil') + ' see the ' + K.roleName('lancelotEvil') + '.')
-        : lan === 1 ? K.L('순례자끼리 서로 모르고, ' + K.roleName('lancelotEvil') + '와 ' + K.teamName('evil') + '도 서로 몰라요.', 'The Lancelots don\'t know each other, and the ' + K.roleName('lancelotEvil') + ' and ' + K.teamName('evil') + ' don\'t know each other.')
-        : K.L('3번째 ' + K.term('quest', '사명') + '부터 ' + K.term('loyalty', '갈림길 카드') + '에 따라 두 순례자의 편이 바뀔 수 있어요.', 'From the 3rd ' + K.term('quest', 'Mission') + ', a ' + K.term('loyalty', 'Crossroads card') + ' can switch the two Lancelots\' sides.');
+      const lanDesc = lan ? K.lanVarRule(lan) + ' ' + K.L(K.teamName('evil') + '는 ' + K.roleBase('lancelotEvil') + '를 알지만, ' + K.roleBase('lancelotEvil') + '는 아무도 몰라요.', K.teamName('evil') + ' see the ' + K.roleBase('lancelotEvil') + ', who sees no one.')
+        : K.L('선한 랜슬롯과 악한 랜슬롯이 함께해요. 아래에서 공식 변형 1·2·3 중 하나를 골라요.', 'Adds a Good and an Evil Lancelot. Pick one of the official variants 1, 2 or 3 below.');
       h += '<div class="ux-setting uxl-mod"><div class="thumb">' + K.roleImg(lan ? 'lancelotEvil' : 'lancelotGood') + '</div><div class="txt"><div class="name">' + esc(K.term('lancelot', K.L('갈림길의 순례자 (랜슬롯)', 'Lancelot'))) + ' ' + modTag + '</div><div class="desc">' + esc(lanDesc) + '</div></div>' +
-        '<div class="uxl-seg" role="group" aria-label="' + esc(K.term('lancelot', K.L('갈림길의 순례자 (랜슬롯)', 'Lancelot'))) + '">' + [0, 1, 2].map(i => '<button class="' + (lan === i ? 'on' : '') + '" data-act="l-lan" data-n="' + i + '"' + (isHost ? '' : ' disabled') + ' aria-pressed="' + (lan === i) + '">' + esc(i ? vshort(i) : K.L('끔', 'Off')) + '</button>').join('') + '</div></div>';
+        '<div class="uxl-seg" role="group" aria-label="' + esc(K.term('lancelot', K.L('갈림길의 순례자 (랜슬롯)', 'Lancelot'))) + '">' + [0, 1, 2, 3].map(i => '<button class="' + (lan === i ? 'on' : '') + '" data-act="l-lan" data-n="' + i + '"' + (isHost ? '' : ' disabled') + ' aria-pressed="' + (lan === i) + '">' + esc(i ? K.lanVarShort(i) : K.L('끔', 'Off')) + '</button>').join('') + '</div></div>';
       h += '<div class="ux-setting"><div class="thumb" style="display:grid;place-items:center">' + K.img(K.asset('excalibur.svg'), 'excalibur', '') + '</div><div class="txt"><div class="name">' + esc(K.term('excalibur', K.L('말씀 두루마리', 'Scroll of the Word'))) + ' ' + modTag + '</div><div class="desc">' +
         esc(K.L(K.term('leader', '조장') + '이 원정대원 한 명에게 주면, 카드를 다 낸 뒤 다른 대원 한 명의 카드를 뒤집을 수 있어요.', 'The ' + K.term('leader', 'Leader') + ' gives it to one team member, who may flip one other member\'s card after all cards are in.')) + '</div></div>' +
         sw('excalibur', K.term('excalibur', K.L('말씀 두루마리', 'Scroll of the Word'))) + '</div>';
@@ -1356,7 +1380,7 @@
     const s = v.settings || {}, a = [];
     if (s.lady) a.push(K.term('lady', K.L('등불', 'Lamp')));
     if (v.excalibur || s.excalibur) a.push(K.term('excalibur', K.L('말씀 두루마리', 'Scroll of the Word')));
-    if (v.lancelot || s.lancelot) a.push(K.term('loyalty', K.L('갈림길 카드', 'Crossroads card')) + ' (' + String(K.term('lancelotVariant' + ((v.lancelot || s.lancelot) === 2 ? 2 : 1), '')).split(' (')[0] + ')');
+    if (v.lancelot || s.lancelot) a.push(K.term('lancelot', K.L('갈림길의 순례자 (랜슬롯)', 'Lancelot')) + ' · ' + K.lanVarShort(K.lanVariant(v)));
     return a.length ? '<p class="ux-muted" style="margin-top:8px">' + esc(K.L('함께 쓰는 규칙: ', 'Also in this game: ') + a.join(' · ')) + '</p>' : '';
   }
   K.actions['r-flip'] = (d, card) => {
@@ -1461,6 +1485,9 @@
 .bd-loy.down::after { content: '?'; position: absolute; inset: 0; display: grid; place-items: center; font-size: 12px; font-weight: 900; color: var(--gold-hi); text-shadow: 0 1px 3px rgba(0,0,0,.8); }
 .bd-loy.switch { border-color: rgba(200,182,255,.8); box-shadow: 0 0 10px rgba(143,108,240,.55); }
 .bd-loy.fresh-up { animation: stamp .8s var(--ease-spring) both; }
+.bd-loy.played { opacity: .5; filter: saturate(.6); }
+.bd-loy.played::after { content: '✓'; position: absolute; right: -1px; bottom: -1px; width: 12px; height: 12px; border-radius: 50%; display: grid; place-items: center; font-size: 8px; font-weight: 900; color: #2a1a02; background: var(--gold); }
+.bd-qwrap.cur .bd-loy.played { opacity: 1; filter: none; }
 .bd-loyl { display: flex; justify-content: center; align-items: center; gap: 6px; margin-top: 8px; font-size: 11.5px; color: var(--text-mute); }
 .bd-loyl b { color: var(--text-dim); font-variant-numeric: tabular-nums; }
 .bd-rejl { margin-right: 4px; }
@@ -1605,15 +1632,28 @@
   }
 
   // ---------- quest track + rejection track (+ Crossroads cards at missions 3–5) ----------
-  function loyaltyHtml(v, i, fresh) {
-    if (!(v.lancelot > 0)) return '';
-    if (i < 2) return '<span class="bd-loy sp" aria-hidden="true"></span>';
-    const r = (v.loyaltyRevealed || []).filter(x => x.round === i).pop();
-    if (!r) return '<span class="bd-loy down" role="img" aria-label="' + e(W.loyalty() + ' · ' + K.L('아직 덮여 있어요', 'still face down')) + '">' + K.backImg() + '</span>';
-    const sw = r.card === 'switch';
-    const label = W.loyalty() + ': ' + (sw ? W.loySwitch() : W.loyNone());
-    return '<span class="bd-loy ' + (sw ? 'switch' : 'none') + (fresh ? ' fresh-up' : '') + '" role="img" aria-label="' + e(label) + '" title="' + e(label) + '">' +
+  /* Crossroads cards on the track. Variant 1: one card flipped at the start of missions 3–5 (face down until then).
+     Variant 2: all five dealt face up at the start (view.loyaltyPlan, card i = mission i); played ones are marked.
+     Variant 3 (no cards) and Lancelot off: no row. */
+  const loyMode = v => v.lancelot === 1 ? 1 : (v.lancelot === 2 && Array.isArray(v.loyaltyPlan) && v.loyaltyPlan.length) ? 2 : 0;
+  const loyCard = (card, cls, extraLabel, fresh) => {
+    const sw = card === 'switch';
+    const label = W.loyalty() + ': ' + (sw ? W.loySwitch() : W.loyNone()) + (extraLabel ? ' · ' + extraLabel : '');
+    return '<span class="bd-loy ' + (sw ? 'switch' : 'none') + (cls ? ' ' + cls : '') + (fresh ? ' fresh-up' : '') + '" role="img" aria-label="' + e(label) + '" title="' + e(label) + '">' +
       K.img(K.asset('loyalty/' + (sw ? 'switch' : 'none') + '.svg'), 'loyalty-' + (sw ? 'switch' : 'none'), '') + '</span>';
+  };
+  function loyaltyHtml(v, i, fresh) {
+    const mode = loyMode(v);
+    if (!mode) return '';
+    const r = (v.loyaltyRevealed || []).filter(x => x.round === i).pop();
+    if (mode === 2) {
+      const card = (r && r.card) || v.loyaltyPlan[i];
+      if (!card) return '<span class="bd-loy sp" aria-hidden="true"></span>';
+      return loyCard(card, r ? 'played' : '', r ? K.L('적용됨', 'in effect') : K.L('앞으로', 'coming up'), fresh);
+    }
+    if (i < 2) return '<span class="bd-loy sp" aria-hidden="true"></span>';
+    if (!r) return '<span class="bd-loy down" role="img" aria-label="' + e(W.loyalty() + ' · ' + K.L('아직 덮여 있어요', 'still face down')) + '">' + K.backImg() + '</span>';
+    return loyCard(r.card, '', '', fresh);
   }
 
   function trackHtml(v) {
@@ -1648,7 +1688,9 @@
     out += '<div class="ux-rejects"><span class="bd-rejl">' + K.L(e(W.reject()) + ' 누적', 'Rejected') + '</span>';
     for (let i = 1; i <= 5; i++) out += '<span class="ux-rej' + (showRej && i <= filled ? ' on' : '') + (i === 5 ? ' last' : '') + '">' + (i === 5 ? '!' : '') + '</span>';
     out += '</div>';
-    if (v.lancelot > 0) {
+    if (loyMode(v) === 2) {
+      out += '<div class="bd-loyl">🧭 <span>' + e(K.term('loyaltyPlan', K.L('펼쳐 둔 갈림길 카드', 'Crossroads cards on the table'))) + '</span></div>';
+    } else if (loyMode(v) === 1) {
       const left = typeof v.loyaltyLeft === 'number' ? v.loyaltyLeft : null;
       if (left != null) {
         const h = typeof K.hint === 'function' ? K.hint('loyalty', 'left', { count: left }) : '';
@@ -2022,8 +2064,17 @@
     const s = scr(); if (s && K.view) applyLocal(s, K.view);
   };
 
+  /* Lancelot variant 2: a Lancelot must play for their current side, so a current-Tempter Lancelot can't play Blessing.
+     Handled exactly like a good player's Hindrance: same buttons for everyone, a tap on the wrong one only shakes and
+     shows a short note on that phone. */
+  const lancelotMustFail = v => !!(v && v.lancelot === 2 && v.me && /^lancelot(Good|Evil)$/.test(v.me.role || '') && v.me.team === 'evil');
   K.actions['bd-choice'] = (d, node) => {
     const v = K.view; const val = d.val === '1';
+    if (v.phase === 'quest' && val && lancelotMustFail(v)) {
+      K.shake(node); K.buzz('tick');
+      K.toast(K.term('lancelotForced', K.L('지금 편대로만 낼 수 있어요', 'You can only play for your current side')), 'info');
+      return;
+    }
     if (v.phase === 'quest' && !val && v.me && v.me.team === 'good') {
       K.shake(node); K.buzz('tick');
       K.toast(K.L(jo(K.teamName('good'), '은', '는') + ' ' + W.success() + '만 낼 수 있어요', K.teamName('good') + ' can only play ' + W.success()), 'info');
@@ -2057,6 +2108,7 @@
   K.actions['bd-quest'] = (d, btn) => {
     const v = K.view; const c = K.local.choice; if (c == null) return;
     if (!c && v.me && v.me.team === 'good') return;
+    if (c && lancelotMustFail(v)) return;
     send(btn, 'quest', !!c);
   };
   K.actions['bd-lady'] = (d, btn) => { const id = (K.local.picks || [])[0]; if (id) send(btn, 'lady', id); };
@@ -2299,6 +2351,15 @@
 .cn-lohist i { width: 24px; height: 34px; border-radius: 4px; overflow: hidden; opacity: .55; box-shadow: 0 2px 6px rgba(0,0,0,.45); }
 .cn-lohist i.cur { opacity: 1; box-shadow: 0 0 0 1.5px var(--gold-hi), 0 2px 8px rgba(0,0,0,.5); }
 .cn-lohist img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cn-loplan { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.cn-loplan > small { font-size: 12px; color: var(--text-mute); letter-spacing: .04em; }
+.cn-loplan > div { display: flex; gap: 7px; justify-content: center; }
+.cn-loplan .pc { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 11px; color: var(--text-mute); }
+.cn-loplan .pc i { display: block; width: 40px; height: 56px; border-radius: 5px; overflow: hidden; opacity: .6; box-shadow: 0 2px 6px rgba(0,0,0,.45); transition: transform .5s var(--ease-spring), opacity .4s ease, box-shadow .4s ease; }
+.cn-loplan .pc i img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cn-loplan .pc.past i { opacity: .3; }
+.cn-loplan .pc.cur b { color: var(--gold-hi); }
+.cn-loplan.cn-hl .pc.cur i { opacity: 1; transform: translateY(-5px) scale(1.12); box-shadow: 0 0 0 2px var(--gold-hi), 0 0 18px rgba(244,201,107,.6), 0 4px 10px rgba(0,0,0,.5); }
 .ux-banner.cn-sw { color: #eadcff; text-shadow: 0 0 24px rgba(180,140,224,.85), 0 0 50px rgba(244,201,107,.35); }
 
 /* excalibur (Scroll of the Word) */
@@ -2769,28 +2830,48 @@
       return '<i class="' + (i === idx ? 'cur' : '') + '">' + (i === idx ? K.backImg() : K.img(K.asset('loyalty/' + c + '.svg'), 'back', '')) + '</i>';
     }).join('') + '</div>';
     const name = card === 'switch' ? term('loyaltySwitch', L('편이 바뀜', 'Sides switch')) : term('loyaltyNone', L('그대로', 'No change'));
+    /* Variant 2: all five cards lie face up from the start (view.loyaltyPlan, card i = mission i+1), so this is not a
+       surprise flip: the card is shown face up and highlighted in the plan row as it takes effect. */
+    const plan = v && Array.isArray(v.loyaltyPlan) && v.loyaltyPlan.length ? v.loyaltyPlan : null;
+    const cimg = c => K.img(K.asset('loyalty/' + (c === 'switch' ? 'switch' : 'none') + '.svg'), 'back', '');
+    const row = plan
+      ? '<div class="cn-loplan cn-pre" aria-hidden="true"><small>' + E(term('loyaltyPlan', L('펼쳐 둔 갈림길 카드', 'Crossroads cards on the table'))) + '</small><div>' +
+        plan.map((c, i) => '<span class="pc' + (i === ri ? ' cur' : i < ri ? ' past' : '') + '"><i>' + cimg(c) + '</i><b>' + (i + 1) + '</b></span>').join('') + '</div></div>'
+      : hist;
+    const subTxt = plan
+      ? L(E(Q()) + ' ' + round + ' 시작 · 이번 사명의 카드가 적용돼요', E(Q()) + ' ' + round + ' begins · This mission\'s card takes effect')
+      : L(E(Q()) + ' ' + round + ' 시작 · 카드 한 장을 펼쳐요', E(Q()) + ' ' + round + ' begins · One card is turned over');
     ctx.set('<div class="cn-wrap cn-lo">' +
       '<div class="ux-ornament">✦</div>' +
       '<div class="ux-cine-title">' + E(LOY()) + '</div>' +
-      '<div class="ux-cine-sub">' + L(E(Q()) + ' ' + round + ' 시작 · 카드 한 장을 펼쳐요', E(Q()) + ' ' + round + ' begins · One card is turned over') + '</div>' +
-      '<div class="cn-tcard ' + card + '"><div class="cn-beat"><div class="c"><div class="b">' + K.backImg() + '</div><div class="f">' +
-        K.img(K.asset('loyalty/' + card + '.svg'), 'back', '') + '</div></div></div></div>' +
-      '<div class="cn-res"></div>' + hist + TAP() + '</div>');
+      '<div class="ux-cine-sub">' + subTxt + '</div>' +
+      '<div class="cn-tcard ' + card + (plan ? ' flip' : '') + '"><div class="cn-beat"><div class="c"><div class="b">' + K.backImg() + '</div><div class="f">' +
+        cimg(card) + '</div></div></div></div>' +
+      '<div class="cn-res"></div>' + row + TAP() + '</div>');
     const tc = S.q('.cn-tcard'), beat = S.q('.cn-beat');
     S.scene('candle', S.y(tc));
     S.fb('whoosh');
     await ctx.sleep(S.M(700));
-    S.on(S.q('.cn-lohist'));
-    // three slow beats, then the turn
-    for (const b of [520, 440, 380]) {
-      if (ctx.skipped) break;
-      S.sfx('drum'); S.buzz('tick');
-      if (!S.R && beat && beat.animate) beat.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.05)' }, { transform: 'scale(1)' }], { duration: 220, easing: 'ease-out' });
-      await ctx.sleep(S.M(b));
+    if (plan) {
+      const pr = S.q('.cn-loplan'); S.on(pr);
+      await ctx.sleep(S.M(500));
+      pr.classList.add('cn-hl'); S.sfx('pick'); S.buzz('tick');
+      S.burst(S.q('.cn-loplan .pc.cur i'), { n: 12, speed: 90, size: 7 });
+      if (!S.R && beat && beat.animate) beat.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.07)' }, { transform: 'scale(1)' }], { duration: 520, easing: 'ease-out' });
+      await ctx.sleep(S.M(800));
+    } else {
+      S.on(S.q('.cn-lohist'));
+      // three slow beats, then the turn
+      for (const b of [520, 440, 380]) {
+        if (ctx.skipped) break;
+        S.sfx('drum'); S.buzz('tick');
+        if (!S.R && beat && beat.animate) beat.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.05)' }, { transform: 'scale(1)' }], { duration: 220, easing: 'ease-out' });
+        await ctx.sleep(S.M(b));
+      }
+      tc.classList.add('flip'); S.fb('flip');
+      const cur = S.q('.cn-lohist i.cur'); if (cur) cur.innerHTML = cimg(card);
+      await ctx.sleep(S.M(650));
     }
-    tc.classList.add('flip'); S.fb('flip');
-    const cur = S.q('.cn-lohist i.cur'); if (cur) cur.innerHTML = K.img(K.asset('loyalty/' + card + '.svg'), 'back', '');
-    await ctx.sleep(S.M(650));
     const res = S.q('.cn-res');
     if (card === 'switch') {
       tc.classList.add('cn-swap');

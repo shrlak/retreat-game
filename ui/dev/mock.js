@@ -14,7 +14,7 @@
   "use strict";
 
   // =====================================================================
-  // Engine port, generated from server/engine.js (md5 e54f2729bc60…): `export` dropped,
+  // Engine port, generated from server/engine.js (md5 1eaad1921ee7…): `export` dropped,
   // `||=` rewritten for ES2020. Don't edit rules here: change server/engine.js and re-port,
   // so the mock never drifts from the server.
   // =====================================================================
@@ -62,6 +62,8 @@
     notQuestPhase: { ko: "지금은 사명 카드를 낼 때가 아니에요", en: "It's not time to play mission cards" },
     teamOnlyQuest: { ko: "원정대원만 카드를 낼 수 있어요", en: "Only team members can play a card" },
     alreadyPlayed: { ko: "이미 카드를 냈어요", en: "You've already played a card" },
+    lancelotMustFail: { ko: "지금 유혹의 편인 랜슬롯은 방해 카드만 낼 수 있어요", en: "As the Lancelot now on the Tempters' side, you must play Hindrance" },
+    lancelotMustSucceed: { ko: "지금 빛의 편인 랜슬롯은 축복 카드만 낼 수 있어요", en: "As the Lancelot now on the Light's side, you must play Blessing" },
     goodOnlySuccess: { ko: "빛의 일꾼은 축복 카드만 낼 수 있어요", en: "The Light team can only play Blessing" },
     notExcaliburPhase: { ko: "지금은 말씀 두루마리를 쓸 때가 아니에요", en: "It's not time to use the Scroll of the Word" },
     excaliburHolderOnly: { ko: "두루마리를 받은 사람만 쓸 수 있어요", en: "Only the person holding the scroll can use it" },
@@ -115,7 +117,13 @@
   }
   const GOOD_ROLES = ["merlin", "percival", "servant", "lancelotGood"];
   const EVIL_ROLES = ["assassin", "morgana", "mordred", "oberon", "minion", "lancelotEvil"];
+  // Official Lancelot module (Indie Boards & Cards rulebook):
+  // Variant 1: 5 Loyalty cards (3 No Change, 2 Switch), one flipped at the start of rounds 3, 4 and 5.
+  // Variant 2: 7 cards (5 No Change, 2 Switch), 5 dealt face up at the start, one per round; a Switch takes effect
+  //            at the start of its round, and Lancelots must play Success/Fail by their current side.
+  // Variant 3: no Loyalty cards; the two Lancelots know each other.
   const LOYALTY_DECK = ["none", "none", "none", "switch", "switch"];
+  const LOYALTY_DECK_V2 = ["none", "none", "none", "none", "none", "switch", "switch"];
   const ONLINE_MS = 15000;
   const REJOIN_MS = 120000; // how long a host-opened seat stays open for a new device
   const HOST_AWAY_MS = 60000; // after this long offline, another player may take over as host
@@ -132,7 +140,7 @@
     roles: { merlin: true, percival: true, morgana: true, assassin: true, mordred: false, oberon: false },
     lady: false,
     balance: false,
-    lancelot: 0, // 0 off, 1 = quiet variant, 2 = known variant
+    lancelot: 0, // 0 off, 1/2/3 = official Lancelot variant 1/2/3
     excalibur: false,
     maxPlayers: 10,
   };
@@ -277,7 +285,7 @@
       if ("excalibur" in patch) out.excalibur = !!patch.excalibur;
       if ("lancelot" in patch) {
         const l = Number(patch.lancelot === true ? 1 : patch.lancelot);
-        out.lancelot = l === 1 || l === 2 ? l : 0;
+        out.lancelot = l === 1 || l === 2 || l === 3 ? l : 0;
       }
       if ("maxPlayers" in patch) {
         const m = Math.round(Number(patch.maxPlayers));
@@ -341,16 +349,35 @@
       assassinTargetId: null,
       allegiance,
       lancelot: state.settings.lancelot || 0,
-      loyaltyDeck: state.settings.lancelot ? shuffle(LOYALTY_DECK, rng) : [],
-      loyaltyRevealed: [], // [{round, card}]
+      loyaltyDeck: state.settings.lancelot === 1 ? shuffle(LOYALTY_DECK, rng) : [],
+      // variant 2: five cards dealt face up at the start, card i belongs to round i (public)
+      loyaltyPlan: state.settings.lancelot === 2 ? shuffle(LOYALTY_DECK_V2, rng).slice(0, 5) : null,
+      loyaltyRevealed: [], // [{round, card}] cards that have taken effect
       excalibur: !!state.settings.excalibur,
       excaliburResults: {}, // holderId -> [{round, targetId, original:bool}]
       lastExcalibur: null,
       winner: null,
       winReason: null,
     };
+    applyLoyalty(state.game); // variant 2: the round-1 card takes effect at the start of round 1
     state.phase = "reveal";
     return {};
+  }
+
+  function flipLancelots(g) {
+    for (const id of Object.keys(g.roleOf)) {
+      if (g.roleOf[id] === "lancelotGood" || g.roleOf[id] === "lancelotEvil")
+        g.allegiance[id] = g.allegiance[id] === "good" ? "evil" : "good";
+    }
+  }
+  // called at the start of every round (g.round already set)
+  function applyLoyalty(g) {
+    let card = null;
+    if (g.lancelot === 1 && g.round >= 2 && g.loyaltyDeck.length) card = g.loyaltyDeck.shift();
+    else if (g.lancelot === 2 && g.loyaltyPlan && g.loyaltyPlan[g.round]) card = g.loyaltyPlan[g.round];
+    if (!card) return;
+    g.loyaltyRevealed.push({ round: g.round, card });
+    if (card === "switch") flipLancelots(g);
   }
 
   const isLancelot = (r) => r === "lancelotGood" || r === "lancelotEvil";
@@ -413,16 +440,7 @@
     g.proposalNo = 1;
     g.proposal = null;
     nextLeader(state);
-    if (g.lancelot && g.round >= 2 && g.loyaltyDeck.length) {
-      const card = g.loyaltyDeck.shift();
-      g.loyaltyRevealed.push({ round: g.round, card });
-      if (card === "switch") {
-        for (const id of Object.keys(g.roleOf)) {
-          if (g.roleOf[id] === "lancelotGood" || g.roleOf[id] === "lancelotEvil")
-            g.allegiance[id] = g.allegiance[id] === "good" ? "evil" : "good";
-        }
-      }
-    }
+    applyLoyalty(g);
     // lady after quests 2,3,4 (round index 1,2,3 just finished => now round 2,3,4)
     if (g.lady && g.round >= 2 && g.round <= 4) {
       const candidates = state.players.filter((p) => !g.ladyUsedBy.includes(p.id));
@@ -577,6 +595,11 @@
           if (!g.proposal.team.includes(me.id)) return err("원정대원만 카드를 낼 수 있어요");
           if (me.id in g.questCards) return err("이미 카드를 냈어요");
           let success = msg.success !== false;
+          if (g.lancelot === 2 && isLancelot(g.roleOf[me.id])) {
+            // variant 2: Lancelots have no choice, they play for their current side
+            if (curTeam(g, me.id) === "evil" && success) return err("lancelotMustFail");
+            if (curTeam(g, me.id) === "good" && !success) return err("lancelotMustSucceed");
+          }
           if (curTeam(g, me.id) === "good" && !success) return err("빛의 일꾼은 축복 카드만 낼 수 있어요");
           g.questCards[me.id] = success;
           if (Object.keys(g.questCards).length === g.proposal.team.length) {
@@ -745,11 +768,12 @@
       const r = g.roleOf[p.id];
       if (myRole === "merlin" && teamOf(r) === "evil" && r !== "mordred") me.knowledge.push({ id: p.id, tag: "evil" });
       if (myRole === "percival" && (r === "merlin" || r === "morgana")) me.knowledge.push({ id: p.id, tag: "merlinCandidate" });
-      const quietLancelot = g.lancelot !== 2; // variant 1: evil Lancelot and the evil team don't know each other
-      const hidesFromEvil = (role) => role === "oberon" || (quietLancelot && role === "lancelotEvil");
-      if (me.startTeam === "evil" && !hidesFromEvil(myRole) && teamOf(r) === "evil" && !hidesFromEvil(r))
+      // Official rulebook: Evil Lancelot keeps his eyes closed and shows a thumb, so the evil team (not Oberon)
+      // knows him, but he does not see them. Oberon sees no one and no one sees Oberon.
+      const blindEvil = myRole === "oberon" || myRole === "lancelotEvil";
+      if (me.startTeam === "evil" && !blindEvil && teamOf(r) === "evil" && r !== "oberon")
         me.knowledge.push({ id: p.id, tag: "evil" });
-      if (g.lancelot === 2 && (myRole === "lancelotGood" || myRole === "lancelotEvil") && (r === "lancelotGood" || r === "lancelotEvil"))
+      if (g.lancelot === 3 && (myRole === "lancelotGood" || myRole === "lancelotEvil") && (r === "lancelotGood" || r === "lancelotEvil"))
         me.knowledge.push({ id: p.id, tag: "lancelot" });
     }
     const ended = state.phase === "end";
@@ -768,7 +792,8 @@
       proposal: g.proposal ? { team: g.proposal.team.slice(), excaliburTo: g.proposal.excaliburTo || null } : null,
       lancelot: g.lancelot || 0,
       loyaltyRevealed: (g.loyaltyRevealed || []).slice(),
-      loyaltyLeft: (g.loyaltyDeck || []).length,
+      loyaltyLeft: g.lancelot === 2 ? Math.max(0, 5 - (g.loyaltyRevealed || []).length) : (g.loyaltyDeck || []).length,
+      loyaltyPlan: g.loyaltyPlan ? g.loyaltyPlan.slice() : null,
       excalibur: !!g.excalibur,
       lastExcalibur: g.lastExcalibur || null,
       votedIds: Object.keys(g.votes),
@@ -991,6 +1016,8 @@
         return pid in g.votes ? null : { action: "vote", approve: voteChoice(pid, pol) };
       case "quest":
         if (g.proposal.team.indexOf(pid) < 0 || pid in g.questCards) return null;
+        var rl = roleOf(pid);
+        if (g.lancelot === 2 && (rl === "lancelotGood" || rl === "lancelotEvil")) return { action: "quest", success: !isEvil(pid) };
         return { action: "quest", success: questChoice(pid, pol) };
       case "lady": {
         if (g.ladyHolderId !== pid) return null;

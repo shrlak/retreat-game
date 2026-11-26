@@ -23,8 +23,8 @@ async function run() {
     [5, { merlin: true, assassin: true }, false], [6, { merlin: true, percival: true, morgana: true, assassin: true }, false],
     [7, { merlin: true, percival: true, morgana: true, assassin: true }, true], [8, { merlin: true, percival: true, morgana: true, mordred: true, assassin: true }, true],
     [9, { merlin: true, percival: true, morgana: true, mordred: true, assassin: true }, true], [10, { merlin: true, percival: true, morgana: true, mordred: true, oberon: true, assassin: true }, true],
-    // expansions: Lancelot quiet/known × Excalibur
-    [7, base, true, { lancelot: 1 }], [8, base, true, { lancelot: 2, excalibur: true }], [9, base, false, { excalibur: true }], [10, base, true, { lancelot: 1, excalibur: true }],
+    // expansions: Lancelot official variants 1/2/3 × Excalibur
+    [7, base, true, { lancelot: 1 }], [8, base, true, { lancelot: 2, excalibur: true }], [9, base, false, { lancelot: 3, excalibur: true }], [10, base, true, { lancelot: 2 }],
   ];
   let total = 0, bad = 0;
   for (const [n, roles, lady, exp = {}] of setups) for (let g = 0; g < games; g++) {

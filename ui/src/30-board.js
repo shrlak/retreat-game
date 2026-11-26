@@ -68,6 +68,9 @@
 .bd-loy.down::after { content: '?'; position: absolute; inset: 0; display: grid; place-items: center; font-size: 12px; font-weight: 900; color: var(--gold-hi); text-shadow: 0 1px 3px rgba(0,0,0,.8); }
 .bd-loy.switch { border-color: rgba(200,182,255,.8); box-shadow: 0 0 10px rgba(143,108,240,.55); }
 .bd-loy.fresh-up { animation: stamp .8s var(--ease-spring) both; }
+.bd-loy.played { opacity: .5; filter: saturate(.6); }
+.bd-loy.played::after { content: '✓'; position: absolute; right: -1px; bottom: -1px; width: 12px; height: 12px; border-radius: 50%; display: grid; place-items: center; font-size: 8px; font-weight: 900; color: #2a1a02; background: var(--gold); }
+.bd-qwrap.cur .bd-loy.played { opacity: 1; filter: none; }
 .bd-loyl { display: flex; justify-content: center; align-items: center; gap: 6px; margin-top: 8px; font-size: 11.5px; color: var(--text-mute); }
 .bd-loyl b { color: var(--text-dim); font-variant-numeric: tabular-nums; }
 .bd-rejl { margin-right: 4px; }
@@ -212,15 +215,28 @@
   }
 
   // ---------- quest track + rejection track (+ Crossroads cards at missions 3–5) ----------
-  function loyaltyHtml(v, i, fresh) {
-    if (!(v.lancelot > 0)) return '';
-    if (i < 2) return '<span class="bd-loy sp" aria-hidden="true"></span>';
-    const r = (v.loyaltyRevealed || []).filter(x => x.round === i).pop();
-    if (!r) return '<span class="bd-loy down" role="img" aria-label="' + e(W.loyalty() + ' · ' + K.L('아직 덮여 있어요', 'still face down')) + '">' + K.backImg() + '</span>';
-    const sw = r.card === 'switch';
-    const label = W.loyalty() + ': ' + (sw ? W.loySwitch() : W.loyNone());
-    return '<span class="bd-loy ' + (sw ? 'switch' : 'none') + (fresh ? ' fresh-up' : '') + '" role="img" aria-label="' + e(label) + '" title="' + e(label) + '">' +
+  /* Crossroads cards on the track. Variant 1: one card flipped at the start of missions 3–5 (face down until then).
+     Variant 2: all five dealt face up at the start (view.loyaltyPlan, card i = mission i); played ones are marked.
+     Variant 3 (no cards) and Lancelot off: no row. */
+  const loyMode = v => v.lancelot === 1 ? 1 : (v.lancelot === 2 && Array.isArray(v.loyaltyPlan) && v.loyaltyPlan.length) ? 2 : 0;
+  const loyCard = (card, cls, extraLabel, fresh) => {
+    const sw = card === 'switch';
+    const label = W.loyalty() + ': ' + (sw ? W.loySwitch() : W.loyNone()) + (extraLabel ? ' · ' + extraLabel : '');
+    return '<span class="bd-loy ' + (sw ? 'switch' : 'none') + (cls ? ' ' + cls : '') + (fresh ? ' fresh-up' : '') + '" role="img" aria-label="' + e(label) + '" title="' + e(label) + '">' +
       K.img(K.asset('loyalty/' + (sw ? 'switch' : 'none') + '.svg'), 'loyalty-' + (sw ? 'switch' : 'none'), '') + '</span>';
+  };
+  function loyaltyHtml(v, i, fresh) {
+    const mode = loyMode(v);
+    if (!mode) return '';
+    const r = (v.loyaltyRevealed || []).filter(x => x.round === i).pop();
+    if (mode === 2) {
+      const card = (r && r.card) || v.loyaltyPlan[i];
+      if (!card) return '<span class="bd-loy sp" aria-hidden="true"></span>';
+      return loyCard(card, r ? 'played' : '', r ? K.L('적용됨', 'in effect') : K.L('앞으로', 'coming up'), fresh);
+    }
+    if (i < 2) return '<span class="bd-loy sp" aria-hidden="true"></span>';
+    if (!r) return '<span class="bd-loy down" role="img" aria-label="' + e(W.loyalty() + ' · ' + K.L('아직 덮여 있어요', 'still face down')) + '">' + K.backImg() + '</span>';
+    return loyCard(r.card, '', '', fresh);
   }
 
   function trackHtml(v) {
@@ -255,7 +271,9 @@
     out += '<div class="ux-rejects"><span class="bd-rejl">' + K.L(e(W.reject()) + ' 누적', 'Rejected') + '</span>';
     for (let i = 1; i <= 5; i++) out += '<span class="ux-rej' + (showRej && i <= filled ? ' on' : '') + (i === 5 ? ' last' : '') + '">' + (i === 5 ? '!' : '') + '</span>';
     out += '</div>';
-    if (v.lancelot > 0) {
+    if (loyMode(v) === 2) {
+      out += '<div class="bd-loyl">🧭 <span>' + e(K.term('loyaltyPlan', K.L('펼쳐 둔 갈림길 카드', 'Crossroads cards on the table'))) + '</span></div>';
+    } else if (loyMode(v) === 1) {
       const left = typeof v.loyaltyLeft === 'number' ? v.loyaltyLeft : null;
       if (left != null) {
         const h = typeof K.hint === 'function' ? K.hint('loyalty', 'left', { count: left }) : '';
@@ -629,8 +647,17 @@
     const s = scr(); if (s && K.view) applyLocal(s, K.view);
   };
 
+  /* Lancelot variant 2: a Lancelot must play for their current side, so a current-Tempter Lancelot can't play Blessing.
+     Handled exactly like a good player's Hindrance: same buttons for everyone, a tap on the wrong one only shakes and
+     shows a short note on that phone. */
+  const lancelotMustFail = v => !!(v && v.lancelot === 2 && v.me && /^lancelot(Good|Evil)$/.test(v.me.role || '') && v.me.team === 'evil');
   K.actions['bd-choice'] = (d, node) => {
     const v = K.view; const val = d.val === '1';
+    if (v.phase === 'quest' && val && lancelotMustFail(v)) {
+      K.shake(node); K.buzz('tick');
+      K.toast(K.term('lancelotForced', K.L('지금 편대로만 낼 수 있어요', 'You can only play for your current side')), 'info');
+      return;
+    }
     if (v.phase === 'quest' && !val && v.me && v.me.team === 'good') {
       K.shake(node); K.buzz('tick');
       K.toast(K.L(jo(K.teamName('good'), '은', '는') + ' ' + W.success() + '만 낼 수 있어요', K.teamName('good') + ' can only play ' + W.success()), 'info');
@@ -664,6 +691,7 @@
   K.actions['bd-quest'] = (d, btn) => {
     const v = K.view; const c = K.local.choice; if (c == null) return;
     if (!c && v.me && v.me.team === 'good') return;
+    if (c && lancelotMustFail(v)) return;
     send(btn, 'quest', !!c);
   };
   K.actions['bd-lady'] = (d, btn) => { const id = (K.local.picks || [])[0]; if (id) send(btn, 'lady', id); };
