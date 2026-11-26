@@ -1,205 +1,217 @@
 {
- "at": "2026-11-26T10:14:54.589Z",
+ "at": "2026-11-26T11:11:30.827Z",
  "perN": 100000,
- "seconds": 2036.174,
+ "seconds": 2142.594,
  "byN": {
   "5": {
    "n": 5,
    "games": 100000,
-   "setups": 216,
+   "setups": 264,
    "refused": 0,
    "winners": {
-    "evil": 81086,
-    "good": 18914
+    "evil": 83395,
+    "good": 16605
    },
    "reasons": {
-    "fails": 42209,
-    "assassinHit": 3013,
-    "assassinFailed": 6785,
-    "quests": 12129,
-    "rejections": 35864
+    "fails": 44792,
+    "quests": 10943,
+    "assassinFailed": 5662,
+    "assassinHit": 2670,
+    "rejections": 35933
    },
    "cover": {
-    "hammer": 35864,
+    "hammer": 35933,
     "twoFailSaved": 0,
     "twoFailFailed": 0,
-    "assassinHit": 3013,
-    "assassinMiss": 6785,
-    "ladyUses": 58860,
-    "switches": 20993,
-    "lancelotSwitchedGames": 15373,
+    "assassinHit": 2670,
+    "assassinMiss": 5662,
+    "ladyUses": 59330,
+    "switches": 24126,
+    "lancelotSwitchedGames": 15184,
     "balance": 50000,
-    "lancelot1": 22224,
-    "lancelot2": 22224,
+    "lancelot1": 18188,
+    "lancelot2": 18184,
+    "lancelot3": 18184,
+    "forcedLancelotRounds": 39252,
     "excalibur": 50000
    },
    "findings": {},
-   "steps": 1875807
+   "steps": 1879029
   },
   "6": {
    "n": 6,
    "games": 100000,
-   "setups": 108,
+   "setups": 132,
    "refused": 0,
    "winners": {
-    "evil": 84094,
-    "good": 15906
+    "evil": 86198,
+    "good": 13802
    },
    "reasons": {
-    "fails": 35176,
-    "assassinFailed": 5956,
-    "assassinHit": 1791,
-    "quests": 9950,
-    "rejections": 47127
+    "fails": 37340,
+    "quests": 8748,
+    "assassinHit": 1657,
+    "assassinFailed": 5054,
+    "rejections": 47201
    },
    "cover": {
-    "hammer": 47127,
+    "hammer": 47201,
     "twoFailSaved": 0,
     "twoFailFailed": 0,
-    "assassinHit": 1791,
-    "assassinMiss": 5956,
-    "ladyUses": 49492,
-    "switches": 17688,
-    "lancelotSwitchedGames": 13072,
+    "assassinHit": 1657,
+    "assassinMiss": 5054,
+    "ladyUses": 50003,
+    "switches": 21281,
+    "lancelotSwitchedGames": 13649,
     "balance": 0,
-    "lancelot1": 22224,
-    "lancelot2": 22224,
+    "lancelot1": 18186,
+    "lancelot2": 18184,
+    "lancelot3": 18184,
+    "forcedLancelotRounds": 32235,
     "excalibur": 50000
    },
    "findings": {},
-   "steps": 1835590
+   "steps": 1837114
   },
   "7": {
    "n": 7,
    "games": 100000,
-   "setups": 416,
+   "setups": 536,
    "refused": 0,
    "winners": {
-    "evil": 79435,
-    "good": 20565
+    "evil": 81527,
+    "good": 18473
    },
    "reasons": {
-    "fails": 38868,
-    "quests": 9966,
-    "assassinFailed": 10599,
-    "assassinHit": 3045,
+    "fails": 41122,
+    "quests": 9192,
+    "assassinFailed": 9281,
+    "assassinHit": 2883,
     "rejections": 37522
    },
    "cover": {
     "hammer": 37522,
-    "twoFailSaved": 13842,
-    "twoFailFailed": 7819,
-    "assassinHit": 3045,
-    "assassinMiss": 10599,
-    "ladyUses": 57224,
-    "switches": 26304,
-    "lancelotSwitchedGames": 19090,
+    "twoFailSaved": 14213,
+    "twoFailFailed": 8511,
+    "assassinHit": 2883,
+    "assassinMiss": 9281,
+    "ladyUses": 57739,
+    "switches": 28823,
+    "lancelotSwitchedGames": 17797,
     "balance": 50000,
-    "lancelot1": 28852,
-    "lancelot2": 28852,
+    "lancelot1": 22396,
+    "lancelot2": 22396,
+    "lancelot3": 22396,
+    "forcedLancelotRounds": 40288,
     "excalibur": 50000
    },
    "findings": {},
-   "steps": 1835100
+   "steps": 1840040
   },
   "8": {
    "n": 8,
    "games": 100000,
-   "setups": 208,
+   "setups": 268,
    "refused": 0,
    "winners": {
-    "evil": 83031,
-    "good": 16969
+    "evil": 85159,
+    "good": 14841
    },
    "reasons": {
-    "rejections": 44804,
-    "fails": 36291,
-    "assassinFailed": 8943,
-    "assassinHit": 1936,
-    "quests": 8026
+    "rejections": 44816,
+    "fails": 38542,
+    "quests": 7121,
+    "assassinFailed": 7720,
+    "assassinHit": 1801
    },
    "cover": {
-    "hammer": 44804,
-    "twoFailSaved": 10150,
-    "twoFailFailed": 7352,
-    "assassinHit": 1936,
-    "assassinMiss": 8943,
-    "ladyUses": 48716,
-    "switches": 22254,
-    "lancelotSwitchedGames": 16792,
+    "hammer": 44816,
+    "twoFailSaved": 10723,
+    "twoFailFailed": 7913,
+    "assassinHit": 1801,
+    "assassinMiss": 7720,
+    "ladyUses": 48860,
+    "switches": 25844,
+    "lancelotSwitchedGames": 16822,
     "balance": 0,
-    "lancelot1": 28850,
-    "lancelot2": 28850,
+    "lancelot1": 22390,
+    "lancelot2": 22388,
+    "lancelot3": 22388,
+    "forcedLancelotRounds": 38475,
     "excalibur": 50000
    },
    "findings": {},
-   "steps": 1797887
+   "steps": 1799377
   },
   "9": {
    "n": 9,
    "games": 100000,
-   "setups": 208,
+   "setups": 268,
    "refused": 0,
    "winners": {
-    "good": 20610,
-    "evil": 79390
+    "good": 18559,
+    "evil": 81441
    },
    "reasons": {
-    "quests": 9611,
-    "fails": 39352,
-    "rejections": 38127,
-    "assassinFailed": 10999,
-    "assassinHit": 1911
+    "quests": 8776,
+    "fails": 41505,
+    "rejections": 38118,
+    "assassinFailed": 9783,
+    "assassinHit": 1818
    },
    "cover": {
-    "hammer": 38127,
-    "twoFailSaved": 12613,
-    "twoFailFailed": 8438,
-    "assassinHit": 1911,
-    "assassinMiss": 10999,
-    "ladyUses": 55363,
-    "switches": 25717,
-    "lancelotSwitchedGames": 18807,
+    "hammer": 38118,
+    "twoFailSaved": 13171,
+    "twoFailFailed": 9019,
+    "assassinHit": 1818,
+    "assassinMiss": 9783,
+    "ladyUses": 55967,
+    "switches": 28189,
+    "lancelotSwitchedGames": 17657,
     "balance": 0,
-    "lancelot1": 28850,
-    "lancelot2": 28850,
+    "lancelot1": 22390,
+    "lancelot2": 22388,
+    "lancelot3": 22388,
+    "forcedLancelotRounds": 39924,
     "excalibur": 50000
    },
    "findings": {},
-   "steps": 1808654
+   "steps": 1811600
   },
   "10": {
    "n": 10,
    "games": 100000,
-   "setups": 272,
+   "setups": 360,
    "refused": 0,
    "winners": {
-    "good": 16050,
-    "evil": 83950
+    "good": 14385,
+    "evil": 85615
    },
    "reasons": {
-    "quests": 6372,
-    "fails": 36025,
-    "rejections": 46234,
-    "assassinFailed": 9678,
-    "assassinHit": 1691
+    "quests": 5639,
+    "fails": 37706,
+    "rejections": 46238,
+    "assassinFailed": 8746,
+    "assassinHit": 1671
    },
    "cover": {
-    "hammer": 46234,
-    "twoFailSaved": 9358,
-    "twoFailFailed": 7224,
-    "assassinHit": 1691,
-    "assassinMiss": 9678,
-    "ladyUses": 46453,
-    "switches": 23995,
-    "lancelotSwitchedGames": 18167,
+    "hammer": 46238,
+    "twoFailSaved": 9769,
+    "twoFailFailed": 7708,
+    "assassinHit": 1671,
+    "assassinMiss": 8746,
+    "ladyUses": 46942,
+    "switches": 27349,
+    "lancelotSwitchedGames": 18025,
     "balance": 0,
-    "lancelot1": 32354,
-    "lancelot2": 32354,
+    "lancelot1": 24446,
+    "lancelot2": 24446,
+    "lancelot3": 24446,
+    "forcedLancelotRounds": 34540,
     "excalibur": 50000
    },
    "findings": {},
-   "steps": 1755423
+   "steps": 1759530
   }
  }
 }
