@@ -106,6 +106,8 @@ test("L6 variant 2: Lancelots must play for their current side", () => {
   const r = started(8, { lancelot: 2, roles: { ...NONE, merlin: true, assassin: true } });
   r.g.loyaltyPlan = ["none", "switch", "none", "none", "none"];
   const lg = byRole(r, "lancelotGood"), le = byRole(r, "lancelotEvil");
+  // the dealt round-0 card already took effect at start; reset it to match the plan we set
+  r.g.allegiance[lg] = "good"; r.g.allegiance[le] = "evil"; r.g.loyaltyRevealed = [{ round: 0, card: "none" }];
   approve(r, teamFor(r, [lg, le]));
   const x = r.act(le, "quest", { success: true });
   assert.ok(x.error, "Evil Lancelot must fail");

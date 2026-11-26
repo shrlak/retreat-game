@@ -57,7 +57,7 @@ GUIDE.format(str, params)                   // 실행 중 값 채우기 (조사 
 | `phaseHints.lady.result` | `{targetName}` `{team:이에요}` | `me.ladyResults` + 진영 이름 (`G.names.good/evil`) |
 | `phaseHints.excalibur.others/used/passed` | `{holderName}` `{targetName}` | `proposal.excaliburTo`, `lastExcalibur` |
 | `phaseHints.excalibur.result` | `{targetName}` `{card:이었어요}` | `me.excaliburResults` (`original` → `G.names.success/fail`) |
-| `phaseHints.loyalty.none/switch` | — | `loyaltyRevealed` 마지막 카드 |
+| `phaseHints.loyalty.none/switch` | — | `loyaltyRevealed` 마지막 카드 (변형 1·2만, 그 라운드에 카드가 적용됐을 때) |
 | `phaseHints.loyalty.left` | `{count}` | `loyaltyLeft` |
 | `phaseHints.loyalty.mySwitchSecret` | `{team}` | `me.team != me.startTeam` 일 때, **본인이 눌렀을 때만** |
 | `phaseHints.end.switchedNote` | `{name}` `{team}` | 끝에서 `finalTeams` 가 시작 진영과 다른 순례자 |
@@ -85,3 +85,6 @@ GUIDE.format(str, params)                   // 실행 중 값 채우기 (조사 
 - `phaseHints` 와 `alerts` 는 진영이 드러나지 않는 문장만 있어요. 화면에 늘 띄워도 옆 사람이 봐서 알 수 있는 게 없어요.
 - `roles[...]` (특히 `tips`, `know`) 는 진영이 드러나요. "내 역할 팁" 처럼 본인이 눌렀을 때만 보여 주세요.
 - quest 단계 `onTeam` 은 모두에게 같은 문장이에요. 선한 사람에게 방해 버튼을 아예 숨기면 옆에서 진영이 보일 수 있으니, 버튼은 둘 다 보이게 하고 누를 때 막는 쪽을 권해요.
+
+### 랜슬롯 변형 (server v7)
+`settings.lancelot` 1/2/3 = 공식 변형 1/2/3. 규칙 절과 역할 카드 문장은 세 변형을 모두 설명하니, 변형 3이면 `loyalty` 힌트와 `loyaltyRevealed`/`loyaltySoon` 알림을 띄우지 마세요. `loyaltySoon` 은 변형 1에서만 씁니다.
