@@ -230,3 +230,11 @@ test("H3 in-game rejoin by exact name must not hand over another player's role w
   const res = E.joinPlayer(r.state, victim.name, null, { now: 2 });
   assert.ok(res.error, "anyone who types a player's name gets their seat and secret role");
 });
+
+test("H3b a player whose phone is locked (no polling >15 s) can have their seat and role taken by anyone typing their name", () => {
+  const r = started(5, {});
+  const victim = r.state.players[1];
+  victim.lastSeen = 0; // phone in pocket, browser suspended
+  const res = E.joinPlayer(r.state, victim.name, null, { now: 60_000 });
+  assert.ok(res.error, "name-only rejoin of an idle seat hands over the secret role without any proof");
+});

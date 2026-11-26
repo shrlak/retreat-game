@@ -9,9 +9,25 @@ tar -C "$SRC" --exclude=node_modules --exclude=.task-notes -cf - . | tar -C "$RE
 cd "$REPO"
 {
   echo
-  echo "## Snapshot ($(date -u '+%Y-%m-%d %H:%M UTC'))"
+  echo "## Snapshot ($(date -u '+%Y-%m-%d %H:%M UTC'), auto-generated every push)"
+  echo
+  echo "### Engine tests"
   echo '```'
-  find . -path ./.git -prune -o -type f -print | sort | sed 's|^\./||' | head -200
+  (cd "$SRC" && timeout 90 node --test tests/*.test.mjs 2>&1 | grep -E "^# (pass|fail)|^not ok" | head -20) || echo "tests did not run"
+  echo '```'
+  echo "### Helper folders (files, newest change)"
+  for d in ui assets guide tests web server; do
+    n=$(find "$SRC/$d" -type f 2>/dev/null | grep -v __pycache__ | wc -l)
+    t=$(find "$SRC/$d" -type f -printf '%TY-%Tm-%Td %TH:%TM\n' 2>/dev/null | sort | tail -1)
+    echo "- \`$d/\`: $n files, newest $t UTC"
+  done
+  echo "### Recent commits"
+  echo '```'
+  git log --oneline -8 2>/dev/null || true
+  echo '```'
+  echo "### Files"
+  echo '```'
+  find . -path ./.git -prune -o -type f -print | grep -v __pycache__ | sort | sed 's|^\./||' | head -250
   echo '```'
 } >> HANDOFF.md
 git add -A

@@ -31,14 +31,34 @@ Phone-based online hidden-role game in the style of the classic team-quest deduc
 - Role names: church-retreat names in `web/config.js` (Spencer asked for church-themed names; current set is a first pick).
 - Hosting: Supabase (free, in existing project "health-dashboard") + GitHub Pages. Cloudflare not possible from the cloud session (connector can't deploy Workers).
 
-## Snapshot (2026-11-26 09:05 UTC)
+## Snapshot (2026-11-26 09:09 UTC, auto-generated every push)
+
+### Engine tests
+```
+tests did not run
+```
+### Helper folders (files, newest change)
+- `ui/`: 15 files, newest 2026-11-26 09:10 UTC
+- `assets/`: 89 files, newest 2026-11-26 09:10 UTC
+- `guide/`: 8 files, newest 2026-11-26 09:01 UTC
+- `tests/`: 14 files, newest 2026-11-26 09:10 UTC
+- `web/`: 4 files, newest 2026-11-26 09:03 UTC
+- `server/`: 3 files, newest 2026-11-26 09:04 UTC
+### Recent commits
+```
+5c44ef9 Add .nojekyll
+2024bc9 Add live end-to-end bot test page
+d804a45 Server: SDK-free handler.js; index.ts is a thin wrapper
+5663a2b Engine: name rejoin only for offline seats, no self-target; net slot param
+4e8339d Initial engine, backend, web shell and handoff docs
+```
+### Files
 ```
 .nojekyll
 CLAUDE.md
 CONTRACT.md
 HANDOFF.md
 assets/STYLE.md
-assets/_src/__pycache__/lib.cpython-313.pyc
 assets/_src/build_manifest.py
 assets/_src/build_roles_evil.py
 assets/_src/build_roles_good.py
@@ -56,7 +76,15 @@ assets/avatars/avatar-6.svg
 assets/avatars/avatar-7.svg
 assets/avatars/avatar-8.svg
 assets/avatars/avatar-9.svg
+assets/backgrounds/game.svg
+assets/backgrounds/home.svg
+assets/backgrounds/reveal.svg
+assets/backgrounds/victory-evil.svg
+assets/backgrounds/victory-good.svg
+assets/bg-pattern-overlay.svg
+assets/bg-pattern.svg
 assets/card-back.svg
+assets/icons/apple-touch-icon.png
 assets/icons/check.svg
 assets/icons/clock.svg
 assets/icons/copy.svg
@@ -64,9 +92,15 @@ assets/icons/dove.svg
 assets/icons/exit.svg
 assets/icons/eye-off.svg
 assets/icons/eye.svg
+assets/icons/favicon-16.png
+assets/icons/favicon-32.png
+assets/icons/favicon.svg
 assets/icons/flag.svg
 assets/icons/help.svg
 assets/icons/home.svg
+assets/icons/icon-192.png
+assets/icons/icon-512.png
+assets/icons/icon-maskable-512.png
 assets/icons/info.svg
 assets/icons/lamp.svg
 assets/icons/olive-branch.svg
@@ -106,6 +140,11 @@ assets/team-evil.svg
 assets/team-good.svg
 assets/token-fail.svg
 assets/token-success.svg
+assets/track/quest-board.svg
+assets/track/quest-slot.svg
+assets/track/two-fails.svg
+assets/track/vote-marker.svg
+assets/track/vote-track.svg
 assets/vote-approve.svg
 assets/vote-reject.svg
 guide/README.md
@@ -121,6 +160,7 @@ server/engine.js
 server/handler.js
 server/index.ts
 sync.sh
+tests/README.md
 tests/RULES_CHECKLIST.md
 tests/concurrency.test.mjs
 tests/e2e.html
@@ -134,6 +174,7 @@ tests/live.html
 tests/mutation-check.mjs
 tests/perf.mjs
 tests/run-matrix.mjs
+ui/README.md
 ui/build.js
 ui/dev.html
 ui/dev/mock.js
@@ -141,8 +182,13 @@ ui/dev/theme-fallback.js
 ui/src/00-core.js
 ui/src/10-common.js
 ui/src/20-home.js
+ui/src/21-lobby.js
+ui/src/22-reveal.js
+ui/src/30-board.js
+ui/src/50-end.js
 ui/src/KIT.md
 ui/ui.css
+ui/ui.js
 web/app.js
 web/config.js
 web/dev-ui.js

@@ -14,8 +14,9 @@
   "use strict";
 
   // =====================================================================
-  // Engine port (from server/engine.js). Do not change rules here: change
-  // server/engine.js and re-port, so the mock never drifts from the server.
+  // Engine port, generated from server/engine.js (md5 a40890edd45f…): `export` dropped,
+  // `||=` rewritten for ES2020. Don't edit rules here: change server/engine.js and re-port,
+  // so the mock never drifts from the server.
   // =====================================================================
   var E = (function () {
   // 빛의 원정대 — rules engine. Pure JS (ESM), no deps. Runs in Deno and Node.
@@ -154,6 +155,9 @@
     const same = state.players.find((p) => p.name === n);
     if (state.phase !== "lobby") {
       if (!same) return err("이미 시작된 게임이에요. 처음 쓴 이름 그대로 입력하면 다시 들어갈 수 있어요");
+      // name-only rejoin is allowed only for a seat whose phone has been gone a while,
+      // so nobody can take over (and peek at) an active player's seat.
+      if (now - same.lastSeen < ONLINE_MS) return err("그 이름은 지금 접속 중이에요. 원래 폰에서 다시 열어 주세요");
       same.token = randId(rng, 20); // rejoin from another device: old device is signed out
       same.lastSeen = now;
       return { player: same, changed: true };
@@ -447,6 +451,7 @@
           if (g.assassinId !== me.id) return err("정탐꾼만 지목할 수 있어요");
           const t = P(state, msg.targetId);
           if (!t) return err("없는 참가자예요");
+          if (t.id === me.id) return err("자기 자신은 지목할 수 없어요");
           g.assassinTargetId = t.id;
           if (g.roleOf[t.id] === "merlin") endGame(state, "evil", "assassinHit");
           else endGame(state, "good", "assassinFailed");
@@ -911,9 +916,16 @@
     S.stalled = {};
     prepare(goal);
     var pol = Object.assign({ hostStarts: true, vote: "random", quest: "random", team: "random", assassin: "random" }, goal.pol);
-    var left = !reached(goal);
-    for (var i = 0; i < 5000; i++) {
+    var left = !reached(goal), resets = 0;
+    for (var i = 0; i < 8000; i++) {
       if (reached(goal)) { if (left) break; } else left = true;
+      // the game ended (or hit the assassination) before the goal: start a fresh game and go on
+      if (goal.phase !== "end" && (S.state.phase === "end" || (S.state.phase === "assassin" && goal.phase !== "assassin")) && resets < 5) {
+        resets++;
+        hardReset();
+        prepare(goal);
+        continue;
+      }
       var actor = null, d = null;
       for (var k = 0; k < S.state.players.length; k++) {
         var id = S.state.players[k].id;
