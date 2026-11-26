@@ -8,14 +8,18 @@ Owner/integrator: the main thread. Everyone builds against this file. Need a cha
 - **Realtime**: after any change the function broadcasts on Supabase Realtime channel `mist:<CODE>` event `update` payload `{v}`. Clients listen and then call `state`. Clients also poll `state` every 4 s as a fallback (this also marks them online).
 - **Rules engine**: `server/engine.js`, pure JS ESM, no deps, runs in Deno and Node (`node --test`). Same file is deployed with the function.
 
-## Folder layout (`/mnt/project-files/avalon-game/`)
+## Folder layout (repo root)
 ```
 CONTRACT.md
 server/engine.js      rules engine (pure)
-server/index.ts       edge function handler
+server/index.ts       edge function entry (Deno.serve(makeHandler(...)))
+server/handler.js     request handling, optimistic locking, realtime broadcast
+server/messages.js    every server message in ko + en
 index.html            page shell (repo root); loads files below in this order
 web/config.js         THEME: all names/texts/role art paths (swap names here only)
 web/net.js            window.Net: API + realtime + local token storage
+web/dev-ui.js         plain fallback UI (?dev=1)
+guide/guide.js        window.GUIDE (rules, tutorial, host guide; built from guide/content*.mjs)
 ui/ui.css, ui/ui.js   window.UI: all screens + animations
 assets/               SVG art (see Assets)
 web/app.js            glue: Net -> UI
@@ -67,7 +71,7 @@ window.THEME = {
 - 3 successes → if merlin in game: assassination phase (assassin picks; hitting merlin → evil wins) else good wins. 3 fails → evil wins.
 
 ## Client → server API
-`POST {FN_URL}` with JSON `{action, code?, playerId?, token?, ...params}`. Headers: `apikey` and `Authorization: Bearer <anon>` and `content-type: application/json`.
+`POST {FN_URL}` with JSON `{action, code?, playerId?, token?, ...params}`. Headers: `apikey: <publishable key>` and `content-type: application/json`. The function is deployed with `verify_jwt` off (it checks each player's own token), so no `Authorization` header is needed.
 Response: `{ok:true, view, playerId?, token?, code?}` or `{ok:false, error:"한국어 메시지"}`.
 
 | action | params | who / when |
@@ -141,8 +145,9 @@ UI detects transitions itself: new `lastVote.seq` → vote reveal animation, new
 
 ## window.UI (ui/ui.js)
 ```js
-UI.init(rootEl, api, THEME)   // api = { create(name), join(code,name), ready(b), settings(s), kick(id), start(), ack(),
-                              //         propose(ids), vote(b), quest(b), lady(id), assassinate(id), restart(), leave() }
+UI.init(rootEl, api, THEME, GUIDE)   // api = { create(name), join(code,name), ready(b), settings(s), kick(id), start(), ack(), skipReveal(),
+                              //         propose(ids, excaliburTo?), vote(b), quest(b), excalibur(id?) (no id = pass), lady(id), assassinate(id),
+                              //         allowRejoin(id), claimHost(), restart(), leave(), home(), lastSession(), resume() }
 UI.render(view|null)          // null = home screen (create / join by code). Called on every new view.
 UI.toast(msg)                 // errors
 ```
