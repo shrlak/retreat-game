@@ -25,8 +25,11 @@ Phone-based online hidden-role game in the style of the classic team-quest deduc
 - `ui/` real screens + animations (UI thread): needs excalibur phase, Lancelot loyalty cards, rejoin/claimHost buttons, synced transitions from phaseStartedAt.
 - `tests/` thread: concurrency + handler models.
 
+- Live bot tests on GitHub Pages against function v6 (2026-11-26): base game 5–10 players 12 games 0 fails; expansions (Lancelot 1/2, Excalibur, lady) 5–10 players 16 games 0 fails. One request out of 4,588 hung 160 s (504) earlier → every DB call now has a 5 s deadline, a timed-out write is recognised by `_saveId`, phones abort a tap after 15 s.
+- Auto push: a background loop runs sync.sh every 60 s and pushes only when a file changed (it lives in the working session; restart it if the session is replaced: `while true; do sleep 60; bash sync.sh; done`).
+
 ## Next, in priority order
-1. Run tests/e2e.html matrix 5–10 on GitHub Pages incl. expansions; fix anything found.
+1. Rerun tests/e2e.html after each server change.
 2. Verify the real UI on the live site with the new view fields.
 3. Clean up test leftovers in Supabase: function `mist-admin`, storage bucket `mist-game`.
 4. Keep README.md, HANDOFF.md, CLAUDE.md in step with every feature change.

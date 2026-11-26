@@ -49,7 +49,7 @@
 
   // ---------- my role sheet ----------
   K.knowList = v => {
-    const me = v.me || {}, list = me.knowledge || [];
+    const me = v.me || {}, list = (me.knowledge || []).slice().sort((x, y) => (x.tag === 'lancelot') - (y.tag === 'lancelot'));
     const g = K.G(), kl = (g && g.knowledgeLabels) || {};
     if (!list.length) {
       const empty = me.role === 'oberon' ? (kl.emptyOberon || K.L('보이는 동료가 없어요.', 'You can\'t see any teammates.'))
