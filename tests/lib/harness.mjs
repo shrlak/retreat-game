@@ -1,6 +1,6 @@
 // Simulated-player harness. Bots only ever look at their own view (like a phone client).
 // Every view every bot receives is recorded and checked against the oracle at the end.
-import { EVIL, SIZES, FAILS, teamOf, expectedKnowledge, allegianceAt } from "./oracle.mjs";
+import { EVIL, SIZES, FAILS, teamOf, expectedKnowledge, allegianceAt, sizesFor } from "./oracle.mjs";
 
 function mkRng(seed) {
   let s = (seed >>> 0) || 7;
@@ -18,13 +18,13 @@ const FORBIDDEN_KEYS = new Set(["roleOf", "questCards", "token", "votes_pending"
 export async function playGame(transport, opts = {}) {
   const {
     n = 5, roles: roles0 = { merlin: true, percival: true, morgana: true, assassin: true, mordred: false, oberon: false },
-    lady = false, lancelot = 0, excalibur = false, seed = 1, approveProb = 0.6, evilFailProb = 0.7, chaos = 0.15, maxSteps = 4000,
+    lady = false, lancelot = 0, excalibur = false, balance = false, seed = 1, approveProb = 0.6, evilFailProb = 0.7, chaos = 0.15, maxSteps = 4000,
   } = opts;
   let roles = { ...roles0 };
   const rng = mkRng(seed);
   const findings = [];
   const log = [];
-  const tag = `n=${n} seed=${seed} lady=${lady}${lancelot ? " lancelot=" + lancelot : ""}${excalibur ? " excalibur" : ""} roles=${Object.keys(roles).filter((k) => roles[k]).join("+") || "none"}`;
+  const tag = `n=${n} seed=${seed} lady=${lady}${lancelot ? " lancelot=" + lancelot : ""}${excalibur ? " excalibur" : ""}${balance ? " balance" : ""} roles=${Object.keys(roles).filter((k) => roles[k]).join("+") || "none"}`;
   const bad = (id, msg, extra) => findings.push({ id, msg, tag, extra, step: log.length });
   const call = async (body) => {
     const r = await transport.call(body);
@@ -54,7 +54,7 @@ export async function playGame(transport, opts = {}) {
   const dup = await call({ action: "join", code, name: "봇2" });
   if (dup.ok && dup.playerId === bots[1].id) bad("H3", "lobby: joining with an existing name returned that player's seat");
 
-  let r = await act(host, "settings", { settings: { roles, lady, maxPlayers: 10, ...(lancelot ? { lancelot } : {}), ...(excalibur ? { excalibur } : {}) } });
+  let r = await act(host, "settings", { settings: { roles, lady, maxPlayers: 10, ...(lancelot ? { lancelot } : {}), ...(excalibur ? { excalibur } : {}), ...(balance ? { balance } : {}) } });
   if (!r.ok) { bad("API", "settings refused", r.error); return { findings, log, tag }; }
   const eff = r.view.settings.roles;
   for (const k of Object.keys(roles)) if (!!eff[k] !== !!roles[k]) { roles = { ...roles, ...eff }; break; }
@@ -232,8 +232,8 @@ export async function playGame(transport, opts = {}) {
   for (const b of bots) { const s = await act(b, "state"); }
   const end = bots[0].views[bots[0].views.length - 1];
   const result = { winner: end.winner, winReason: end.winReason };
-  verify({ bots, end, n, roles, lady, lancelot, excalibur, truth, firstLeaderId, firstLadyHolder, seatOf, bad });
-  return { findings, log, tag, result, code, effectiveRoles: roles };
+  verify({ bots, end, n, roles, lady, lancelot, excalibur, balance, truth, firstLeaderId, firstLadyHolder, seatOf, bad });
+  return { findings, log, tag, result, code, effectiveRoles: roles, end, steps };
 }
 
 function deepScan(obj, path, visit) {
@@ -242,7 +242,7 @@ function deepScan(obj, path, visit) {
   }
 }
 
-function verify({ bots, end, n, roles, lady, lancelot = 0, excalibur = false, truth, firstLeaderId, firstLadyHolder, seatOf, bad }) {
+function verify({ bots, end, n, roles, lady, lancelot = 0, excalibur = false, balance = false, truth, firstLeaderId, firstLadyHolder, seatOf, bad }) {
   if (end.phase !== "end") { bad("FLOW", `final phase is ${end.phase}`); return; }
   const roleOf = end.revealed;
   if (!roleOf) { bad("END", "revealed roles missing at end"); return; }
@@ -270,7 +270,8 @@ function verify({ bots, end, n, roles, lady, lancelot = 0, excalibur = false, tr
       if (end.finalTeams[id] !== allegianceAt(r, lr)) bad("L7", `${r} final team ${end.finalTeams[id]}, expected ${allegianceAt(r, lr)}`);
     void expCards;
   }
-  if (JSON.stringify(end.teamSizes) !== JSON.stringify(SIZES[n])) bad("A3", `team sizes ${end.teamSizes}`);
+  const SZ = sizesFor(n, balance);
+  if (JSON.stringify(end.teamSizes) !== JSON.stringify(SZ)) bad("A3", `team sizes ${end.teamSizes}`);
   if (JSON.stringify(end.failsNeeded) !== JSON.stringify(FAILS(n))) bad("A4", `failsNeeded ${end.failsNeeded}`);
   if (end.evilCount !== EVIL[n]) bad("A2", `view evilCount ${end.evilCount}`);
   const sortedPublic = (end.rolesInGame || []).slice().sort().join(",");
@@ -300,7 +301,7 @@ function verify({ bots, end, n, roles, lady, lancelot = 0, excalibur = false, tr
     if (q.fails !== expFails) bad("D3", `quest ${i + 1}: ${q.fails} fails shown, ${expFails} played`);
     const exp = q.fails >= FAILS(n)[i] ? "fail" : "success";
     if (q.result !== exp) bad("A4", `quest ${i + 1}: ${q.fails} fails → ${q.result}, expected ${exp}`);
-    if (q.team.length !== SIZES[n][i]) bad("A3", `quest ${i + 1} team size ${q.team.length}`);
+    if (q.team.length !== SZ[i]) bad("A3", `quest ${i + 1} team size ${q.team.length}`);
     q.result === "success" ? succ++ : fail++;
   });
   if (end.winReason === "fails" && fail < 3) bad("D4", "evil won by fails with <3 failed quests");

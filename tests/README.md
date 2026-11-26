@@ -8,7 +8,7 @@ Run from `avalon-game/`:
 | `node tests/run-matrix.mjs` | 봇 전체 게임: 5~10명 × 선택 역할 32조합 × 등불 on/off × (기본 + 랜슬롯 1·2 × 엑스칼리버) | ~40초 |
 | `node tests/run-matrix.mjs --games 30` | 같은 매트릭스, 기본 30판·확장 15판씩 | ~10분 |
 | `node tests/run-matrix.mjs --no-expansions` | 확장 없이 기본 규칙만 | |
-| `node tests/mutation-check.mjs` | 엔진에 버그 26종(기본 12 + 확장 14)을 하나씩 심어서 테스트가 다 잡는지 확인 | ~10분 |
+| `node tests/mutation-check.mjs` | 엔진에 버그 25종(기본 12 + 확장 13)을 하나씩 심어서 테스트가 다 잡는지 확인 | ~10분 |
 | `node tests/perf.mjs` | 탭당 처리 시간, 폰 1대 다운로드 크기, 10명 게임 트래픽 | 1초 |
 | `FN_URL=… ANON_KEY=… node tests/run-matrix.mjs --http` | 실서버 대상 (이 샌드박스는 supabase.co 차단) | |
 | `tests/live.html?config=../web/config.js` | 브라우저에서 실서버 대상 봇 게임 + 응답 속도(p50/p95) | |

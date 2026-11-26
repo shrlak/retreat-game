@@ -1,5 +1,8 @@
 // Independent rules oracle (original Avalon rulebook). Do NOT import from server/.
 export const EVIL = { 5: 2, 6: 2, 7: 3, 8: 3, 9: 3, 10: 4 };
+// House "balance" variant (not in the rulebook): engine's own table for 5 and 7 players.
+export const BALANCE_SIZES = { 5: [3, 2, 3, 2, 3], 7: [2, 3, 4, 3, 4] };
+export const sizesFor = (n, balance) => (balance && BALANCE_SIZES[n]) || SIZES[n];
 export const SIZES = {
   5: [2, 3, 2, 3, 3], 6: [2, 3, 4, 3, 4], 7: [2, 3, 3, 4, 4],
   8: [3, 4, 4, 5, 5], 9: [3, 4, 4, 5, 5], 10: [3, 4, 4, 5, 5],
