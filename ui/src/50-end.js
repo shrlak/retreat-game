@@ -77,6 +77,7 @@
   K.actions['e-home'] = async () => { if (await K.confirm(K.L('처음 화면으로 갈까요?', 'Go back to the home screen?'), esc(K.L('이 방에서 나가요.', 'You\'ll leave this room.')), { ok: K.L('나가기', 'Leave'), cancel: K.L('취소', 'Cancel') })) { await K.call('home'); window.UI.render(null); } };
 
   const css = `
+.uxe > .ux-dock { position: relative; }   /* in the flow under the roles (only the lobby dock sticks) */
 .uxe-crest { position: relative; width: 140px; height: 140px; display: grid; place-items: center; }
 .uxe-crest .ux-rose { transform: scale(.62); }
 .uxe-crest .crest { position: relative; font-size: 64px; animation: bannerIn 1.2s var(--ease-spring) both, uxeBob 3s 1.2s ease-in-out infinite; }

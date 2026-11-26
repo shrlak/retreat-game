@@ -102,7 +102,7 @@
 .bd-glow { position: absolute; left: 50%; top: -60px; width: 260px; height: 160px; margin-left: -130px; border-radius: 50%; pointer-events: none;
   background: radial-gradient(closest-side, rgba(255,215,122,.22), transparent); animation: breathe 3.6s ease-in-out infinite; }
 .bd-action.dark .bd-glow { background: radial-gradient(closest-side, rgba(224,72,110,.22), transparent); }
-.bd-action > div { position: relative; }
+.bd-action > div:not(.bd-glow) { position: relative; }   /* the glow stays absolute (no empty band above the title) */
 .bd-tag { display: flex; justify-content: center; margin-bottom: 8px; }
 .bd-hint { text-align: center; margin: -4px 0 12px; }
 .bd-note { text-align: center; font-size: 12px; color: #ffb3c4; margin: -6px 0 12px; }
@@ -200,12 +200,12 @@
   function topHtml(v) {
     const n = (v.round || 0) + 1, pn = v.proposalNo || 1;
     let title = e(W.quest()) + ' ' + n, sub = '';
-    if (v.phase === 'propose') sub = K.L(pn + '번째 제안', 'Proposal ' + pn) + ' · ' + e(W.leader()) + ' ' + nm(v, v.leaderId);
+    if (v.phase === 'propose') sub = K.L(e(W.leader()) + ' ' + nm(v, v.leaderId) + ' · ' + pn + '번째 제안', nm(v, v.leaderId) + ' leads · try ' + pn);   // name first: the bar is ~110px wide at 360px
     else if (v.phase === 'vote') sub = K.L(pn + '번째 제안 · 투표 중', 'Proposal ' + pn + ' · Voting');
     else if (v.phase === 'quest') sub = K.L(e(W.quest()) + ' 수행 중', 'On the ' + e(W.quest()));
     else if (v.phase === 'excalibur') sub = e(W.xc()) + ' · ' + nm(v, xcHolder(v));
     else if (v.phase === 'lady') sub = e(W.lady()) + ' · ' + nm(v, v.ladyHolderId);
-    else if (v.phase === 'assassin') { title = K.L('마지막 ' + e(W.assassinate()), 'The final choice'); sub = K.L('모든 것이 이 한 번에 달렸어요', 'Everything rides on this one choice'); }
+    else if (v.phase === 'assassin') { title = K.L('마지막 선택', 'The final choice'); sub = e(K.roleName('assassin') || K.L('정탐꾼', 'Spy')) + ' · ' + nm(v, v.assassinId); }   // short: the bar has ~140px at 360–390px
     const marks = showMarks();
     return '<div class="grow"><div class="ux-top-title">' + title + '</div><div class="ux-top-sub">' + sub + '</div></div>' +
       '<button class="ux-icon-btn' + (marks ? ' on' : '') + '" data-act="bd-marks" aria-label="' + e(K.L('알고 있는 정보 표시', 'Show what I know')) + '" aria-pressed="' + marks + '">' + (marks ? '👁' : '🙈') + '</button>' +
