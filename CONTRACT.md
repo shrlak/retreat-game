@@ -34,7 +34,9 @@ Deployed site root = repo root (GitHub Pages from `main`), so paths are `./web/c
 | `mordred` | hidden leader | 양의 탈을 쓴 늑대 | evil |
 | `oberon` | lone evil | 방황하는 자 | evil |
 | `minion` | evil | 유혹하는 자 | evil |
-Token `lady` (lady of the lake) = **등불**. Teams: `good` = 빛의 일꾼들, `evil` = 유혹의 무리. Quest = 사명, leader = 조장, success card = 축복, fail card = 방해, approve = 찬성, reject = 반대.
+| `lancelotGood` | good Lancelot (module) | 갈림길의 순례자 | good (can switch) |
+| `lancelotEvil` | evil Lancelot (module) | 갈림길의 그림자 | evil (can switch) |
+Token `lady` (lady of the lake) = **등불**. Token `excalibur` = **말씀 두루마리**. Loyalty deck (Lancelot module) = **갈림길 카드** (`none` 그대로 / `switch` 편이 바뀜). Teams: `good` = 빛의 일꾼들, `evil` = 유혹의 무리. Quest = 사명, leader = 조장, success card = 축복, fail card = 방해, approve = 찬성, reject = 반대.
 
 `THEME` shape (config.js):
 ```js
@@ -56,6 +58,8 @@ window.THEME = {
 - Vote: all players vote approve/reject simultaneously; majority (strictly more than half) approves.
 - Quest: team members play secretly; good can only play success.
 - Lady (등불), optional: holder starts at the player right of first leader. After quests 2,3,4 resolve (and game not over), holder inspects one player who hasn't held it; holder privately learns that player's team; token passes to them.
+- Lancelot module (`settings.lancelot`: 0 off, 1 = 조용한 갈림길, 2 = 알려진 갈림길): adds `lancelotGood` + `lancelotEvil` (the evil one takes one evil slot). Loyalty deck of 5 (3 `none`, 2 `switch`) shuffled at start; at the start of rounds 3, 4, 5 (index 2–4) one card is turned face up (`view.loyaltyRevealed`); each `switch` swaps both pilgrims' current sides. Quest cards, the lamp's answer and the final win all use the CURRENT side (`me.team`; `me.startTeam` = side at start). Variant 1: evil pilgrim and the evil team don't know each other; the seer still sees the evil pilgrim. Variant 2: the two pilgrims see each other (tag `lancelot`), and the evil team sees the evil pilgrim (tag `evil`).
+- Excalibur module (`settings.excalibur`): the leader's `propose` also names `excaliburTo` (a team member, not the leader). After all quest cards are in, phase `excalibur`: the holder either flips one other member's card (`excalibur {targetId}`) or passes (`excalibur {}`); only the holder learns the original card (`me.excaliburResults`). Who used it on whom is public (`lastQuest.excalibur`).
 - 3 successes → if merlin in game: assassination phase (assassin picks; hitting merlin → evil wins) else good wins. 3 fails → evil wins.
 
 ## Client → server API
@@ -65,7 +69,7 @@ Response: `{ok:true, view, playerId?, token?, code?}` or `{ok:false, error:"한�
 | action | params | who / when |
 |---|---|---|
 | `create` | `name` | anyone → new room, caller is host |
-| `join` | `code, name` (+`token` if rejoining) | lobby: new seat; in game: rejoin by token, or by exact name |
+| `join` | `code, name` (+`token` if rejoining) | lobby: new seat; in game: rejoin by the device token only, or by exact name while the host has opened that seat (`allowRejoin`) |
 | `state` | — | anyone in room |
 | `ready` | `ready:bool` | lobby |
 | `settings` | `settings` (partial) | host, lobby |
@@ -77,19 +81,34 @@ Response: `{ok:true, view, playerId?, token?, code?}` or `{ok:false, error:"한�
 | `quest` | `success:bool` | team member, phase `quest` |
 | `lady` | `targetId` | holder, phase `lady` |
 | `assassinate` | `targetId` | assassin holder, phase `assassin` |
+| `excalibur` | `targetId` or nothing (= pass) | 말씀 두루마리 holder, phase `excalibur` |
+| `allowRejoin` | `targetId` | host, in game, target offline ≥15 s → that seat opens for 2 min to a new phone joining with the same name |
+| `claimHost` | — | anyone, when the host has been offline ≥60 s (`view.hostAway`) |
 | `restart` | — | host, phase `end` → back to lobby (same players, ready reset) |
 | `leave` | — | lobby only |
 
-`settings`: `{ roles: {percival, morgana, mordred, oberon, assassin, merlin: bool}, lady: bool, balance: bool, maxPlayers: 5..10 }`. `balance` = alternate team sizes: 5p [3,2,3,2,3], 7p [2,3,4,3,4].
+`settings`: `{ roles: {percival, morgana, mordred, oberon, assassin, merlin: bool}, lady: bool, balance: bool, lancelot: 0|1|2, excalibur: bool, maxPlayers: 5..10 }`. `balance` = alternate team sizes: 5p [3,2,3,2,3], 7p [2,3,4,3,4].
 
 ## View (what a client receives — only its own secrets)
 ```js
 {
   code, v,                       // v = state version
-  phase: "lobby"|"reveal"|"propose"|"vote"|"quest"|"lady"|"assassin"|"end",
+  phase: "lobby"|"reveal"|"propose"|"vote"|"quest"|"excalibur"|"lady"|"assassin"|"end",
+  // synced scene transitions (all phones): phaseSeq bumps on every phase/round/proposal change;
+  // phaseStartedAt = server ms when it happened; serverNow = server ms of this response;
+  // serverOffsetMs (added by Net) = server clock − this phone's clock. Start the transition at
+  // phaseStartedAt (local time = phaseStartedAt − serverOffsetMs) and run it for transitionMs; if that
+  // moment has passed, jump to the matching point in the animation (or skip it).
+  phaseSeq, phaseStartedAt, prevPhase, transitionMs, serverNow, serverOffsetMs,
+  rejoinOpenFor: id|null, hostAway: bool,
+  lancelot: 0|1|2, loyaltyRevealed: [{round, card:"none"|"switch"}], loyaltyLeft,
+  excalibur: bool, lastExcalibur: {round, holderId, targetId|null}|null,
+  finalTeams: {id: "good"|"evil"} | null,   // at end: each player's side at the finish
   me: { id, name, isHost, ready, seat,
         role: "merlin"|... (null in lobby), team: "good"|"evil"|null,
-        knowledge: [{ id, tag: "evil"|"merlinCandidate" }],
+        startTeam,                     // side at the start (differs from team only for a switched pilgrim)
+        knowledge: [{ id, tag: "evil"|"merlinCandidate"|"lancelot" }],
+        excaliburResults: [{ round, targetId, original: bool }],
         acked, myVote: true|false|null, myQuestPlayed: bool,
         ladyResults: [{ targetId, team }] },          // only what I learned
   players: [{ id, name, seat, isHost, ready, online, acked }],   // seat order = table order
@@ -99,7 +118,7 @@ Response: `{ok:true, view, playerId?, token?, code?}` or `{ok:false, error:"한�
   proposalNo,       // 1..5 within the round
   leaderId, ladyHolderId, ladyUsedBy:[ids],
   quests: [{ size, failsNeeded, result: null|"success"|"fail", team:[ids], fails:null|n }],
-  proposal: { team:[ids] } | null,
+  proposal: { team:[ids], excaliburTo: id|null } | null,
   votedIds: [ids],                      // who has voted this proposal (not how)
   questPlayedIds: [ids],
   lastVote: { seq, round, proposalNo, leaderId, team, votes:{id:bool}, approved } | null,
@@ -114,7 +133,7 @@ Response: `{ok:true, view, playerId?, token?, code?}` or `{ok:false, error:"한�
 UI detects transitions itself: new `lastVote.seq` → vote reveal animation, new `lastQuest.seq` → card shuffle reveal, phase change → screen transition.
 
 ## window.Net (web/net.js)
-`Net.create(name)`, `Net.join(code,name)`, `Net.act(action, params)`, `Net.onView(cb)`, `Net.resume()` (rejoin from localStorage), `Net.leave()`. All return `Promise<{ok, error?, view?}>`.
+`Net.serverTime()` (≈ server ms now), `Net.clockOffset`, `Net.create(name)`, `Net.join(code,name)`, `Net.act(action, params)`, `Net.onView(cb)`, `Net.resume()` (rejoin from localStorage), `Net.leave()`. All return `Promise<{ok, error?, view?}>`.
 
 ## window.UI (ui/ui.js)
 ```js
@@ -126,7 +145,8 @@ UI.toast(msg)                 // errors
 UI must never assume more than the view shows. Sound: optional, off by default (toggle).
 
 ## Assets (`assets/`, all SVG, original art, warm church-retreat style: candles, lamps, hills, dawn light, doves, sheep; no violence)
-- `roles/<key>.svg` for the 8 keys — card front art, viewBox `0 0 600 840`, no text baked in
+- `roles/<key>.svg` for the 10 keys (incl. `lancelotGood`, `lancelotEvil`), `loyalty/none.svg`, `loyalty/switch.svg`, `excalibur.svg`; full list in `assets/manifest.json`
+- `roles/<key>.svg` for the 8 base keys — card front art, viewBox `0 0 600 840`, no text baked in
 - `card-back.svg` (0 0 600 840), `token-success.svg`, `token-fail.svg`, `vote-approve.svg`, `vote-reject.svg`, `leader.svg`, `lady.svg` (all 0 0 200 200), `bg-pattern.svg` (tileable).
 
 ## Engine API (server/engine.js, ESM) — for tests

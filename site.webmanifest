@@ -1,0 +1,15 @@
+{
+  "name": "빛의 원정대",
+  "short_name": "빛의 원정대",
+  "description": "수련회·모임용 숨은 역할 추리 게임",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#14101f",
+  "theme_color": "#14101f",
+  "icons": [
+    { "src": "./assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "./assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "./assets/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

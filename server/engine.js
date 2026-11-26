@@ -257,6 +257,13 @@ function startGame(state, rng) {
   return {};
 }
 
+const isLancelot = (r) => r === "lancelotGood" || r === "lancelotEvil";
+// current team: Lancelots can switch sides during the game; everyone else stays with their role's team
+function curTeam(g, id) {
+  const r = g.roleOf[id];
+  return isLancelot(r) && g.allegiance && g.allegiance[id] ? g.allegiance[id] : teamOf(r);
+}
+
 function leaderId(state) {
   return state.players[state.game.leaderSeat].id;
 }
@@ -287,8 +294,9 @@ function resolveQuest(state) {
     successes: q.team.length - fails,
     fails,
     result: q.result,
-    excalibur: g.lastExcalibur && g.lastExcalibur.round === g.round ? { holderId: g.lastExcalibur.holderId, targetId: g.lastExcalibur.targetId } : null,
   };
+  if (g.excalibur)
+    g.lastQuest.excalibur = g.lastExcalibur && g.lastExcalibur.round === g.round ? { holderId: g.lastExcalibur.holderId, targetId: g.lastExcalibur.targetId } : null;
   g.questCards = {};
   afterQuestResolved(state);
 }
@@ -473,7 +481,7 @@ export function applyAction(state, msg, ctx = {}) {
         if (!g.proposal.team.includes(me.id)) return err("원정대원만 카드를 낼 수 있어요");
         if (me.id in g.questCards) return err("이미 카드를 냈어요");
         let success = msg.success !== false;
-        if (g.allegiance[me.id] === "good" && !success) return err("빛의 일꾼은 축복 카드만 낼 수 있어요");
+        if (curTeam(g, me.id) === "good" && !success) return err("빛의 일꾼은 축복 카드만 낼 수 있어요");
         g.questCards[me.id] = success;
         if (Object.keys(g.questCards).length === g.proposal.team.length) {
           if (g.excalibur && g.proposal.excaliburTo) {
@@ -504,7 +512,7 @@ export function applyAction(state, msg, ctx = {}) {
         const t = P(state, msg.targetId);
         if (!t || t.id === me.id) return err("다른 사람을 골라 주세요");
         if (g.ladyUsedBy.includes(t.id)) return err("이미 등불을 가졌던 사람은 고를 수 없어요");
-        (g.ladyResults[me.id] ||= []).push({ targetId: t.id, team: g.allegiance[t.id] });
+        (g.ladyResults[me.id] ||= []).push({ targetId: t.id, team: curTeam(g, t.id) });
         state.seqs.lady += 1;
         g.lastLady = { seq: state.seqs.lady, holderId: me.id, targetId: t.id };
         g.ladyHolderId = t.id;
@@ -626,7 +634,7 @@ export function viewFor(state, playerId, now = Date.now()) {
   }
   const myRole = g.roleOf[meP.id];
   me.role = myRole;
-  me.team = g.allegiance ? g.allegiance[meP.id] : teamOf(myRole);
+  me.team = curTeam(g, meP.id);
   me.startTeam = teamOf(myRole);
   me.excaliburResults = ((g.excaliburResults || {})[meP.id] || []).slice();
   me.acked = !!g.acked[meP.id];
@@ -675,6 +683,6 @@ export function viewFor(state, playerId, now = Date.now()) {
     assassinId: showAssassin ? g.assassinId : null,
     assassinTargetId: g.assassinTargetId,
     revealed: ended ? { ...g.roleOf } : null,
-    finalTeams: ended && g.allegiance ? { ...g.allegiance } : null,
+    finalTeams: ended ? Object.fromEntries(state.players.map((p) => [p.id, curTeam(g, p.id)])) : null,
   };
 }

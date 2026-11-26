@@ -326,6 +326,17 @@
      proposal last changed — every vote/quest/lamp result changes one of them in the same action). Every phone
      starts the cinematics and scene transitions at phaseStartedAt + SYNC_LEAD on the server clock. Without the
      fields everything plays on arrival. */
+  const clockS = [];
+  K.clock = {
+    offset: null,
+    sample(serverNow) {
+      if (typeof serverNow !== 'number' || !isFinite(serverNow)) return;
+      clockS.push(serverNow - Date.now()); if (clockS.length > 10) clockS.shift();
+      K.clock.offset = Math.max.apply(null, clockS);   // the least-delayed sample is closest to the truth
+    },
+    now() { return Date.now() + (K.clock.offset || 0); },
+    has() { return K.clock.offset !== null; }
+  };
   K.SYNC_LEAD = 900;     // ms after the server moment that every phone starts together
   K.evAt = (e, v) => {
     const d = e && e.d; if (d && typeof d.at === 'number') return d.at;
@@ -359,8 +370,8 @@
       const res = mine ? ((v.me.ladyResults || []).filter(r => r.targetId === v.lastLady.targetId).pop() || null) : null;
       ev.push({ type: 'lady', d: v.lastLady, result: res });
     }
-    if (v.phase === 'propose' && seen.phase === 'reveal') { ev.push({ type: 'begin' }); ev.push({ type: 'journey', from: -1, to: v.round || 0 }); }
-    else if (typeof v.round === 'number' && typeof seen.round === 'number' && v.round !== seen.round && /^(propose|vote|quest|lady)$/.test(v.phase) && /^(propose|vote|quest|lady)$/.test(seen.phase || '')) ev.push({ type: 'journey', from: seen.round, to: v.round });
+    if (seen.phase === 'reveal' && /^(propose|vote|quest|excalibur|lady)$/.test(v.phase)) { if (!v.round) ev.push({ type: 'begin' }); ev.push({ type: 'journey', from: -1, to: v.round || 0 }); }
+    else if (typeof v.round === 'number' && typeof seen.round === 'number' && v.round !== seen.round && /^(propose|vote|quest|excalibur|lady)$/.test(v.phase) && /^(propose|vote|quest|excalibur|lady)$/.test(seen.phase || '')) ev.push({ type: 'journey', from: seen.round, to: v.round });
     if (v.phase === 'assassin' && seen.phase && seen.phase !== 'assassin') ev.push({ type: 'assassin' });
     if (v.phase === 'end' && seen.phase && seen.phase !== 'end') ev.push({ type: 'end' });
     seen.phase = v.phase; seen.round = v.round;

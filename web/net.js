@@ -10,14 +10,31 @@
   function load() { try { return JSON.parse(localStorage.getItem(LS) || "null"); } catch { return null; } }
   function store(s) { try { s ? localStorage.setItem(LS, JSON.stringify(s)) : localStorage.removeItem(LS); } catch {} }
 
+  // Server clock estimate, so every phone starts a scene transition at the same moment:
+  // serverTime ≈ Date.now() + clockOffset. Keep the sample with the shortest round trip (least error).
+  let clockOffset = 0, clockRtt = Infinity, clockAt = 0;
+  function sampleClock(t0, t1, serverNow) {
+    if (typeof serverNow !== "number") return;
+    const rtt = t1 - t0;
+    // older samples slowly lose priority so a drifting phone clock gets corrected
+    const aged = clockRtt + (t1 - clockAt) / 60;
+    if (rtt <= aged) { clockOffset = serverNow - (t0 + t1) / 2; clockRtt = rtt; clockAt = t1; }
+  }
+  const serverTime = () => Date.now() + clockOffset;
+
   async function call(body) {
     try {
+      const t0 = Date.now();
       const r = await fetch(B.fnUrl, {
         method: "POST",
         headers: { "content-type": "application/json", apikey: B.anonKey },
         body: JSON.stringify(body),
       });
       const j = await r.json().catch(() => ({ ok: false, error: "응답을 읽지 못했어요" }));
+      if (j && j.view) {
+        sampleClock(t0, Date.now(), j.view.serverNow);
+        j.view.serverOffsetMs = Math.round(clockOffset);
+      }
       return j;
     } catch (e) {
       return { ok: false, error: "인터넷 연결을 확인해 주세요", offline: true };
@@ -27,7 +44,8 @@
   function emit(view) {
     if (!view) return;
     if (lastView && view.v < lastV && view.code === lastView.code) return; // stale
-    const changed = !lastView || view.v !== lastV || JSON.stringify(view) !== JSON.stringify(lastView);
+    const same = (a, b) => JSON.stringify({ ...a, serverNow: 0, serverOffsetMs: 0 }) === JSON.stringify({ ...b, serverNow: 0, serverOffsetMs: 0 });
+    const changed = !lastView || view.v !== lastV || !same(view, lastView);
     lastV = view.v; lastView = view;
     if (changed) listeners.forEach((cb) => { try { cb(view); } catch (e) { console.error(e); } });
   }
@@ -82,6 +100,8 @@
   window.Net = {
     get session() { return session; },
     get view() { return lastView; },
+    serverTime,
+    get clockOffset() { return clockOffset; },
     onView(cb) { listeners.push(cb); },
     async create(name) { return enter(await call({ action: "create", name }), name); },
     async join(code, name) {

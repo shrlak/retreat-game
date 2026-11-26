@@ -9,14 +9,15 @@
   /* img: files tried in order under assets/backgrounds/ (the first that loads wins); cls: CSS look + decorations. */
   const SCENES = {
     home: { img: ['home'], cls: 'dawn' },
-    lobby: { img: ['lobby', 'home'], cls: 'camp' },
+    lobby: { img: ['home'], cls: 'camp' },
     reveal: { img: ['reveal'], cls: 'night' },
-    propose: { img: ['propose', 'game'], cls: 'road' },
-    vote: { img: ['vote', 'game'], cls: 'chapel' },
-    quest: { img: ['quest', 'game'], cls: 'wild' },
-    excalibur: { img: ['excalibur', 'quest', 'game'], cls: 'wild' },
-    lady: { img: ['lady', 'game'], cls: 'lamp' },
-    assassin: { img: ['assassin', 'victory-evil'], cls: 'storm' },
+    wait: { img: ['phase-wait', 'game'], cls: 'night' },
+    propose: { img: ['phase-propose', 'game'], cls: 'road' },
+    vote: { img: ['phase-vote', 'game'], cls: 'chapel' },
+    quest: { img: ['phase-mission', 'game'], cls: 'wild' },
+    excalibur: { img: ['phase-mission', 'game'], cls: 'wild' },
+    lady: { img: ['phase-lady', 'game'], cls: 'lamp' },
+    assassin: { img: ['phase-assassin', 'victory-evil'], cls: 'storm' },
     'end-good': { img: ['victory-good'], cls: 'glory' },
     'end-evil': { img: ['victory-evil'], cls: 'dusk' }
   };
@@ -44,7 +45,12 @@
     };
     tryAt(0);
   }
-  K.sceneKey = v => !v ? 'home' : v.phase === 'end' ? 'end-' + (v.winner === 'evil' ? 'evil' : 'good') : (SCENES[v.phase] ? v.phase : 'propose');
+  K.sceneKey = v => {
+    if (!v) return 'home';
+    if (v.phase === 'end') return 'end-' + (v.winner === 'evil' ? 'evil' : 'good');
+    if (v.phase === 'reveal' && v.me && v.me.acked) return 'wait';
+    return SCENES[v.phase] ? v.phase : 'propose';
+  };
 
   let sceneBox = null, sceneCur = null, sceneEl = null;
   function setScene(key) {
@@ -116,69 +122,53 @@
   });
 
   // ---------- journey map cinematic ----------
-  /* Points: 0 = 출발 (the retreat's start), 1..5 = the five 사명. viewBox 0 0 360 660. */
-  const PTS = [[180, 622], [86, 520], [276, 418], [96, 304], [262, 190], [180, 70]];
-  const PLACES = ['갈릴리 호숫가', '광야의 길', '요단강 나루', '감람산 언덕', '예루살렘 성문'];
-  const SEG = 28;
-  // Catmull-Rom through PTS, sampled; idx[i] = sample index of point i
+  /* Art: assets/map/journey.svg (600×1300) with route data from assets/manifest.json (map.data). Point 0 = the
+     start camp, 1..5 = the five 사명 stops. The route is sampled here (no getPointAtLength needed). */
+  const ROUTE = 'M300,1222 C300,1121.9 185,1140.1 185,1040 C185,932.8 420,952.2 420,845 C420,732.2 195,752.8 195,640 C195,525.6 415,546.4 415,432 C415,324.2 300,343.8 300,236';
+  const PLACES = ['우물가', '목자의 들', '강 건너기', '빛의 산', '거룩한 성문'];
+  const MW = 600, MH = 1300, MARK = 90, BADGE = 84, CUR = 140;
   const SAMP = [], IDX = [0];
   (function build() {
-    const P = i => PTS[Math.max(0, Math.min(PTS.length - 1, i))];
-    for (let i = 0; i < PTS.length - 1; i++) {
-      const p0 = P(i - 1), p1 = P(i), p2 = P(i + 1), p3 = P(i + 2);
-      for (let s = i === 0 ? 0 : 1; s <= SEG; s++) {
-        const t = s / SEG, t2 = t * t, t3 = t2 * t;
-        const f = (a, b, c, d) => .5 * ((2 * b) + (-a + c) * t + (2 * a - 5 * b + 4 * c - d) * t2 + (-a + 3 * b - 3 * c + d) * t3);
-        SAMP.push([f(p0[0], p1[0], p2[0], p3[0]), f(p0[1], p1[1], p2[1], p3[1])]);
+    const n = ROUTE.match(/-?\d+(\.\d+)?/g).map(Number);
+    let x = n[0], y = n[1]; SAMP.push([x, y]);
+    for (let i = 2; i + 5 < n.length; i += 6) {
+      const c1x = n[i], c1y = n[i + 1], c2x = n[i + 2], c2y = n[i + 3], ex = n[i + 4], ey = n[i + 5];
+      for (let s = 1; s <= 40; s++) {
+        const t = s / 40, u = 1 - t;
+        SAMP.push([u * u * u * x + 3 * u * u * t * c1x + 3 * u * t * t * c2x + t * t * t * ex, u * u * u * y + 3 * u * u * t * c1y + 3 * u * t * t * c2y + t * t * t * ey]);
       }
-      IDX.push(SAMP.length - 1);
+      IDX.push(SAMP.length - 1); x = ex; y = ey;
     }
   })();
+  const PTS = IDX.map(i => SAMP[i]);
   const LEN = [0]; for (let i = 1; i < SAMP.length; i++) LEN.push(LEN[i - 1] + Math.hypot(SAMP[i][0] - SAMP[i - 1][0], SAMP[i][1] - SAMP[i - 1][1]));
   const TOTAL = LEN[LEN.length - 1];
-  const pathD = (a, b) => 'M' + SAMP.slice(a, b + 1).map(p => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join('L');
   function atLen(l) {
     let i = 1; while (i < LEN.length - 1 && LEN[i] < l) i++;
     const k = (l - LEN[i - 1]) / Math.max(1e-6, LEN[i] - LEN[i - 1]), a = SAMP[i - 1], b = SAMP[i];
     return [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k];
   }
   const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  const mk = (x, y) => 'translate(' + (x - MARK * .5).toFixed(1) + ' ' + (y - MARK * .92).toFixed(1) + ')';
+  const img = (f, x, y, sz, cls) => '<image href="' + K.asset('map/' + f) + '" x="' + (x - sz / 2) + '" y="' + (y - sz / 2) + '" width="' + sz + '" height="' + sz + '"' + (cls ? ' class="' + cls + '"' : '') + '/>';
 
-  function landmark(i) {
-    const [x, y] = PTS[i + 1];
-    const g = ['<path d="M' + (x - 34) + ' ' + (y + 12) + 'q17 -8 34 0t34 0" class="jr-water"/><path d="M' + (x - 26) + ' ' + (y + 20) + 'q13 -6 26 0t26 0" class="jr-water"/>',
-      '<path d="M' + (x - 38) + ' ' + (y + 16) + 'l14 -18 10 10 12 -20 18 28z" class="jr-hill"/>',
-      '<path d="M' + (x - 40) + ' ' + (y + 14) + 'q20 -10 40 0t40 0" class="jr-water"/><path d="M' + (x - 40) + ' ' + (y + 22) + 'q20 -10 40 0t40 0" class="jr-water"/>',
-      '<path d="M' + (x - 42) + ' ' + (y + 18) + 'q22 -40 44 -4q12 -16 26 4z" class="jr-hill"/><circle cx="' + (x + 20) + '" cy="' + (y + 4) + '" r="3" class="jr-tree"/><circle cx="' + (x + 28) + '" cy="' + (y + 8) + '" r="3" class="jr-tree"/>',
-      '<path d="M' + (x - 36) + ' ' + (y + 18) + 'v-18h10v-8h10v8h12v-14h8v14h12v-8h10v8h10v18z" class="jr-city"/>'][i] || '';
-    return g;
-  }
   function mapSVG(v, from, to) {
-    const qs = v.quests || [], cur = Math.max(0, to);
-    let s = '<svg class="jr-svg" viewBox="0 0 360 660" xmlns="http://www.w3.org/2000/svg">' +
-      '<defs><radialGradient id="jrG" cx="50%" cy="40%" r="75%"><stop offset="0" stop-color="#2a2a5c"/><stop offset="1" stop-color="#0b0e26"/></radialGradient>' +
-      '<radialGradient id="jrL" r="50%"><stop offset="0" stop-color="#fff3c8"/><stop offset=".5" stop-color="#f4c96b" stop-opacity=".7"/><stop offset="1" stop-color="#f4c96b" stop-opacity="0"/></radialGradient></defs>' +
-      '<rect width="360" height="660" rx="22" fill="url(#jrG)"/>' +
-      '<rect x="8" y="8" width="344" height="644" rx="16" class="jr-frame"/>';
-    for (let i = 0; i < 26; i++) { const x = (i * 137) % 340 + 10, y = (i * 251) % 640 + 10; s += '<circle cx="' + x + '" cy="' + y + '" r="' + (i % 3 ? 1 : 1.6) + '" class="jr-star" style="animation-delay:' + (i % 7) * .4 + 's"/>'; }
-    for (let i = 0; i < 5; i++) s += '<g class="jr-lm">' + landmark(i) + '</g>';
-    s += '<path d="' + pathD(0, IDX[5]) + '" class="jr-road"/>';
-    const doneTo = IDX[Math.max(0, from + 1)];
-    if (doneTo > 0) s += '<path d="' + pathD(0, doneTo) + '" class="jr-done"/>';
-    const a = IDX[Math.max(0, from + 1)], b = IDX[cur + 1];
-    s += '<path d="' + pathD(a, b) + '" class="jr-go" data-len="' + (LEN[b] - LEN[a]).toFixed(1) + '"/>';
-    s += '<g class="jr-start"><circle cx="' + PTS[0][0] + '" cy="' + PTS[0][1] + '" r="9"/><text x="' + PTS[0][0] + '" y="' + (PTS[0][1] + 28) + '">출발</text></g>';
+    const qs = v.quests || [], start = PTS[Math.max(0, from + 1)];
+    let s = '<svg class="jr-svg" viewBox="0 0 ' + MW + ' ' + MH + '" xmlns="http://www.w3.org/2000/svg">' +
+      '<path d="' + ROUTE + '" class="jr-road"/>' +
+      '<path d="' + ROUTE + '" class="jr-go" style="stroke-dasharray:' + TOTAL.toFixed(1) + ';stroke-dashoffset:' + (TOTAL - LEN[IDX[Math.max(0, from + 1)]]).toFixed(1) + '"/>';
     for (let i = 0; i < 5; i++) {
-      const [x, y] = PTS[i + 1], q = qs[i] || {}, r = q.result, here = i === cur;
-      s += '<g class="jr-st' + (r ? ' ' + r : '') + (here ? ' here' : '') + '" data-st="' + i + '">' +
-        (here ? '<circle cx="' + x + '" cy="' + y + '" r="34" class="jr-aura"/>' : '') +
-        '<circle cx="' + x + '" cy="' + y + '" r="17" class="jr-dot"/>' +
-        '<text x="' + x + '" y="' + (y + 6) + '" class="jr-n">' + (r === 'success' ? '✓' : r === 'fail' ? '✕' : (i + 1)) + '</text>' +
-        '<text x="' + x + '" y="' + (y - 26) + '" class="jr-name">' + esc(PLACES[i]) + '</text>' +
-        (q.size ? '<text x="' + x + '" y="' + (y + 36) + '" class="jr-sz">' + q.size + '명' + ((q.failsNeeded || 1) >= 2 ? ' · 방해 2' : '') + '</text>' : '') +
+      const [x, y] = PTS[i + 1], r = (qs[i] || {}).result, q = qs[i] || {};
+      s += '<g class="jr-st' + (i === to ? ' here' : '') + '" data-st="' + i + '">' +
+        '<circle cx="' + x + '" cy="' + y + '" r="46" class="jr-dot"/>' +
+        (r ? img(r === 'success' ? 'stop-done-good.svg' : 'stop-done-evil.svg', x, y, BADGE, 'jr-seal') : '<text x="' + x + '" y="' + (y + 14) + '" class="jr-n">' + (i + 1) + '</text>') +
+        (i === to ? img('stop-current.svg', x, y, CUR, 'jr-cur') : '') +
+        '<text x="' + x + '" y="' + (y - 58) + '" class="jr-name">' + esc(PLACES[i]) + '</text>' +
+        (q.size ? '<text x="' + x + '" y="' + (y + 76) + '" class="jr-sz">' + q.size + '명' + ((q.failsNeeded || 1) >= 2 ? ' · 방해 2' : '') + '</text>' : '') +
         '</g>';
     }
-    s += '<g class="jr-tok" transform="translate(' + PTS[Math.max(0, from + 1)].join(' ') + ')"><circle r="26" fill="url(#jrL)" class="jr-tglow"/><circle r="11" class="jr-tbody"/><text y="5" class="jr-ticon">🕯️</text></g>';
+    s += '<g class="jr-tok" transform="' + mk(start[0], start[1]) + '"><circle cx="45" cy="70" r="52" class="jr-tglow"/>' +
+      '<image href="' + K.asset('map/marker.svg') + '" width="' + MARK + '" height="' + MARK + '"/></g>';
     return s + '</svg>';
   }
 
@@ -187,41 +177,44 @@
     const to = Math.max(0, Math.min(4, typeof ev.to === 'number' ? ev.to : (v.round || 0)));
     const from = Math.max(-1, Math.min(to - 1, typeof ev.from === 'number' ? ev.from : to - 1));
     lastJourney = Date.now();
-    const q = (v.quests || [])[to] || {}, leader = K.player ? K.player(v, v.leaderId) : (v.players || []).find(p => p.id === v.leaderId);
-    const late = ctx.late || 0, quick = late > 2500 || K.reduced();
+    const q = (v.quests || [])[to] || {}, leader = (v.players || []).find(p => p.id === v.leaderId);
+    const quick = (ctx.late || 0) > 2500 || K.reduced();
     ctx.el.classList.add('jr-ov');
     ctx.set('<div class="jr-wrap">' +
       '<div class="ux-ornament jr-kicker">' + esc(K.term('quest', '사명')) + ' ' + (to + 1) + '</div>' +
       '<div class="ux-cine-title">' + esc((K.josa ? K.josa(PLACES[to], '으로') : PLACES[to] + '(으)로') + (to === 0 && from < 0 ? ' 떠나요' : ' 이동해요')) + '</div>' +
-      '<div class="jr-view"><div class="jr-pan">' + mapSVG(v, from, to) + '</div></div>' +
+      '<div class="jr-view"><div class="jr-pan"><div class="jr-map"></div>' + mapSVG(v, from, to) + '</div></div>' +
       '<div class="jr-info ux-cine-sub">' + (q.size ? esc(q.size + '명의 ' + K.term('questTeam', '원정대')) : '') +
       ((q.failsNeeded || 1) >= 2 ? ' · <b>' + esc(K.term('fail', '방해')) + ' 2장</b>이 나와야 실패' : '') +
       (leader ? '<br>' + esc(K.term('leader', '조장')) + ': ' + esc(leader.name) : '') + '</div></div>');
     const view = ctx.inner.querySelector('.jr-view'), pan = ctx.inner.querySelector('.jr-pan'), svg = ctx.inner.querySelector('.jr-svg');
+    const map = ctx.inner.querySelector('.jr-map'), mi = new Image();
+    mi.onload = () => { map.style.backgroundImage = 'url("' + mi.src + '")'; view.classList.add('has-art'); }; mi.src = K.asset('map/journey.svg');
     const tok = svg.querySelector('.jr-tok'), go = svg.querySelector('.jr-go');
-    const vw = view.clientWidth || 320, vh = view.clientHeight || 360, sc = vw / 360, mh = 660 * sc;
-    const panTo = y => { const ty = Math.max(vh - mh, Math.min(0, vh / 2 - y * sc)); pan.style.transform = 'translate3d(0,' + ty.toFixed(1) + 'px,0)'; };
-    const a = LEN[IDX[Math.max(0, from + 1)]], b = LEN[IDX[to + 1]], segLen = b - a;
-    go.style.strokeDasharray = segLen.toFixed(1); go.style.strokeDashoffset = segLen.toFixed(1);
-    const place = l => { const p = atLen(l); tok.setAttribute('transform', 'translate(' + p[0].toFixed(1) + ' ' + p[1].toFixed(1) + ')'); return p; };
+    const vw = view.clientWidth || 320, vh = view.clientHeight || 400, sc = vw / MW, mh = MH * sc;
+    const panTo = y => { const ty = Math.max(vh - mh, Math.min(0, vh * .55 - y * sc)); pan.style.transform = 'translate3d(0,' + ty.toFixed(1) + 'px,0)'; };
+    const a = LEN[IDX[Math.max(0, from + 1)]], b = LEN[IDX[to + 1]];
+    const place = l => { const p = atLen(l); tok.setAttribute('transform', mk(p[0], p[1])); go.style.strokeDashoffset = (TOTAL - l).toFixed(1); return p; };
     panTo(atLen(a)[1]);
     K.fb('tap');
     if (!quick) {
-      await ctx.sleep(700);
+      await ctx.sleep(750);
       if (!ctx.skipped) {
-        const D = 2100;
+        const D = 2500;
+        tok.classList.add('walk');
         await new Promise(res => {
           const t0 = performance.now();
           const step = now => {
-            const t = ctx.skipped ? 1 : Math.min(1, (now - t0) / D), e = ease(t), l = a + segLen * e;
-            const p = place(l); panTo(p[1]); go.style.strokeDashoffset = (segLen * (1 - e)).toFixed(1);
+            const t = ctx.skipped ? 1 : Math.min(1, (now - t0) / D), p = place(a + (b - a) * ease(t));
+            panTo(p[1]);
             if (t < 1) requestAnimationFrame(step); else res();
           };
           requestAnimationFrame(step);
         });
+        tok.classList.remove('walk');
       }
     }
-    const p = place(b); panTo(p[1]); go.style.strokeDashoffset = '0';
+    const p = place(b); panTo(p[1]);
     const st = svg.querySelector('[data-st="' + to + '"]'); if (st) st.classList.add('arrived');
     K.fb('chime');
     if (!ctx.skipped) K.fx.burstAt(tok, { n: 46, speed: 260 });
@@ -321,42 +314,33 @@
 .jr-ov { background: radial-gradient(circle at 50% 35%, rgba(26,30,72,.94), rgba(5,7,20,.98)); }
 .jr-wrap { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 10px; }
 .jr-kicker { animation: titleIn .6s both; }
-.jr-view { position: relative; width: 100%; max-width: 360px; height: min(52vh, 420px); overflow: hidden; border-radius: 22px; box-shadow: 0 0 0 1px var(--line-strong), 0 20px 60px rgba(0,0,0,.55), 0 0 40px rgba(244,201,107,.15); animation: jrUnroll .8s var(--ease-out) both; transform-origin: 50% 0; }
-.jr-pan { will-change: transform; }
-.jr-svg { display: block; width: 100%; height: auto; }
+.jr-view { position: relative; width: 100%; max-width: 360px; height: min(54vh, 440px); overflow: hidden; border-radius: 22px; background: radial-gradient(circle at 50% 40%, #3a3166, #121233);
+  box-shadow: 0 0 0 1px var(--line-strong), 0 20px 60px rgba(0,0,0,.55), 0 0 40px rgba(244,201,107,.15); animation: jrUnroll .8s var(--ease-out) both; transform-origin: 50% 0; }
+.jr-pan { position: relative; will-change: transform; }
+.jr-map { position: absolute; inset: 0; background-size: 100% 100%; }
+.jr-svg { position: relative; display: block; width: 100%; height: auto; }
 @keyframes jrUnroll { from { transform: scaleY(.2); opacity: 0; } to { transform: none; opacity: 1; } }
-.jr-frame { fill: none; stroke: rgba(255,227,163,.35); stroke-width: 1.5; stroke-dasharray: 2 6; }
-.jr-star { fill: #fff; opacity: .5; animation: scnTw 3s ease-in-out infinite; }
-.jr-road { fill: none; stroke: rgba(255,231,168,.22); stroke-width: 5; stroke-linecap: round; stroke-dasharray: 2 10; }
-.jr-done { fill: none; stroke: rgba(244,201,107,.75); stroke-width: 5; stroke-linecap: round; }
-.jr-go { fill: none; stroke: #ffe7a8; stroke-width: 6; stroke-linecap: round; filter: drop-shadow(0 0 6px rgba(255,215,122,.9)); }
-.jr-water { fill: none; stroke: rgba(150,190,255,.45); stroke-width: 2; stroke-linecap: round; }
-.jr-hill { fill: rgba(120,110,190,.32); stroke: rgba(255,227,163,.25); stroke-width: 1; }
-.jr-tree { fill: rgba(140,200,140,.5); }
-.jr-city { fill: rgba(255,215,122,.22); stroke: rgba(255,227,163,.5); stroke-width: 1; }
-.jr-start circle { fill: rgba(255,231,168,.35); stroke: #ffe7a8; stroke-width: 2; }
-.jr-start text, .jr-name, .jr-sz, .jr-n { text-anchor: middle; font-family: var(--font-display); }
-.jr-start text { fill: var(--text-dim); font-size: 12px; }
-.jr-dot { fill: #1a2050; stroke: rgba(255,227,163,.55); stroke-width: 2; }
-.jr-n { fill: var(--gold-hi); font-size: 15px; font-weight: 700; }
-.jr-name { fill: var(--text); font-size: 12.5px; font-weight: 700; }
-.jr-sz { fill: var(--text-mute); font-size: 10.5px; }
-.jr-st.success .jr-dot { fill: rgba(255,215,122,.9); stroke: #fff3c8; } .jr-st.success .jr-n { fill: #3a2a08; }
-.jr-st.fail .jr-dot { fill: rgba(224,72,110,.85); stroke: #ffc0d0; } .jr-st.fail .jr-n { fill: #fff; }
-.jr-st.here .jr-dot { stroke: #ffe7a8; stroke-width: 3; }
-.jr-aura { fill: rgba(255,215,122,.16); transform-box: fill-box; transform-origin: center; animation: breathe 2s ease-in-out infinite; }
-.jr-st.arrived .jr-dot { fill: rgba(255,231,168,.95); }
-.jr-st.arrived .jr-n { fill: #3a2a08; }
-.jr-st.arrived .jr-aura { animation: jrPing 1.2s var(--ease-out) both, breathe 2s 1.2s ease-in-out infinite; }
-@keyframes jrPing { from { transform: scale(.4); opacity: 1; } to { transform: scale(1.4); opacity: .6; } }
-.jr-tbody { fill: #fff3c8; stroke: #c98d2e; stroke-width: 2; }
-.jr-ticon { text-anchor: middle; font-size: 14px; }
-.jr-tglow { transform-box: fill-box; transform-origin: center; animation: breathe 1.4s ease-in-out infinite; }
+.jr-road { fill: none; stroke: rgba(255,231,168,.3); stroke-width: 10; stroke-linecap: round; stroke-dasharray: 3 18; }
+.has-art .jr-road { opacity: 0; }
+.jr-go { fill: none; stroke: #e9b949; stroke-width: 11; stroke-linecap: round; opacity: .9; }
+.jr-dot { fill: rgba(26,32,80,.55); stroke: rgba(255,227,163,.6); stroke-width: 3; }
+.has-art .jr-dot { fill: transparent; stroke: transparent; }
+.jr-n, .jr-name, .jr-sz { text-anchor: middle; font-family: var(--font-display); paint-order: stroke; stroke: rgba(10,10,30,.75); stroke-width: 6px; stroke-linejoin: round; }
+.jr-n { fill: var(--gold-hi); font-size: 40px; font-weight: 700; }
+.jr-name { fill: #fff6dc; font-size: 30px; font-weight: 700; }
+.jr-sz { fill: rgba(255,246,220,.8); font-size: 24px; }
+.jr-cur { transform-box: fill-box; transform-origin: center; animation: breathe 1.8s ease-in-out infinite; }
+.jr-seal { transform-box: fill-box; transform-origin: center; }
+.jr-st.arrived .jr-cur { animation: jrPing 1.1s var(--ease-out) both, breathe 1.8s 1.1s ease-in-out infinite; }
+@keyframes jrPing { from { transform: scale(.4); opacity: 1; } to { transform: scale(1.25); opacity: .9; } }
+.jr-tglow { fill: rgba(255,215,122,.28); transform-box: fill-box; transform-origin: center; animation: breathe 1.4s ease-in-out infinite; }
+.jr-tok.walk image { transform-box: fill-box; transform-origin: 50% 92%; animation: jrStep .42s ease-in-out infinite alternate; }
+@keyframes jrStep { from { transform: rotate(-4deg) translateY(0); } to { transform: rotate(4deg) translateY(-4px); } }
 .jr-info { opacity: 0; transform: translateY(8px); transition: opacity .5s ease, transform .5s ease; animation: none; line-height: 1.6; }
 .jr-info.on { opacity: 1; transform: none; }
 .jr-info b { color: #ff9db5; font-weight: 700; }
 @media (prefers-reduced-motion: reduce) {
-  .ux-scene-l .img, .ux-scene-l .deco i, .ux-wfx i, .jr-star, .jr-aura, .jr-tglow { animation: none !important; }
+  .ux-scene-l .img, .ux-scene-l .deco i, .ux-wfx i, .jr-cur, .jr-tglow, .jr-tok image { animation: none !important; }
   .ux-wipe, .ux-sweep { display: none; }
 }
 `;

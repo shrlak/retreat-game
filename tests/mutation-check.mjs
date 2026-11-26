@@ -8,17 +8,31 @@ import { runMatrix } from "./run-matrix.mjs";
 const src = readFileSync(new URL("../server/engine.js", import.meta.url), "utf8");
 const MUTANTS = {
   "merlin sees mordred": [`teamOf(r) === "evil" && r !== "mordred") me.knowledge`, `teamOf(r) === "evil") me.knowledge`],
-  "oberon sees evil": [`myRole !== "oberon" && teamOf(r)`, `teamOf(r)`],
+  "oberon sees evil": [`role === "oberon" ||`, `role === "__none__" ||`],
   "no 2-fail quest at 7": [`n >= 7 ? 2 : 1`, `n >= 8 ? 2 : 1`],
   "hammer at 4": [`g.proposalNo >= 5`, `g.proposalNo >= 4`],
   "tie approves": [`yes * 2 > state.players.length`, `yes * 2 >= state.players.length`],
   "leader stuck on reject": [`g.proposal = null;\n              nextLeader(state);`, `g.proposal = null;`],
   "lady on previous holder": [`if (g.ladyUsedBy.includes(t.id)) return err`, `if (false) return err`],
   "revealed leaks early": [`revealed: ended ? { ...g.roleOf } : null`, `revealed: { ...g.roleOf }`],
-  "good may fail": [`if (teamOf(g.roleOf[me.id]) === "good" && !success) return err`, `if (false) return err`],
+  "good may fail": [`if (curTeam(g, me.id) === "good" && !success) return err`, `if (false) return err`],
   "percival misses morgana": [`(r === "merlin" || r === "morgana")`, `(r === "merlin")`],
   "6p wrong sizes": [`6: [2, 3, 4, 3, 4]`, `6: [2, 3, 3, 4, 4]`],
   "10p 3 evil": [`10: 4 }`, `10: 3 }`],
+  // expansions (Lancelot / Excalibur)
+  "quest rule ignores switch": [`if (curTeam(g, me.id) === "good" && !success) return err`, `if (teamOf(g.roleOf[me.id]) === "good" && !success) return err`],
+  "switch never flips": [`g.allegiance[id] = g.allegiance[id] === "good" ? "evil" : "good";`, `g.allegiance[id] = g.allegiance[id];`],
+  "loyalty card in round 2": [`g.round >= 2 && g.loyaltyDeck.length`, `g.round >= 1 && g.loyaltyDeck.length`],
+  "quiet lancelot visible to evil": [`(quietLancelot && role === "lancelotEvil")`, `(quietLancelot && role === "lancelotEvil" && false)`],
+  "known lancelots blind": [`if (g.lancelot === 2 && (myRole`, `if (g.lancelot === 3 && (myRole`],
+  "lady shows start team": [`team: curTeam(g, t.id) }`, `team: teamOf(g.roleOf[t.id]) }`],
+  "leader keeps excalibur": [`|| excaliburTo === me.id)`, `)`],
+  "excalibur on self": [`if (targetId === me.id || !g.proposal.team.includes(targetId))`, `if (!g.proposal.team.includes(targetId))`],
+  "excalibur doesn't flip": [`g.questCards[targetId] = !original;`, `g.questCards[targetId] = original;`],
+  "excalibur shows wrong original": [`({ round: g.round, targetId, original })`, `({ round: g.round, targetId, original: !original })`],
+  "anyone uses excalibur": [`if (g.proposal.excaliburTo !== me.id) return err`, `if (false) return err`],
+  "excalibur results leak": [`me.excaliburResults = ((g.excaliburResults || {})[meP.id] || []).slice();`, `me.excaliburResults = Object.values(g.excaliburResults || {}).flat();`],
+  "final teams leak early": [`finalTeams: ended ? Object.fromEntries`, `finalTeams: true ? Object.fromEntries`],
 };
 const dir = mkdtempSync(join(tmpdir(), "mut-"));
 let missed = 0;

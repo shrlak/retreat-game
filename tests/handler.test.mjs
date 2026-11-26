@@ -11,8 +11,16 @@ test("full bot games run through the real handler for every player count", async
     const t = handlerTransport({ seed: n, ...fast });
     const r = await playGame(t, { n, lady, seed: n * 7 + (lady ? 1 : 0), roles: { merlin: true, percival: true, morgana: true, assassin: true, mordred: n >= 7, oberon: n === 10 } });
     assert.ok(r.result, `n=${n} did not finish: ${r.setupRefused || ""}`);
-    const real = r.findings.filter((f) => f.id !== "H3b");
-    assert.deepEqual(real.map((f) => `[${f.id}] ${f.msg}`), [], r.tag);
+    assert.deepEqual(r.findings.map((f) => `[${f.id}] ${f.msg}`), [], r.tag);
+  }
+});
+
+test("Lancelot (both modes) and Excalibur games run through the real handler", async () => {
+  for (const n of [7, 8, 10]) for (const lancelot of [1, 2]) for (const excalibur of [false, true]) {
+    const t = handlerTransport({ seed: n + lancelot, ...fast });
+    const r = await playGame(t, { n, lady: n >= 8, lancelot, excalibur, seed: n * 13 + lancelot * 3 + (excalibur ? 1 : 0), roles: { merlin: true, percival: true, morgana: true, assassin: true, mordred: false, oberon: false } });
+    assert.ok(r.result, `${r.tag} did not finish: ${r.setupRefused || ""}`);
+    assert.deepEqual(r.findings.map((f) => `[${f.id}] ${f.msg}`), [], r.tag);
   }
 });
 
@@ -82,7 +90,7 @@ for (const n of [5, 10]) test(`${n} phones tapping at once through the real hand
   assert.equal(errors.length, 0, `${errors.length} taps failed over 10 rooms: ${[...new Set(errors)].slice(0, 3).join(" | ")}`);
 });
 
-test("lag: a tap's response waits on the realtime broadcast round trip", async () => {
+test("lag: a tap's response does not wait on the realtime broadcast round trip", async () => {
   const t = handlerTransport({ latency: [40, 40] });
   const c = await t.call({ action: "create", name: "p0" });
   t.stats.ms.length = 0;

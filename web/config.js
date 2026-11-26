@@ -24,6 +24,11 @@ window.THEME = {
                 desc: "유혹의 무리지만 동료를 모르고, 동료도 당신을 몰라요. 선지자에게는 보여요." },
     minion:   { classic: "minion",      name: "유혹하는 자",     short: "유혹",   team: "evil", art: "./assets/roles/minion.svg",
                 desc: "동료 유혹하는 자들을 알고 있어요. 몰래 사명을 방해하세요." },
+    // optional module: 갈림길의 순례자 (classic: Lancelot). Can switch sides when a 갈림길 카드 says so.
+    lancelotGood: { classic: "good lancelot", en: "Good Lancelot", name: "갈림길의 순례자", short: "순례자", team: "good", art: "./assets/roles/lancelotGood.svg",
+                desc: "빛의 일꾼 편으로 시작하지만, 3번째 사명부터 갈림길 카드가 뒤집히면 편이 바뀔 수 있어요. 지금 내 편으로 카드를 내세요." },
+    lancelotEvil: { classic: "evil lancelot", en: "Evil Lancelot", name: "갈림길의 그림자", short: "그림자", team: "evil", art: "./assets/roles/lancelotEvil.svg",
+                desc: "유혹의 무리 편으로 시작하지만, 3번째 사명부터 갈림길 카드가 뒤집히면 편이 바뀔 수 있어요. 지금 내 편으로 카드를 내세요." },
   },
   terms: {
     quest: "사명", questTeam: "원정대", leader: "조장",
@@ -32,10 +37,15 @@ window.THEME = {
     lady: "등불", ladyAction: "등불로 비추기",
     assassinate: "선지자 지목", host: "방장",
     ready: "준비 완료", notReady: "준비하기",
+    lancelot: "갈림길의 순례자", loyalty: "갈림길 카드", loyaltyNone: "그대로", loyaltySwitch: "편이 바뀜",
+    lancelotVariant1: "조용한 갈림길 (서로 모름)", lancelotVariant2: "알려진 갈림길 (순례자끼리 알아봄)",
+    excalibur: "말씀 두루마리", excaliburEn: "Excalibur", lancelotEn: "Lancelot", excaliburAction: "카드 하나 뒤집기", excaliburPass: "뒤집지 않기",
+    allowRejoin: "다시 입장 허용", claimHost: "방장 맡기",
   },
   knowledgeText: {
     evil: "유혹의 무리",
     merlinCandidate: "선지자 후보",
+    lancelot: "또 다른 순례자",
   },
   winText: {
     quests: "빛의 일꾼들이 사명 3번을 이뤘어요",

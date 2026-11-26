@@ -2,7 +2,8 @@
 // and saves only if `v` is unchanged (optimistic lock), retrying up to ATTEMPTS times.
 // DB calls get random latency so simultaneous phones really interleave.
 import * as E from "../../server/engine.js";
-export function occTransport({ seed = 1, attempts = 8, latency = [5, 40], backoff = 0 } = {}) {
+// policy "handler" = server/handler.js retry rule (14 tries, wait rand*min(600, 40*2^a)+15 ms); "old" = no wait, 8 tries.
+export function occTransport({ seed = 1, policy = "handler", attempts = policy === "handler" ? 14 : 8, latency = [5, 40], backoff = 0 } = {}) {
   let s = seed >>> 0 || 1;
   const rng = () => ((s = (s * 1664525 + 1013904223) >>> 0) / 2 ** 32);
   const db = new Map(); // code -> {state(json), v}
@@ -24,7 +25,8 @@ export function occTransport({ seed = 1, attempts = 8, latency = [5, 40], backof
     }
     const code = body.code;
     for (let a = 0; a < attempts; a++) {
-      if (a && backoff) await new Promise((r) => setTimeout(r, rng() * backoff * a));
+      if (a && policy === "handler") await new Promise((r) => setTimeout(r, rng() * Math.min(600, 40 * 2 ** a) + 15));
+      else if (a && backoff) await new Promise((r) => setTimeout(r, rng() * backoff * a));
       const row = await load(code);
       if (!row) return { ok: false, error: "no room" };
       const { state, v: prevV } = row;

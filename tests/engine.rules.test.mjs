@@ -36,7 +36,7 @@ function playQuest(r, failCount) {
   let f = failCount;
   // make the first `failCount` team members evil for this test
   for (const id of g.proposal.team) {
-    if (f > 0) { g.roleOf[id] = "minion"; assert.ok(!r.act(id, "quest", { success: false }).error); f--; }
+    if (f > 0) { g.roleOf[id] = "minion"; if (g.allegiance) g.allegiance[id] = "evil"; assert.ok(!r.act(id, "quest", { success: false }).error); f--; }
     else assert.ok(!r.act(id, "quest", { success: true }).error);
   }
 }

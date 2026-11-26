@@ -82,6 +82,14 @@
     "minion": {
       "card": "./assets/roles/minion.svg",
       "team": "evil"
+    },
+    "lancelotGood": {
+      "card": "./assets/roles/lancelotGood.svg",
+      "team": "good"
+    },
+    "lancelotEvil": {
+      "card": "./assets/roles/lancelotEvil.svg",
+      "team": "evil"
     }
   },
   "cardBack": "./assets/card-back.svg",
@@ -91,7 +99,26 @@
     "approve": "./assets/vote-approve.svg",
     "reject": "./assets/vote-reject.svg",
     "leader": "./assets/leader.svg",
-    "lady": "./assets/lady.svg"
+    "lady": "./assets/lady.svg",
+    "excalibur": "./assets/excalibur.svg"
+  },
+  "expansion": {
+    "lancelot": {
+      "good": "lancelotGood",
+      "evil": "lancelotEvil",
+      "names": {
+        "lancelotGood": "Good Lancelot",
+        "lancelotEvil": "Evil Lancelot"
+      },
+      "loyalty": {
+        "none": "./assets/loyalty/none.svg",
+        "switch": "./assets/loyalty/switch.svg",
+        "back": "./assets/card-back.svg"
+      }
+    },
+    "excalibur": {
+      "token": "./assets/excalibur.svg"
+    }
   },
   "teams": {
     "good": "./assets/team-good.svg",

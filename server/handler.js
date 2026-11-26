@@ -37,6 +37,13 @@ export function makeHandler({ url, key, table = "mist_rooms" }) {
   async function cleanup(now) {
     await fetch(`${rest}?updated_at=lt.${new Date(now - 3 * 864e5).toISOString()}`, { method: "DELETE", headers: H }).catch(() => {});
   }
+  // reply right away; the realtime ping finishes in the background (EdgeRuntime keeps it alive)
+  function later(p) {
+    const safe = Promise.resolve(p).catch(() => {});
+    try {
+      if (globalThis.EdgeRuntime && EdgeRuntime.waitUntil) EdgeRuntime.waitUntil(safe);
+    } catch {}
+  }
   function broadcast(code, v) {
     return fetch(`${url}/realtime/v1/api/broadcast`, {
       method: "POST",
@@ -74,7 +81,7 @@ export function makeHandler({ url, key, table = "mist_rooms" }) {
         if (r.error) return { ok: false, error: r.error };
         if (r.changed) state.v += 1;
         if (!(await save(code, state, prevV))) continue;
-        if (r.changed) await broadcast(code, state.v);
+        if (r.changed) later(broadcast(code, state.v));
         return { ok: true, code, playerId: r.player.id, token: r.player.token, view: E.viewFor(state, r.player.id, now) };
       }
       const me = state.players.find((p) => p.id === body.playerId);
@@ -88,7 +95,7 @@ export function makeHandler({ url, key, table = "mist_rooms" }) {
         if (!changed) return { ok: true, view: E.viewFor(state, me.id, now) };
         continue;
       }
-      if (changed) await broadcast(code, state.v);
+      if (changed) later(broadcast(code, state.v));
       return { ok: true, view: action === "leave" ? null : E.viewFor(state, me.id, now) };
     }
     return { ok: false, error: "동시에 너무 많은 요청이 왔어요. 다시 눌러 주세요" };

@@ -1,6 +1,6 @@
 // Simulated-player harness. Bots only ever look at their own view (like a phone client).
 // Every view every bot receives is recorded and checked against the oracle at the end.
-import { EVIL, SIZES, FAILS, teamOf, expectedKnowledge } from "./oracle.mjs";
+import { EVIL, SIZES, FAILS, teamOf, expectedKnowledge, allegianceAt } from "./oracle.mjs";
 
 function mkRng(seed) {
   let s = (seed >>> 0) || 7;
@@ -122,7 +122,6 @@ export async function playGame(transport, opts = {}) {
       if (lv.me.team === "evil") team = [leader.id, ...sample(rng, v.players.map((p) => p.id).filter((id) => id !== leader.id), size - 1)];
       else team = sample(rng, v.players.map((p) => p.id), size);
       const extra = v.excalibur ? { excaliburTo: pick(rng, team.filter((id) => id !== leader.id)) } : {};
-      if (v.excalibur && !extra.excaliburTo) { const swap = v.players.map((p) => p.id).find((id) => !team.includes(id)); team = [leader.id, ...team.filter((id) => id !== leader.id)].slice(0, size - 1).concat(swap ? [] : []); }
       const x = await act(leader, "propose", { team, ...extra });
       if (!x.ok) bad("C2", "legal proposal refused", x.error);
       continue;
@@ -186,7 +185,7 @@ export async function playGame(transport, opts = {}) {
       const x = await act(holder, "excalibur", { targetId });
       if (!x.ok) bad("X2", "legal Excalibur use refused", x.error);
       else {
-        truth.excal.push({ round: v.round, holderId, targetId });
+        truth.excal.push({ round: v.round, holderId, targetId, original: targetId && truth.played[v.round] ? truth.played[v.round][targetId] : undefined });
         if (targetId && truth.played[v.round] && targetId in truth.played[v.round]) {
           const before = truth.played[v.round][targetId];
           truth.played[v.round][targetId] = !before;
@@ -233,7 +232,7 @@ export async function playGame(transport, opts = {}) {
   for (const b of bots) { const s = await act(b, "state"); }
   const end = bots[0].views[bots[0].views.length - 1];
   const result = { winner: end.winner, winReason: end.winReason };
-  verify({ bots, end, n, roles, lady, truth, firstLeaderId, firstLadyHolder, seatOf, bad });
+  verify({ bots, end, n, roles, lady, lancelot, excalibur, truth, firstLeaderId, firstLadyHolder, seatOf, bad });
   return { findings, log, tag, result, code, effectiveRoles: roles };
 }
 
@@ -243,7 +242,7 @@ function deepScan(obj, path, visit) {
   }
 }
 
-function verify({ bots, end, n, roles, lady, truth, firstLeaderId, firstLadyHolder, seatOf, bad }) {
+function verify({ bots, end, n, roles, lady, lancelot = 0, excalibur = false, truth, firstLeaderId, firstLadyHolder, seatOf, bad }) {
   if (end.phase !== "end") { bad("FLOW", `final phase is ${end.phase}`); return; }
   const roleOf = end.revealed;
   if (!roleOf) { bad("END", "revealed roles missing at end"); return; }
@@ -257,6 +256,20 @@ function verify({ bots, end, n, roles, lady, truth, firstLeaderId, firstLadyHold
     if (!!roles[k] !== has) bad("A5", `role ${k} enabled=${!!roles[k]} but in game=${has}`);
   }
   if (rs.filter((r) => r === "merlin").length > 1) bad("A5", "two merlins");
+  for (const k of ["lancelotGood", "lancelotEvil"]) if (rs.includes(k) !== !!lancelot) bad("L0", `${k} in game=${rs.includes(k)} with lancelot=${lancelot}`);
+  if ((end.lancelot || 0) !== (lancelot || 0)) bad("L0", `view lancelot=${end.lancelot}, set ${lancelot}`);
+  if (lancelot) {
+    const lr = end.loyaltyRevealed || [];
+    const played = end.quests.filter((q) => q.result).length;
+    const expCards = Math.max(0, Math.min(played, 4) - 1) + (end.winReason === "rejections" && played >= 2 ? 1 : 0);
+    if (lr.length > 3) bad("L4", `${lr.length} loyalty cards revealed`);
+    if (lr.some((c) => c.round < 2)) bad("L4", "loyalty card revealed before the 3rd quest");
+    if (lr.filter((c) => c.card === "switch").length > 2) bad("L4", "more than 2 switch cards");
+    if (new Set(lr.map((c) => c.round)).size !== lr.length) bad("L4", "two loyalty cards in one round");
+    if (end.finalTeams) for (const [id, r] of Object.entries(roleOf))
+      if (end.finalTeams[id] !== allegianceAt(r, lr)) bad("L7", `${r} final team ${end.finalTeams[id]}, expected ${allegianceAt(r, lr)}`);
+    void expCards;
+  }
   if (JSON.stringify(end.teamSizes) !== JSON.stringify(SIZES[n])) bad("A3", `team sizes ${end.teamSizes}`);
   if (JSON.stringify(end.failsNeeded) !== JSON.stringify(FAILS(n))) bad("A4", `failsNeeded ${end.failsNeeded}`);
   if (end.evilCount !== EVIL[n]) bad("A2", `view evilCount ${end.evilCount}`);
@@ -283,6 +296,7 @@ function verify({ bots, end, n, roles, lady, truth, firstLeaderId, firstLadyHold
   end.quests.forEach((q, i) => {
     if (!q.result) return;
     const expFails = truth.cardsPlayed[`${i}`] || 0;
+    if (excalibur && !truth.excal.some((x) => x.round === i)) bad("X2", `quest ${i + 1} resolved without an Excalibur step`);
     if (q.fails !== expFails) bad("D3", `quest ${i + 1}: ${q.fails} fails shown, ${expFails} played`);
     const exp = q.fails >= FAILS(n)[i] ? "fail" : "success";
     if (q.result !== exp) bad("A4", `quest ${i + 1}: ${q.fails} fails → ${q.result}, expected ${exp}`);
@@ -316,11 +330,12 @@ function verify({ bots, end, n, roles, lady, truth, firstLeaderId, firstLadyHold
     if (truth.ladyEvents.length !== expectedUses)
       bad("F3", `lady used ${truth.ladyEvents.length}x after ${R} quests (expected ${expectedUses}, end=${end.winReason})`);
   } else if (truth.ladyEvents.length) bad("F1", "lady phase happened with lady off");
+  if (!excalibur && truth.excal.length) bad("X1", "Excalibur phase happened with Excalibur off");
 
   // ---- leak checks over every view every bot ever received (B1-B6, D3, F5)
   const tokens = new Set(bots.map((b) => b.token));
   for (const b of bots) {
-    const exp = expectedKnowledge(roleOf, b.id);
+    const exp = expectedKnowledge(roleOf, b.id, lancelot);
     let checkedKnowledge = false;
     for (const view of b.views) {
       if (!view) continue;
@@ -329,8 +344,12 @@ function verify({ bots, end, n, roles, lady, truth, firstLeaderId, firstLadyHold
       if (view.phase !== "end" && view.phase !== "assassin" && view.assassinId) bad("B6", `${b.name} saw assassinId during ${view.phase}`);
       if (inGame) {
         if (view.me.role !== roleOf[b.id]) bad("B6", `${b.name} me.role changed`);
-        if (view.me.team !== teamOf(roleOf[b.id])) bad("B6", `${b.name} me.team wrong`);
+        const curTeam = allegianceAt(roleOf[b.id], view.loyaltyRevealed);
+        if (view.me.team !== curTeam) bad("L8", `${b.name} me.team ${view.me.team}, expected ${curTeam}`);
+        if ("startTeam" in view.me && view.me.startTeam !== teamOf(roleOf[b.id])) bad("L8", `${b.name} me.startTeam wrong`);
+        if (view.phase !== "end" && view.finalTeams) bad("L8", `${b.name} saw finalTeams during ${view.phase}`);
         const got = new Map(view.me.knowledge.map((k) => [k.id, k.tag]));
+        for (const [id] of exp.optional || []) if (got.get(id) === "evil") got.delete(id);
         const a = [...got].sort().join("|"), e = [...exp].sort().join("|");
         if (a !== e && !checkedKnowledge) {
           bad("B1-5", `${b.name} (${roleOf[b.id]}) knowledge wrong`, { got: [...got].map(([id, t]) => `${roleOf[id]}:${t}`), expected: [...exp].map(([id, t]) => `${roleOf[id]}:${t}`) });
@@ -339,7 +358,14 @@ function verify({ bots, end, n, roles, lady, truth, firstLeaderId, firstLadyHold
         for (const lr of view.me.ladyResults) {
           const mine = truth.ladyEvents.some((e) => e.holderId === b.id && e.targetId === lr.targetId);
           if (!mine) bad("F5", `${b.name} has a lady result it did not earn`);
-          if (lr.team !== teamOf(roleOf[lr.targetId])) bad("F5", "lady result shows wrong team");
+          const ev = truth.ladyEvents.find((e) => e.holderId === b.id && e.targetId === lr.targetId);
+          const expT = ev ? allegianceAt(roleOf[lr.targetId], end.loyaltyRevealed, ev.round) : teamOf(roleOf[lr.targetId]);
+          if (lr.team !== expT) bad(lancelot ? "L9" : "F5", `lady result shows ${lr.team} for ${roleOf[lr.targetId]}, expected ${expT}`);
+        }
+        for (const xr of view.me.excaliburResults || []) {
+          const ev = truth.excal.find((x) => x.holderId === b.id && x.round === xr.round && x.targetId === xr.targetId);
+          if (!ev) bad("X3", `${b.name} has an Excalibur result it did not earn`);
+          else if (xr.original !== ev.original) bad("X3", `${b.name} Excalibur shows original=${xr.original}, played ${ev.original}`);
         }
       }
       deepScan(view, "view", (k, val, path) => {
@@ -347,6 +373,7 @@ function verify({ bots, end, n, roles, lady, truth, firstLeaderId, firstLadyHold
         if (k === "role" && path !== "view.me.role") bad("B6", `${b.name} view has role at ${path}`);
         if (typeof val === "string" && tokens.has(val)) bad("B6", `${b.name} view contains a player token at ${path}`);
         if (k === "team" && path.startsWith("view.players")) bad("B6", `${b.name} sees a team in players list`);
+        if (k === "original" && !path.startsWith("view.me.excaliburResults")) bad("X3", `${b.name} sees an Excalibur original card at ${path}`);
       });
     }
   }

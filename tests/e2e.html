@@ -14,7 +14,7 @@ const q = new URLSearchParams(location.search);
 const FROM = +(q.get("from") || 5), TO = +(q.get("to") || 10), PER = +(q.get("games") || 1);
 const out = document.getElementById("out"), sum = document.getElementById("sum");
 const log = (...a) => { out.textContent += a.join(" ") + "\n"; };
-const EVIL = ["assassin", "morgana", "mordred", "oberon", "minion"];
+const EVIL = ["assassin", "morgana", "mordred", "oberon", "minion", "lancelotEvil"];
 let fails = 0, games = 0, calls = 0, broadcasts = 0;
 const check = (c, msg) => { if (!c) { fails++; log("FAIL:", msg); } };
 async function call(body) {

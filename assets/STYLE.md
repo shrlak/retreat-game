@@ -48,5 +48,10 @@ UI 텍스트 권장: 어두운 배경 위 #FFF6E5, 밝은 이름판 위 #4A3426(
 - 배경: 세로 `0 0 600 1300`, `preserveAspectRatio="xMidYMid slice"` → CSS `background-size: cover` 권장.
 - 패턴: `bg-pattern.svg` 타일(남색 채움), `bg-pattern-overlay.svg` 투명 타일.
 
+## 확장 모듈 아트
+- 랜슬롯형 역할: `roles/lancelotGood.svg`(새벽빛), `roles/lancelotEvil.svg`(보랏빛 밤). 해와 달이 반씩 그려진 메달을 든 같은 인물, 뒤에 반대 색의 그림자 자신이 비침. 키는 `server/engine.js`와 같음. 이름판 글자는 UI가 씀. 한글 이름이 없어서 공식 영어 이름 Good Lancelot, Evil Lancelot을 씀(manifest `expansion.lancelot.names`).
+- 충성 카드(엔진 `LOYALTY_DECK`): `loyalty/none.svg`(봉인된 두루마리와 올리브 가지, 그대로), `loyalty/switch.svg`(돌아가는 화살표와 해·달 메달, 편이 바뀜). 뒷면은 `card-back.svg`.
+- 엑스칼리버형 토큰: `excalibur.svg`. 무기 대신 황금 열쇠(한 장의 카드를 '돌려 여는' 열쇠).
+
 ## 생성
 `python3 _src/build_*.py` 로 다시 만들 수 있습니다. 파일 목록과 경로는 `manifest.json`.

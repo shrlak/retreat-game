@@ -44,7 +44,9 @@
     return h("div", { "data-testid": "myrole", "data-role": m.role, style: "border:1px solid #666;padding:8px;margin:6px 0" },
       `내 역할: ${roleName(m.role)} (${T.teams[m.team].name})`,
       m.knowledge.length ? h("div", {}, m.knowledge.map((k) => `${name(k.id)}=${T.knowledgeText[k.tag]}`).join(", ")) : null,
-      m.ladyResults.length ? h("div", {}, m.ladyResults.map((r) => `${T.terms.lady}: ${name(r.targetId)} → ${T.teams[r.team].name}`).join(", ")) : null);
+      m.ladyResults.length ? h("div", {}, m.ladyResults.map((r) => `${T.terms.lady}: ${name(r.targetId)} → ${T.teams[r.team].name}`).join(", ")) : null,
+      (m.excaliburResults || []).length ? h("div", {}, m.excaliburResults.map((r) => `${T.terms.excalibur}: ${name(r.targetId)}의 원래 카드 = ${r.original ? T.terms.success : T.terms.fail}`).join(", ")) : null,
+      m.startTeam && m.startTeam !== m.team ? h("div", {}, `편이 바뀌었어요 → 지금은 ${T.teams[m.team].name}`) : null);
   }
   function pickList(n, onDone, label, filter = () => true) {
     return h("div", {}, view.players.filter(filter).map((p) => h("label", { style: "display:block;font-size:18px" },
@@ -71,7 +73,10 @@
         const toggle = (k) => h("label", { style: "display:block" }, h("input", { type: "checkbox", "data-setting": k, checked: s.roles[k], on: { change: (e) => api.settings({ roles: { [k]: e.target.checked } }) } }), roleName(k));
         root.append(h("div", {}, ["merlin", "percival", "morgana", "mordred", "oberon"].map(toggle),
           h("label", { style: "display:block" }, h("input", { type: "checkbox", "data-setting": "lady", checked: s.lady, on: { change: (e) => api.settings({ lady: e.target.checked }) } }), T.terms.lady),
-          h("label", { style: "display:block" }, h("input", { type: "checkbox", "data-setting": "balance", checked: s.balance, on: { change: (e) => api.settings({ balance: e.target.checked }) } }), "밸런스 모드")));
+          h("label", { style: "display:block" }, h("input", { type: "checkbox", "data-setting": "balance", checked: s.balance, on: { change: (e) => api.settings({ balance: e.target.checked }) } }), "밸런스 모드"),
+          h("label", { style: "display:block" }, h("input", { type: "checkbox", "data-setting": "excalibur", checked: s.excalibur, on: { change: (e) => api.settings({ excalibur: e.target.checked }) } }), T.terms.excalibur),
+          h("label", { style: "display:block" }, T.terms.lancelot + " ", h("select", { "data-setting": "lancelot", on: { change: (e) => api.settings({ lancelot: +e.target.value }) } },
+            [["0", "끄기"], ["1", T.terms.lancelotVariant1], ["2", T.terms.lancelotVariant2]].map(([v, l]) => h("option", { value: v, selected: String(s.lancelot || 0) === v }, l))))));
         root.append(btn("게임 시작", () => api.start(), { "data-testid": "start" }));
       } else {
         root.append(btn(m.ready ? "준비 취소" : T.terms.ready, () => api.ready(!m.ready), { "data-testid": "ready" }));
@@ -80,6 +85,13 @@
       return;
     }
     root.append(me(), tracker());
+    if ((v.loyaltyRevealed || []).length) root.append(h("div", { "data-testid": "loyalty" }, `${T.terms.loyalty}: ` + v.loyaltyRevealed.map((x) => x.card === "switch" ? T.terms.loyaltySwitch : T.terms.loyaltyNone).join(", ")));
+    if (v.hostAway && !m.isHost && v.phase !== "end") root.append(btn(T.terms.claimHost, () => api.claimHost && api.claimHost(), { "data-testid": "claim-host" }));
+    if (m.isHost && v.phase !== "end") {
+      const off = v.players.filter((p) => !p.online && p.id !== m.id);
+      if (off.length) root.append(h("div", {}, off.map((p) => btn(`${p.name} ${T.terms.allowRejoin}`, () => api.allowRejoin && api.allowRejoin(p.id)))));
+    }
+    if (v.rejoinOpenFor) root.append(h("div", {}, `${name(v.rejoinOpenFor)}님이 새 폰에서 같은 이름으로 다시 들어올 수 있어요 (2분)`));
     if (v.lastVote) root.append(h("div", { "data-testid": "lastvote" }, `지난 투표: ${v.lastVote.approved ? "가결" : "부결"} — ` + Object.entries(v.lastVote.votes).map(([id, b]) => `${name(id)}${b ? "○" : "×"}`).join(" ")));
     if (v.lastQuest) root.append(h("div", { "data-testid": "lastquest" }, `지난 사명: ${v.lastQuest.result} (방해 ${v.lastQuest.fails})`));
     if (v.phase === "reveal") {
@@ -88,7 +100,12 @@
       if (m.isHost) root.append(btn("모두 기다리지 않고 시작", () => api.skipReveal()));
     } else if (v.phase === "propose") {
       root.append(playersList());
-      if (v.leaderId === m.id) root.append(h("p", {}, `${v.quests[v.round].size}명을 고르세요`), pickList(v.quests[v.round].size, (ids) => api.propose(ids), "원정대 제안"));
+      if (v.leaderId === m.id) {
+        let exTo = null;
+        const exSel = v.excalibur ? h("label", { style: "display:block" }, `${T.terms.excalibur} 받을 사람: `, h("select", { "data-testid": "excalibur-to", on: { change: (e) => (exTo = e.target.value) } },
+          h("option", { value: "" }, "고르기"), v.players.filter((p) => p.id !== m.id).map((p) => h("option", { value: p.id }, p.name)))) : null;
+        root.append(h("p", {}, `${v.quests[v.round].size}명을 고르세요`), exSel, pickList(v.quests[v.round].size, (ids) => api.propose(ids, exTo || undefined), "원정대 제안"));
+      }
       else root.append(h("p", {}, `${name(v.leaderId)}님이 원정대를 고르는 중`));
     } else if (v.phase === "vote") {
       root.append(h("p", { "data-testid": "proposal" }, "제안된 원정대: " + v.proposal.team.map(name).join(", ")));
@@ -100,6 +117,10 @@
       if (v.proposal.team.includes(m.id) && !m.myQuestPlayed)
         root.append(btn(T.terms.success, () => api.quest(true), { "data-testid": "success" }), m.team === "evil" ? btn(T.terms.fail, () => api.quest(false), { "data-testid": "fail" }) : null);
       else root.append(h("p", {}, `카드 낸 사람 ${v.questPlayedIds.length}/${v.proposal.team.length}`));
+    } else if (v.phase === "excalibur") {
+      const holder = v.proposal.excaliburTo;
+      if (holder === m.id) root.append(pickList(1, (ids) => api.excalibur(ids[0]), T.terms.excaliburAction, (p) => v.proposal.team.includes(p.id) && p.id !== m.id), btn(T.terms.excaliburPass, () => api.excalibur(null)));
+      else root.append(h("p", {}, `${name(holder)}님이 ${T.terms.excalibur}를 쓰는 중`));
     } else if (v.phase === "lady") {
       if (v.ladyHolderId === m.id) root.append(pickList(1, (ids) => api.lady(ids[0]), T.terms.ladyAction, (p) => !v.ladyUsedBy.includes(p.id)));
       else root.append(h("p", {}, `${name(v.ladyHolderId)}님이 ${T.terms.lady}을 쓰는 중`));

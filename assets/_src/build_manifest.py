@@ -28,6 +28,7 @@ ROLES = [
     ("merlin", "good"), ("percival", "good"), ("servant", "good"),
     ("assassin", "evil"), ("morgana", "evil"), ("mordred", "evil"),
     ("oberon", "evil"), ("minion", "evil"),
+    ("lancelotGood", "good"), ("lancelotEvil", "evil"),  # expansion (engine.js keys)
 ]
 
 m = {
@@ -59,6 +60,14 @@ m = {
         "reject": path("vote-reject.svg"),
         "leader": path("leader.svg"),
         "lady": path("lady.svg"),
+        "excalibur": path("excalibur.svg"),
+    },
+    "expansion": {
+        "lancelot": {"good": "lancelotGood", "evil": "lancelotEvil",
+                     "names": {"lancelotGood": "Good Lancelot", "lancelotEvil": "Evil Lancelot"},
+                     "loyalty": {"none": path("loyalty/none.svg"), "switch": path("loyalty/switch.svg"),
+                                 "back": path("card-back.svg")}},
+        "excalibur": {"token": path("excalibur.svg")},
     },
     "teams": {"good": path("team-good.svg"), "evil": path("team-evil.svg")},
     "knowledge": {
@@ -127,7 +136,8 @@ with open(os.path.join(A, "manifest.json"), "w", encoding="utf-8") as f:
 
 # ---------------------------------------------------------------- preview
 names = {"merlin": "선지자", "percival": "파수꾼", "servant": "빛의 일꾼", "assassin": "정탐꾼",
-         "morgana": "거짓 선지자", "mordred": "양의 탈을 쓴 늑대", "oberon": "방황하는 자", "minion": "유혹하는 자"}
+         "morgana": "거짓 선지자", "mordred": "양의 탈을 쓴 늑대", "oberon": "방황하는 자", "minion": "유혹하는 자",
+         "lancelotGood": "Good Lancelot", "lancelotEvil": "Evil Lancelot"}
 
 
 def rel(p):
@@ -159,7 +169,7 @@ h2{{font-size:16px;margin:28px 0 10px;color:#F8DC8B}}
 .track img{{width:100%;max-width:560px;display:block;margin-bottom:8px}}
 </style></head><body>
 <img src="./logo.svg" alt="빛의 원정대" style="width:280px;display:block;margin:8px auto">
-<h2>역할 카드</h2><div class="row">{cards}<figure class="card"><img src="./card-back.svg" alt=""></figure></div>
+<h2>역할 카드</h2><div class="row">{cards}<figure class="card"><img src="./card-back.svg" alt=""></figure><figure class="card"><img src="./loyalty/none.svg" alt=""></figure><figure class="card"><img src="./loyalty/switch.svg" alt=""></figure></div>
 <h2>토큰 · 투표 · 팀 · 정보</h2><div class="row">{toks}</div>
 <h2>트랙</h2><div class="track"><img src="./track/quest-board.svg" alt=""><img src="./track/vote-track.svg" alt=""></div>
 <h2>배경</h2><div class="row">{bgs}</div>
