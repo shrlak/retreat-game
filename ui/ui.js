@@ -109,7 +109,7 @@
     }
     return (phCache[kind] = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg));
   };
-  /* token names -> art files (CONTRACT asset list); other names map to <name>.svg */
+  /* token art file names (assets/manifest.json "tokens"); anything else is assets/<name>.svg */
   const TOKEN_FILE = { success: 'token-success', fail: 'token-fail', approve: 'vote-approve', reject: 'vote-reject' };
   K.tokenImg = (name, cls) => K.img(K.asset((TOKEN_FILE[name] || name) + '.svg'), name, cls);
   K.roleImg = (key, cls) => K.img(K.roleArtSrc(key), 'role:' + key, cls);
@@ -883,7 +883,7 @@
     const host = ps.find(p => p.isHost);
     let h = '';
     if (v.hostAway && !me.isHost) {
-      h += '<div class="uxc-seatnote"><span>' + esc(sys('hostAway', { targetName: host ? host.name : '' }, '방장이 1분 넘게 자리를 비웠어요. 누구든 \'방장 맡기\'를 누르면 이어서 진행할 수 있어요.', 'The Host has been away for over a minute. Anyone can tap \'Become host\' to keep the game going.')) + '</span>' +
+      h += '<div class="uxc-seatnote away"><span>' + esc(sys('hostAway', { targetName: host ? host.name : '' }, '방장이 1분 넘게 자리를 비웠어요. 누구든 \'방장 맡기\'를 누르면 이어서 진행할 수 있어요.', 'The Host has been away for over a minute. Anyone can tap \'Become host\' to keep the game going.')) + '</span>' +
         '<button class="ux-btn ux-btn-sm ux-btn-gold" data-act="cm-claim">' + esc(K.term('claimHost', K.L('방장 맡기', 'Become host'))) + '</button></div>';
     }
     if (inGame && me.isHost) {
@@ -1053,6 +1053,9 @@
 .uxc-loy-c.done { opacity: .5; }
 .uxc-loy-c img { width: 34px; height: 48px; object-fit: cover; border-radius: 6px; box-shadow: 0 0 0 1px var(--line); } .uxc-loy-c.sw img { box-shadow: 0 0 0 1.5px var(--gold); }
 .uxc-seatnote { display: flex; align-items: center; gap: 10px; margin: 8px 0; padding: 10px 12px; border-radius: 12px; font-size: 13px; line-height: 1.45; color: #ffcf8a; background: rgba(255,170,60,.1); border: 1px solid rgba(255,170,60,.25); }
+/* "host away" stays in view while scrolling (rare, and only someone here can fix it) */
+[data-slot=seat]:has(> .uxc-seatnote.away), [data-bd=seat]:has(> .uxc-seatnote.away) { position: sticky; top: calc(6px + var(--safe-top)); z-index: 6; }
+.uxc-seatnote.away { background: linear-gradient(rgba(255,170,60,.14), rgba(255,170,60,.14)), #161b38; box-shadow: 0 8px 22px rgba(0,0,0,.45); }
 .uxc-seatnote.ok { color: var(--ok); background: rgba(111,227,166,.08); border-color: rgba(111,227,166,.3); }
 .uxc-seatnote span { flex: 1; min-width: 0; } .uxc-seatnote .ux-btn { flex: none; width: auto; padding-left: 12px; padding-right: 12px; }
 .uxc-seats .ux-players { display: flex; flex-direction: column; gap: 6px; } .uxc-seats .ux-player .ux-btn { flex: none; width: auto; padding: 6px 10px; }
@@ -1176,6 +1179,23 @@
   const K = window.UI._k, esc = K.esc;
   const TOPK = ['lady', 'balance', 'excalibur'];   // top-level boolean settings (the rest are settings.roles)
   const ui = (k, ko, en) => { const g = K.G(), u = g && g.ui; return (u && u[k]) || K.L(ko, en); };
+  /* Seer dependency (engine rule): without the seer there is no Watchman and no final naming, so both switch off;
+     with the seer the Spy is always in. Shown on the row (and as a toast on change) so nothing changes silently. */
+  const depOf = (k, merlinOn) => (k === 'percival' || k === 'assassin') ? (!merlinOn ? 'needs' : k === 'assassin' ? 'forced' : '') : '';
+  const seer = () => K.roleName('merlin') || K.L('선지자', 'Prophet');
+  const josa = (w, t) => (K.josa ? K.josa(w, t) : w + t);
+  const depText = (k, dep) => dep === 'needs'
+    ? K.L(josa(seer(), '이') + ' 있어야 넣을 수 있어요', 'Needs the ' + seer() + ' in the game')
+    : K.L(josa(seer(), '이') + ' 있으면 늘 함께해요 (마지막 지목)', 'Always in while the ' + seer() + ' is in (for the final naming)');
+  /* Why start is refused, in the chosen language, plus which Tempter roles take the seats (Lancelot takes one too). */
+  const setupText = v => v.setupError ? (K.isEn() ? (v.setupErrorEn || K.trMsg(v.setupError)) : v.setupError) : '';
+  function setupHint(v) {
+    if (v.setupErrorKey !== 'tooManyEvilSpecials' && !/유혹의 무리는|Tempters, so/.test(v.setupError || '')) return '';
+    const s = v.settings || {}, r = s.roles || {};
+    const on = ['assassin', 'morgana', 'mordred', 'oberon'].filter(k => r[k]).concat(Number(s.lancelot) ? ['lancelotEvil'] : []);
+    if (!on.length) return '';
+    return K.L('지금 켜진 ' + K.teamName('evil') + ' 역할: ', K.teamName('evil').replace(/^The /, '') + ' roles on now: ') + on.map(K.roleName).join(', ');
+  }
 
   K.screens.lobby = {
     build(v) {
@@ -1232,9 +1252,10 @@
         (isHost ? '<button data-act="l-max" data-d="-1" aria-label="' + esc(K.L('줄이기', 'Fewer')) + '"' + (max <= Math.max(5, n) ? ' disabled' : '') + '>−</button>' : '') + '<span class="val">' + max + '</span>' +
         (isHost ? '<button data-act="l-max" data-d="1" aria-label="' + esc(K.L('늘리기', 'More')) + '"' + (max >= 10 ? ' disabled' : '') + '>+</button>' : '') + '</div></div>';
       K.OPTIONAL_ROLES.forEach(k => {
-        const on = val(k), ev = K.teamOf(k) === 'evil';
-        h += '<div class="ux-setting"><div class="thumb">' + K.roleImg(k) + '</div><div class="txt"><div class="name">' + esc(K.roleName(k)) + ' <span class="ux-badge ' + (ev ? 'evil' : 'gold') + '" style="padding:2px 7px">' + esc(ev ? K.teamName('evil') : K.teamName('good')) + '</span></div><div class="desc">' + esc(K.roleDesc(k)) + '</div></div>' +
-          '<button class="ux-switch' + (on ? ' on' : '') + (ev ? ' evil' : '') + '" data-act="l-toggle" data-k="' + k + '"' + (isHost ? '' : ' disabled') + ' aria-pressed="' + on + '" aria-label="' + esc(K.roleName(k)) + '"></button></div>';
+        const on = val(k), ev = K.teamOf(k) === 'evil', dep = depOf(k, val('merlin'));
+        h += '<div class="ux-setting' + (dep ? ' uxl-dep ' + dep : '') + '"><div class="thumb">' + K.roleImg(k) + '</div><div class="txt"><div class="name">' + esc(K.roleName(k)) + ' <span class="ux-badge ' + (ev ? 'evil' : 'gold') + '" style="padding:2px 7px">' + esc(ev ? K.teamName('evil') : K.teamName('good')) + '</span></div><div class="desc">' + esc(K.roleDesc(k)) + '</div>' +
+          (dep ? '<div class="uxl-depnote" id="uxl-dep-' + k + '">🔒 ' + esc(depText(k, dep)) + '</div>' : '') + '</div>' +
+          '<button class="ux-switch' + (on ? ' on' : '') + (ev ? ' evil' : '') + (dep ? ' uxl-locked' : '') + '" data-act="l-toggle" data-k="' + k + '"' + (isHost ? '' : ' disabled') + ' aria-pressed="' + on + '" aria-label="' + esc(K.roleName(k)) + '"' + (dep ? ' aria-describedby="uxl-dep-' + k + '"' : '') + '></button></div>';
       });
       h += '<div class="ux-setting"><div class="thumb" style="display:grid;place-items:center">' + K.tokenImg('lady') + '</div><div class="txt"><div class="name">' + esc(K.term('lady', K.L('등불', 'Lamp'))) + '</div><div class="desc">' + esc(K.L('2·3·4번째 ' + K.term('quest', '사명') + ' 뒤에 한 사람의 진영을 몰래 확인해요. 7명 이상 추천.', 'After the 2nd, 3rd and 4th ' + K.term('quest', 'Mission') + 's, secretly check one player\'s side. Best with 7+.')) + '</div></div>' +
         sw('lady', K.term('lady', K.L('등불', 'Lamp'))) + '</div>';
@@ -1250,8 +1271,9 @@
       h += '<div class="ux-setting"><div class="thumb" style="display:grid;place-items:center">' + K.img(K.asset('excalibur.svg'), 'excalibur', '') + '</div><div class="txt"><div class="name">' + esc(K.term('excalibur', K.L('말씀 두루마리', 'Scroll of the Word'))) + ' ' + modTag + '</div><div class="desc">' +
         esc(K.L(K.term('leader', '조장') + '이 원정대원 한 명에게 주면, 카드를 다 낸 뒤 다른 대원 한 명의 카드를 뒤집을 수 있어요.', 'The ' + K.term('leader', 'Leader') + ' gives it to one team member, who may flip one other member\'s card after all cards are in.')) + '</div></div>' +
         sw('excalibur', K.term('excalibur', K.L('말씀 두루마리', 'Scroll of the Word'))) + '</div>';
-      const se = v.setupError ? (K.isEn() ? (v.setupErrorEn || K.trMsg(v.setupError)) : v.setupError) : '';
-      if (se) h += '<div class="ux-warn" style="margin-top:8px">⚠️ ' + esc(se) + '</div>';
+      const se = setupText(v), seHint = se ? setupHint(v) : '';
+      // guests see why the host can't start here; the host sees it in the dock next to the start button
+      if (se && !isHost) h += '<div class="ux-warn" style="margin-top:8px">⚠️ ' + esc(se) + (seHint ? '<br>' + esc(seHint) : '') + '</div>';
       K.patch(el.querySelector('[data-slot=settings]'), h);
 
       // dock
@@ -1260,8 +1282,10 @@
       let d;
       if (isHost) {
         const can = n >= 5 && n <= 10 && allReady && !v.setupError;
-        const why = n < 5 ? K.L((5 - n) + '명이 더 필요해요', (5 - n) + ' more needed') : !allReady ? K.L('모두 준비하면 시작할 수 있어요 (' + readyN + '/' + others.length + ')', 'You can start when everyone is ready (' + readyN + '/' + others.length + ')') : v.setupError ? K.L('설정을 확인해 주세요', 'Please check the settings') : K.L('모두 준비됐어요!', 'Everyone is ready!');
-        d = '<div class="ux-progress"><i style="width:' + (others.length ? Math.round(100 * readyN / others.length) : 0) + '%"></i></div><p class="ux-muted ux-center">' + esc(why) + '</p>' +
+        const why = n < 5 ? K.L((5 - n) + '명이 더 필요해요', (5 - n) + ' more needed') : !allReady ? K.L('모두 준비하면 시작할 수 있어요 (' + readyN + '/' + others.length + ')', 'You can start when everyone is ready (' + readyN + '/' + others.length + ')') : se ? '' : K.L('모두 준비됐어요!', 'Everyone is ready!');
+        d = '<div class="ux-progress"><i style="width:' + (others.length ? Math.round(100 * readyN / others.length) : 0) + '%"></i></div>' +
+          (se ? '<div class="ux-warn uxl-dockwarn" role="alert">⚠️ ' + esc(se) + (seHint ? '<small>' + esc(seHint) + '</small>' : '') + '</div>' : '') +
+          (why ? '<p class="ux-muted ux-center">' + esc(why) + '</p>' : '') +
           '<button class="ux-btn ux-btn-gold uxl-start' + (can ? ' can' : '') + '" data-act="l-start"' + (can ? '' : ' disabled') + '>✝️ ' + esc(K.L('게임 시작', 'Start game')) + '</button>';
       } else {
         const r = !!me.ready;
@@ -1271,10 +1295,15 @@
       K.patch(el.querySelector('[data-slot=dock]'), d);
 
       // celebrate when the room becomes startable
-      const can2 = n >= 5 && allReady;
+      const can2 = n >= 5 && allReady && !v.setupError;
       if (can2 && K.local.couldStart === false) { K.fb('chime'); const b = el.querySelector('.uxl-start'); if (b) K.fx.burstAt(b, { n: 30 }); }
       K.local.couldStart = can2;
       K.local.pend = {};
+      // a settings change un-readies everyone on the server; tell guests why their button went back
+      const sKey = JSON.stringify(s);
+      if (!isHost && K.local.sKey && K.local.sKey !== sKey && K.local.wasReady && !me.ready)
+        K.toast(K.L('방장이 설정을 바꿨어요. 확인하고 다시 준비해 주세요', 'The host changed the settings. Check them and get ready again'), 'info');
+      K.local.sKey = sKey; K.local.wasReady = !!me.ready;
     }
   };
 
@@ -1304,10 +1333,20 @@
   K.actions['l-toggle'] = (d, btn) => {
     const v = K.view, s = v.settings || {}, k = d.k;
     const cur = TOPK.indexOf(k) >= 0 ? !!s[k] : !!(s.roles || {})[k];
+    const roles = s.roles || {};
+    const dep = TOPK.indexOf(k) < 0 && depOf(k, !!roles.merlin);
+    if (dep) { K.shake(btn.closest('.ux-setting') || btn); K.buzz('tick'); K.toast(K.roleName(k) + ': ' + depText(k, dep), 'info'); return; }
     btn.classList.toggle('on', !cur); K.fb('pick');
-    K.local.pend = Object.assign({}, K.local.pend, { [k]: !cur });
+    const pend = { [k]: !cur };
+    if (k === 'merlin') {
+      // the server switches the dependent roles with the seer; show it right away and say so
+      const gone = ['percival', 'assassin'].filter(r => roles[r]).map(K.roleName);
+      if (cur) { pend.percival = false; pend.assassin = false; if (gone.length) K.toast(K.L(josa(seer(), '을') + ' 빼서 ' + gone.join('·') + '도 함께 빠졌어요', 'Without the ' + seer() + ', the ' + gone.join(' and the ') + (gone.length > 1 ? ' are' : ' is') + ' out too'), 'info'); }
+      else { pend.assassin = true; if (!roles.assassin) K.toast(K.L(josa(seer(), '을') + ' 넣어서 ' + K.roleName('assassin') + '도 함께 들어가요', 'With the ' + seer() + ' in, the ' + K.roleName('assassin') + ' is in too'), 'info'); }
+    }
+    K.local.pend = Object.assign({}, K.local.pend, pend);
     if (TOPK.indexOf(k) >= 0) K.call('settings', { [k]: !cur });
-    else K.call('settings', { roles: Object.assign({}, s.roles || {}, { [k]: !cur }) });
+    else K.call('settings', { roles: Object.assign({}, roles, { [k]: !cur }) });
   };
   K.actions['l-lan'] = (d, btn) => {
     const n = Number(d.n) || 0, cur = Number((K.view.settings || {}).lancelot) || 0; if (n === cur) return;
@@ -1333,6 +1372,10 @@
 .uxl-seg button.on { color: #2a1a02; background: linear-gradient(180deg, var(--gold-hi), var(--gold)); }
 .uxl-seg button:disabled:not(.on) { opacity: .55; }
 .ux-en .uxl-seg button { font-size: 12px; }
+.uxl-depnote { font-size: 11.5px; color: #ffcf8a; margin-top: 4px; line-height: 1.35; }
+.uxl-dep.needs .thumb, .uxl-dep.needs .name, .uxl-dep.needs .desc { opacity: .55; }
+.ux-switch.uxl-locked { opacity: .45; }
+.uxl-dockwarn { text-align: center; background: linear-gradient(rgba(255,170,60,.12), rgba(255,170,60,.12)), #141a33; } .uxl-dockwarn small { display: block; margin-top: 3px; font-size: 11.5px; color: var(--text-dim); }
 .uxl-start.can { animation: uxlGlow 1.6s ease-in-out infinite; }
 @keyframes uxlGlow { 0%,100% { box-shadow: 0 8px 28px rgba(244,201,107,.35); } 50% { box-shadow: 0 8px 44px rgba(244,201,107,.8), 0 0 0 6px rgba(244,201,107,.15); } }
 `;
@@ -1428,6 +1471,7 @@
 .uxr-backglow { position: absolute; inset: 0; background: radial-gradient(circle at 50% 50%, rgba(255,231,168,.35), transparent 60%); animation: breathe 2.4s ease-in-out infinite; pointer-events: none; }
 .uxr-in { animation: uxhCard .7s var(--ease-out) both; }
 .uxr-info { display: flex; flex-direction: column; gap: 12px; }
+.uxr > .ux-dock { position: relative; }   /* in the flow under the card (only the lobby dock sticks) */
 `;
   const st = document.createElement('style'); st.id = 'uxr-style'; st.textContent = css; document.head.appendChild(st);
 })();
@@ -1540,7 +1584,7 @@
 .bd-glow { position: absolute; left: 50%; top: -60px; width: 260px; height: 160px; margin-left: -130px; border-radius: 50%; pointer-events: none;
   background: radial-gradient(closest-side, rgba(255,215,122,.22), transparent); animation: breathe 3.6s ease-in-out infinite; }
 .bd-action.dark .bd-glow { background: radial-gradient(closest-side, rgba(224,72,110,.22), transparent); }
-.bd-action > div { position: relative; }
+.bd-action > div:not(.bd-glow) { position: relative; }   /* the glow stays absolute (no empty band above the title) */
 .bd-tag { display: flex; justify-content: center; margin-bottom: 8px; }
 .bd-hint { text-align: center; margin: -4px 0 12px; }
 .bd-note { text-align: center; font-size: 12px; color: #ffb3c4; margin: -6px 0 12px; }
@@ -1638,12 +1682,12 @@
   function topHtml(v) {
     const n = (v.round || 0) + 1, pn = v.proposalNo || 1;
     let title = e(W.quest()) + ' ' + n, sub = '';
-    if (v.phase === 'propose') sub = K.L(pn + '번째 제안', 'Proposal ' + pn) + ' · ' + e(W.leader()) + ' ' + nm(v, v.leaderId);
+    if (v.phase === 'propose') sub = K.L(e(W.leader()) + ' ' + nm(v, v.leaderId) + ' · ' + pn + '번째 제안', nm(v, v.leaderId) + ' leads · try ' + pn);   // name first: the bar is ~110px wide at 360px
     else if (v.phase === 'vote') sub = K.L(pn + '번째 제안 · 투표 중', 'Proposal ' + pn + ' · Voting');
     else if (v.phase === 'quest') sub = K.L(e(W.quest()) + ' 수행 중', 'On the ' + e(W.quest()));
     else if (v.phase === 'excalibur') sub = e(W.xc()) + ' · ' + nm(v, xcHolder(v));
     else if (v.phase === 'lady') sub = e(W.lady()) + ' · ' + nm(v, v.ladyHolderId);
-    else if (v.phase === 'assassin') { title = K.L('마지막 ' + e(W.assassinate()), 'The final choice'); sub = K.L('모든 것이 이 한 번에 달렸어요', 'Everything rides on this one choice'); }
+    else if (v.phase === 'assassin') { title = K.L('마지막 선택', 'The final choice'); sub = e(K.roleName('assassin') || K.L('정탐꾼', 'Spy')) + ' · ' + nm(v, v.assassinId); }   // short: the bar has ~140px at 360–390px
     const marks = showMarks();
     return '<div class="grow"><div class="ux-top-title">' + title + '</div><div class="ux-top-sub">' + sub + '</div></div>' +
       '<button class="ux-icon-btn' + (marks ? ' on' : '') + '" data-act="bd-marks" aria-label="' + e(K.L('알고 있는 정보 표시', 'Show what I know')) + '" aria-pressed="' + marks + '">' + (marks ? '👁' : '🙈') + '</button>' +
@@ -3568,6 +3612,7 @@
   K.actions['e-home'] = async () => { if (await K.confirm(K.L('처음 화면으로 갈까요?', 'Go back to the home screen?'), esc(K.L('이 방에서 나가요.', 'You\'ll leave this room.')), { ok: K.L('나가기', 'Leave'), cancel: K.L('취소', 'Cancel') })) { await K.call('home'); window.UI.render(null); } };
 
   const css = `
+.uxe > .ux-dock { position: relative; }   /* in the flow under the roles (only the lobby dock sticks) */
 .uxe-crest { position: relative; width: 140px; height: 140px; display: grid; place-items: center; }
 .uxe-crest .ux-rose { transform: scale(.62); }
 .uxe-crest .crest { position: relative; font-size: 64px; animation: bannerIn 1.2s var(--ease-spring) both, uxeBob 3s 1.2s ease-in-out infinite; }

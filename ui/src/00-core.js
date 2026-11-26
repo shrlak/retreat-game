@@ -106,7 +106,7 @@
     }
     return (phCache[kind] = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg));
   };
-  /* token names -> art files (CONTRACT asset list); other names map to <name>.svg */
+  /* token art file names (assets/manifest.json "tokens"); anything else is assets/<name>.svg */
   const TOKEN_FILE = { success: 'token-success', fail: 'token-fail', approve: 'vote-approve', reject: 'vote-reject' };
   K.tokenImg = (name, cls) => K.img(K.asset((TOKEN_FILE[name] || name) + '.svg'), name, cls);
   K.roleImg = (key, cls) => K.img(K.roleArtSrc(key), 'role:' + key, cls);
