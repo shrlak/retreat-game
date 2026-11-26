@@ -38,6 +38,7 @@ export function makeHandler({ url, key, table = "mist_rooms" }) {
     return true;
   }
   async function save(code, state, prevV) {
+    state._saveId = Math.random().toString(36).slice(2); // lets a timed-out write be recognised
     let r;
     try {
       r = await tfetch(`${rest}?code=eq.${encodeURIComponent(code)}&v=eq.${prevV}&select=code`, {
@@ -49,7 +50,7 @@ export function makeHandler({ url, key, table = "mist_rooms" }) {
       if (!isTimeout(e)) throw e;
       // the write may or may not have landed: look, and count it as saved only if the row is exactly ours
       const row = await load(code);
-      return !!row && row.v === state.v && JSON.stringify(row.state) === JSON.stringify(state);
+      return !!row && row.v === state.v && row.state && row.state._saveId === state._saveId;
     }
     if (!r.ok) throw new Error(`save ${r.status} ${await r.text()}`);
     return (await r.json()).length > 0;
