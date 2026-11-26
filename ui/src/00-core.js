@@ -384,7 +384,11 @@
     /* Crossroads card (Lancelot module): a new entry in view.loyaltyRevealed = one card turned face up. */
     const lr = v.loyaltyRevealed || [];
     if (typeof seen.loyalty !== 'number') seen.loyalty = lr.length;
-    if (lr.length > seen.loyalty) { for (let i = seen.loyalty; i < lr.length; i++) ev.push({ type: 'loyalty', d: lr[i], n: i + 1, all: lr.slice(0, i + 1) }); }
+    if (lr.length > seen.loyalty) { for (let i = seen.loyalty; i < lr.length; i++) {
+      /* Variant 2: every card is face up from the start, so only a real switch after mission 1 gets a cinematic (the reveal and board already show the plan). */
+      if (v.lancelot === 2 && (!lr[i] || lr[i].card !== 'switch' || !lr[i].round)) continue;
+      ev.push({ type: 'loyalty', d: lr[i], n: i + 1, all: lr.slice(0, i + 1) });
+    } }
     seen.loyalty = lr.length;
     if (v.lastLady && v.lastLady.seq !== seen.lady) {
       seen.lady = v.lastLady.seq;

@@ -1,6 +1,6 @@
 # Status snapshot
 
-Auto-generated on every push by sync.sh (2026-11-26 10:29 UTC). The written handoff is HANDOFF.md.
+Auto-generated on every push by sync.sh (2026-11-26 10:30 UTC). The written handoff is HANDOFF.md.
 
 ### Engine tests
 ```
@@ -8,7 +8,7 @@ Auto-generated on every push by sync.sh (2026-11-26 10:29 UTC). The written hand
 # fail 0
 ```
 ### Helper folders (files, newest change)
-- `ui/`: 18 files, newest 2026-11-26 10:27 UTC
+- `ui/`: 18 files, newest 2026-11-26 10:30 UTC
 - `assets/`: 114 files, newest 2026-11-26 09:25 UTC
 - `guide/`: 12 files, newest 2026-11-26 10:25 UTC
 - `tests/`: 21 files, newest 2026-11-26 10:28 UTC
@@ -16,6 +16,7 @@ Auto-generated on every push by sync.sh (2026-11-26 10:29 UTC). The written hand
 - `server/`: 4 files, newest 2026-11-26 10:17 UTC
 ### Recent commits
 ```
+dcf69e3 Auto-sync (10:29 UTC)
 8d16727 Auto-sync (10:28 UTC)
 7644fb3 Auto-sync (10:27 UTC)
 29180a5 Auto-sync (10:26 UTC)
@@ -23,7 +24,6 @@ Auto-generated on every push by sync.sh (2026-11-26 10:29 UTC). The written hand
 5970377 Auto-sync (10:23 UTC)
 ef93bda Auto-sync (10:22 UTC)
 ca8bb0a Auto-sync (10:21 UTC)
-5ac74c6 Auto-sync (10:19 UTC)
 ```
 ### Files
 ```
