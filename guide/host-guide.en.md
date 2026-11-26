@@ -38,16 +38,16 @@ A guide to help you run a fun game in about 30 minutes at a retreat or small gro
 
 | Players | Roles to turn on | Lamp | Expansions |
 |---|---|---|---|
-| 5 | Prophet, Spy, Good Lancelot, Evil Lancelot | off | Crossroads (quiet) |
-| 6 | Prophet, Spy, Watchman, Good Lancelot, Evil Lancelot | off | Crossroads (quiet) |
-| 7 | Prophet, Spy, Watchman, False Prophet, Good Lancelot, Evil Lancelot | on | Crossroads (quiet), Scroll |
-| 8 | Prophet, Spy, Watchman, False Prophet, Good Lancelot, Evil Lancelot | on | Crossroads (quiet), Scroll |
-| 9 | Prophet, Spy, Watchman, False Prophet, Good Lancelot, Evil Lancelot | on | Crossroads (quiet), Scroll |
-| 10 | Prophet, Spy, Watchman, False Prophet, Wolf in Sheep's Clothing, Good Lancelot, Evil Lancelot | on | Crossroads (quiet), Scroll |
+| 5 | Prophet, Spy, Good Lancelot, Evil Lancelot | off | Crossroads variant 1 |
+| 6 | Prophet, Spy, Watchman, Good Lancelot, Evil Lancelot | off | Crossroads variant 1 |
+| 7 | Prophet, Spy, Watchman, False Prophet, Good Lancelot, Evil Lancelot | on | Crossroads variant 1, Scroll |
+| 8 | Prophet, Spy, Watchman, False Prophet, Good Lancelot, Evil Lancelot | on | Crossroads variant 1, Scroll |
+| 9 | Prophet, Spy, Watchman, False Prophet, Good Lancelot, Evil Lancelot | on | Crossroads variant 1, Scroll |
+| 10 | Prophet, Spy, Watchman, False Prophet, Wolf in Sheep's Clothing, Good Lancelot, Evil Lancelot | on | Crossroads variant 1, Scroll |
 
 ## Expansions to try later
 
-- Good Lancelot and Evil Lancelot: from the 3rd Mission, Crossroads cards are revealed and the two Lancelots may swap sides. For a first try, use 'Quiet Crossroads'.
+- Good Lancelot and Evil Lancelot: in Variant 1, Crossroads cards are turned over from the 3rd Mission and the two Lancelots may swap sides. Variant 2 lays the cards face up from the start, and in Variant 3 sides never switch. For a first try, use Variant 1.
 - Scroll of the Word: the Leader hands it to a team member, who may flip one other member's card. Great with 7 or more.
 - Alternate team sizes: changes the team sizes in 5 and 7 player games. Nice when the same group plays several rounds.
 - Add only one expansion at a time. Long explanations are hard on first-time players.

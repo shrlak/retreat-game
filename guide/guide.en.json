@@ -204,15 +204,15 @@
         "module": "lancelot",
         "heading": "Expansion: Good Lancelot and Evil Lancelot",
         "body": [
-          "This expansion is used only if the host turns it on. The two Lancelots join the game, and the Evil Lancelot takes one of the Tempters seats.",
-          "A deck of 5 Crossroads cards (3 Stay, 2 Switch sides) is shuffled. At the start of the 3rd, 4th and 5th Missions, one card is shown to everyone.",
-          "When a 'Switch sides' card comes up, the two Lancelots swap sides. If another one comes up, they swap back.",
+          "This expansion is used only if the host turns it on. The two Lancelots join the game: the Good Lancelot takes one Workers of Light seat and the Evil Lancelot takes one Tempters seat.",
+          "When roles are revealed, the Tempters (except the Wanderer) learn who the Evil Lancelot is, but the Evil Lancelot does not see them. The two Lancelots don't know each other, except in Variant 3.",
+          "The Prophet sees the Evil Lancelot as one of the Tempters. The Evil Lancelot never carries out the Prophet Hunt.",
           "Mission cards, the Lamp's answer and the final result all use each Lancelot's current side. A Lancelot currently with the Workers of Light can only play Blessing."
         ],
         "bullets": [
-          "Quiet Crossroads: the Evil Lancelot and the other Tempters don't know each other. The Prophet still sees the Evil Lancelot as one of the Tempters.",
-          "Known Crossroads: the two Lancelots recognise each other, and the Evil Lancelot and the other Tempters also know each other.",
-          "The Evil Lancelot never carries out the Prophet Hunt."
+          "Variant 1: shuffle 5 Crossroads cards (3 'Stay', 2 'Switch sides'). At the start of the 3rd, 4th and 5th Mission, one is turned over for everyone. A 'Switch sides' card swaps the two Lancelots' sides, and a second one swaps them back.",
+          "Variant 2: from 7 Crossroads cards (5 'Stay', 2 'Switch sides'), 5 are laid face up at the start, one for each Mission, so everyone knows when the sides will switch. Each card takes effect as its Mission begins, and the Lancelots must play for their current side: always Hindrance with the Tempters, always Blessing with the Workers of Light.",
+          "Variant 3: no Crossroads cards and no switching. Instead, the two Lancelots know each other."
         ]
       },
       {
@@ -445,38 +445,39 @@
       "module": "lancelot",
       "tagline": "A Lancelot of the light, standing at a crossroads",
       "know": [
-        "Quiet Crossroads: you can't see anyone.",
-        "Known Crossroads: you can see the Evil Lancelot, and they know you too."
+        "You can't see anyone.",
+        "Variant 3 only: you can see the Evil Lancelot, and they know you too."
       ],
       "goal": [
         "Help your current side win. You start with the Workers of Light.",
-        "From the 3rd Mission on, a 'Switch sides' card can move you to the Tempters."
+        "In Variants 1 and 2, a 'Switch sides' card can move you to the Tempters."
       ],
       "tips": [
-        "Every time a Crossroads card is turned over, check your current side again. The result uses your side at the very end.",
-        "While you're with the Workers of Light, you can only play Blessing. With the Tempters, you can play Hindrance too.",
-        "Your side may change, so don't sound too certain too early."
+        "Each time a Crossroads card takes effect, check your current side again. The result uses your side at the very end.",
+        "With the Workers of Light you can only play Blessing. With the Tempters you may choose in Variant 1, but in Variant 2 you must always play Hindrance.",
+        "In Variant 2 the face-up cards show when your side will switch, so plan ahead."
       ],
-      "seenBy": "In Known Crossroads, the Evil Lancelot can see you. Otherwise nobody can."
+      "seenBy": "Nobody, except the Evil Lancelot in Variant 3."
     },
     "lancelotEvil": {
       "team": "evil",
       "module": "lancelot",
       "tagline": "A Lancelot in shadow, standing at a crossroads",
       "know": [
-        "Quiet Crossroads: you can't see anyone, and the other Tempters don't know you.",
-        "Known Crossroads: you can see your fellow Tempters and the Good Lancelot, and they know you too."
+        "You can't see the other Tempters, but they (except the Wanderer) know who you are.",
+        "Variant 3 only: you can see the Good Lancelot, and they know you too."
       ],
       "goal": [
         "Help your current side win. You start with the Tempters.",
-        "From the 3rd Mission on, a 'Switch sides' card can move you to the Workers of Light."
+        "In Variants 1 and 2, a 'Switch sides' card can move you to the Workers of Light."
       ],
       "tips": [
-        "The Prophet sees you as one of the Tempters from the start, and isn't told if your side changes.",
-        "If you end up with the Workers of Light, you can only play Blessing.",
-        "You never carry out the Prophet Hunt. Just share your opinion with your teammates."
+        "The Prophet sees you as one of the Tempters from the start, and isn't told if your side switches.",
+        "With the Workers of Light you can only play Blessing. In Variant 2, while with the Tempters you must always play Hindrance.",
+        "Your teammates know you, but you don't know them. Watch for their signals.",
+        "You never carry out the Prophet Hunt. Just share your thoughts with your team."
       ],
-      "seenBy": "The Prophet sees you as one of the Tempters. In Known Crossroads, your fellow Tempters and the Good Lancelot see you too."
+      "seenBy": "The Prophet and your fellow Tempters (except the Wanderer). In Variant 3, the Good Lancelot too."
     }
   },
   "knowledgeLabels": {
@@ -568,8 +569,8 @@
       "result": "{targetName}'s original card was {card}. It has now been flipped."
     },
     "loyalty": {
-      "none": "A Crossroads card was revealed: Stay. The Lancelots keep their sides.",
-      "switch": "A Crossroads card was revealed: Switch sides! The two Lancelots have swapped sides.",
+      "none": "This Mission's Crossroads card: Stay. The Lancelots keep their sides.",
+      "switch": "This Mission's Crossroads card: Switch sides! The two Lancelots have swapped sides.",
       "left": "Crossroads cards left: {count}",
       "mySwitchSecret": "Your side has changed. You are now with the {team}."
     },
@@ -653,12 +654,12 @@
     },
     {
       "id": "loyaltyRevealed",
-      "when": "lancelot && round >= 2 && proposalNo == 1 && phase == 'propose'",
-      "text": "A Crossroads card was revealed as this Mission began. Think again about the Lancelots' sides."
+      "when": "(lancelot == 1 || lancelot == 2) && loyaltyRevealed.at(-1).round == round && proposalNo == 1 && phase == 'propose'",
+      "text": "This Mission's Crossroads card has taken effect. Think again about the Lancelots' sides."
     },
     {
       "id": "loyaltySoon",
-      "when": "lancelot && round == 1 && phase == 'propose'",
+      "when": "lancelot == 1 && round == 1 && phase == 'propose'",
       "text": "From the next Mission on, one Crossroads card is revealed at the start of each Mission."
     },
     {
@@ -780,7 +781,7 @@
       {
         "heading": "Expansions to try later",
         "bullets": [
-          "Good Lancelot and Evil Lancelot: from the 3rd Mission, Crossroads cards are revealed and the two Lancelots may swap sides. For a first try, use 'Quiet Crossroads'.",
+          "Good Lancelot and Evil Lancelot: in Variant 1, Crossroads cards are turned over from the 3rd Mission and the two Lancelots may swap sides. Variant 2 lays the cards face up from the start, and in Variant 3 sides never switch. For a first try, use Variant 1.",
           "Scroll of the Word: the Leader hands it to a team member, who may flip one other member's card. Great with 7 or more.",
           "Alternate team sizes: changes the team sizes in 5 and 7 player games. Nice when the same group plays several rounds.",
           "Add only one expansion at a time. Long explanations are hard on first-time players."
@@ -1019,7 +1020,7 @@
     },
     "expansion": {
       "label": "Try the expansions",
-      "desc": "Adds the two Lancelots (Quiet Crossroads) and the Scroll of the Word",
+      "desc": "Adds the two Lancelots (Variant 1) and the Scroll of the Word",
       "byCount": {
         "5": {
           "roles": {
@@ -1143,7 +1144,7 @@
     },
     {
       "term": "Crossroads card",
-      "text": "Expansion. Revealed one at a time from the 3rd Mission, and can switch the Lancelots' sides."
+      "text": "Expansion. In Variant 1 one is turned over at the start of each Mission from the 3rd; in Variant 2 they are laid face up from the start. A 'Switch sides' card swaps the Lancelots' sides."
     },
     {
       "term": "Prophet Hunt",

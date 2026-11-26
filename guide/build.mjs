@@ -168,10 +168,10 @@ writeFileSync(join(here, "guide.js"), js);
 const L = {
   ko: { roles: "역할 안내", know: "아는 것", goal: "목표", tips: "팁", seenBy: "나를 보는 사람", glossary: "용어",
         presetTable: "기본 추천 구성", count: "인원", rolesOn: "켤 역할", on: "켬", off: "끔", players: (n) => `${n}명`,
-        expTable: "확장 규칙 맛보기 구성", modules: "확장", lancelotV: "갈림길(조용한)", excal: "두루마리", summary: "한 장 요약" },
+        expTable: "확장 규칙 맛보기 구성", modules: "확장", lancelotV: "갈림길 변형 ", excal: "두루마리", summary: "한 장 요약" },
   en: { roles: "Roles", know: "What you know", goal: "Your goal", tips: "Tips", seenBy: "Who can see you", glossary: "Glossary",
         presetTable: "Recommended setups", count: "Players", rolesOn: "Roles to turn on", on: "on", off: "off", players: (n) => `${n}`,
-        expTable: "Expansion taster setups", modules: "Expansions", lancelotV: "Crossroads (quiet)", excal: "Scroll", summary: "One-page summary" },
+        expTable: "Expansion taster setups", modules: "Expansions", lancelotV: "Crossroads variant ", excal: "Scroll", summary: "One-page summary" },
 };
 const list = (arr, ordered) => arr.map((x, i) => (ordered ? `${i + 1}. ` : "- ") + x).join("\n");
 
@@ -199,7 +199,7 @@ function presetTable(g, l, key, title, withModules) {
     const p = g.presets[key].byCount[n];
     const on = Object.entries(p.roles).filter(([, v]) => v).map(([k]) => N[k]);
     if (p.lancelot) on.push(N.lancelotGood, N.lancelotEvil);
-    const mods = withModules ? ` ${[p.lancelot ? l.lancelotV : "", p.excalibur ? l.excal : ""].filter(Boolean).join(", ") || "-"} |` : "";
+    const mods = withModules ? ` ${[p.lancelot ? l.lancelotV + p.lancelot : "", p.excalibur ? l.excal : ""].filter(Boolean).join(", ") || "-"} |` : "";
     return `| ${l.players(n)} | ${on.join(", ")} | ${p.lady ? l.on : l.off} |${mods}`;
   };
   const head = withModules ? `| ${l.count} | ${l.rolesOn} | ${N.lady} | ${l.modules} |\n|---|---|---|---|` : `| ${l.count} | ${l.rolesOn} | ${N.lady} |\n|---|---|---|`;

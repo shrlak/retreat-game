@@ -205,15 +205,15 @@
           "module": "lancelot",
           "heading": "확장 규칙: {lancelotGood:과} {lancelotEvil}",
           "body": [
-            "진행자가 켜면 쓰는 확장 규칙이에요. 두 순례자가 들어가고, {lancelotEvil:은} {evil} 한 자리를 차지해요.",
-            "{loyalty} 5장({loyaltyNone} 3장, {loyaltySwitch} 2장)을 섞어 두고, 3·4·5번째 {quest:이} 시작될 때마다 한 장씩 모두에게 공개해요.",
-            "'{loyaltySwitch}' 카드가 나오면 두 순례자의 편이 서로 바뀌어요. 또 나오면 다시 바뀌어요.",
+            "진행자가 켜면 쓰는 확장 규칙이에요. 두 순례자가 들어가서 {lancelotGood:은} {good} 한 자리를, {lancelotEvil:은} {evil} 한 자리를 차지해요.",
+            "카드를 확인할 때 {evil}({oberon} 제외)는 {lancelotEvil:이} 누구인지 알지만, {lancelotEvil:은} 동료를 보지 못해요. 두 순례자도 서로를 몰라요(변형 3만 예외).",
+            "{merlin}에게는 {lancelotEvil:이} {evil:으로} 보여요. {lancelotEvil:은} {assassinate:을} 맡지 않아요.",
             "{quest} 카드, {lady}의 결과, 최종 승패는 모두 '지금 편'을 기준으로 정해져요. 순례자가 {good} 편일 때는 {success}만 낼 수 있어요."
           ],
           "bullets": [
-            "조용한 갈림길: {lancelotEvil:과} 다른 {evil:은} 서로를 몰라요. {merlin}에게는 {lancelotEvil:이} {evil:으로} 보여요.",
-            "알려진 갈림길: 두 순례자가 서로를 알아보고, {lancelotEvil:과} {evil} 동료도 서로 알아봐요.",
-            "{lancelotEvil:은} {assassinate:을} 맡지 않아요."
+            "변형 1: {loyalty} 5장({loyaltyNone} 3장, {loyaltySwitch} 2장)을 섞어 두고, 3·4·5번째 {quest:이} 시작될 때 한 장씩 모두에게 공개해요. '{loyaltySwitch}' 카드가 나오면 두 순례자의 편이 서로 바뀌고, 한 장 더 나오면 다시 바뀌어요.",
+            "변형 2: {loyalty} 7장({loyaltyNone} 5장, {loyaltySwitch} 2장) 중 5장을 처음부터 {quest}마다 한 장씩 앞면으로 펼쳐 둬요. 그래서 언제 편이 바뀔지 모두 미리 알아요. 카드는 그 {quest:이} 시작될 때 효과가 나고, 순례자는 지금 편대로만 내요({evil} 편이면 늘 {fail}, {good} 편이면 늘 {success}).",
+            "변형 3: {loyalty:은} 쓰지 않고 편도 바뀌지 않아요. 대신 두 순례자가 서로를 알아봐요."
           ]
         },
         {
@@ -446,38 +446,39 @@
         "module": "lancelot",
         "tagline": "갈림길 앞에 선 순례자",
         "know": [
-          "조용한 갈림길: 아무도 보이지 않아요.",
-          "알려진 갈림길: {lancelotEvil:이} 누구인지 보이고, 그 사람도 나를 알아요."
+          "아무도 보이지 않아요.",
+          "변형 3에서만 {lancelotEvil:이} 누구인지 보이고, 그 사람도 나를 알아요."
         ],
         "goal": [
           "지금 내 편이 이기도록 도와요. 처음에는 {good} 편이에요.",
-          "3번째 {quest}부터 '{loyaltySwitch}' 카드가 나오면 {evil} 편이 될 수 있어요."
+          "변형 1·2에서 '{loyaltySwitch}' 카드가 적용되면 {evil} 편이 될 수 있어요."
         ],
         "tips": [
-          "{loyalty:이} 뒤집힐 때마다 지금 내 편을 다시 확인하세요. 승패는 마지막 순간의 편으로 정해져요.",
-          "{good} 편일 때는 {success}만 낼 수 있어요. {evil} 편이 되면 {fail}도 낼 수 있어요.",
-          "편이 바뀔 수 있으니 처음부터 너무 확신에 찬 말은 아껴 두세요."
+          "{loyalty:이} 적용될 때마다 지금 내 편을 다시 확인하세요. 승패는 마지막 순간의 편으로 정해져요.",
+          "{good} 편일 때는 {success}만 낼 수 있어요. {evil} 편이 되면 변형 1에서는 고를 수 있고, 변형 2에서는 늘 {fail:을} 내야 해요.",
+          "변형 2에서는 펼쳐 둔 카드로 내 편이 언제 바뀔지 미리 보고 계획을 세워 보세요."
         ],
-        "seenBy": "알려진 갈림길이면 {lancelotEvil}에게 보여요. 그 밖에는 아무에게도 보이지 않아요."
+        "seenBy": "아무에게도 보이지 않아요. 변형 3에서만 {lancelotEvil}에게 보여요."
       },
       "lancelotEvil": {
         "team": "evil",
         "module": "lancelot",
         "tagline": "갈림길에 드리운 그림자",
         "know": [
-          "조용한 갈림길: 아무도 보이지 않고, 다른 {evil}도 나를 몰라요.",
-          "알려진 갈림길: {evil} 동료와 {lancelotGood:이} 보이고, 그들도 나를 알아요."
+          "다른 {evil:은} 보이지 않아요. 대신 {evil} 동료({oberon} 제외)는 내가 누구인지 알아요.",
+          "변형 3에서만 {lancelotGood:이} 누구인지 보이고, 그 사람도 나를 알아요."
         ],
         "goal": [
           "지금 내 편이 이기도록 도와요. 처음에는 {evil} 편이에요.",
-          "3번째 {quest}부터 '{loyaltySwitch}' 카드가 나오면 {good} 편이 될 수 있어요."
+          "변형 1·2에서 '{loyaltySwitch}' 카드가 적용되면 {good} 편이 될 수 있어요."
         ],
         "tips": [
           "{merlin}에게는 처음부터 {evil:으로} 보여요. 편이 바뀌어도 {merlin:은} 그 사실을 따로 알지 못해요.",
-          "{good} 편이 되면 {success}만 낼 수 있어요.",
+          "{good} 편이 되면 {success}만 낼 수 있어요. 변형 2에서는 {evil} 편일 때 늘 {fail:을} 내야 해요.",
+          "동료는 나를 알지만 나는 동료를 몰라요. 동료가 보내는 신호를 잘 읽어 보세요.",
           "{assassinate:은} 내가 하지 않아요. 동료에게 의견만 보태 주세요."
         ],
-        "seenBy": "{merlin}에게 {evil:으로} 보여요. 알려진 갈림길이면 {evil} 동료와 {lancelotGood}에게도 보여요."
+        "seenBy": "{merlin:과} {evil} 동료({oberon} 제외)에게 보여요. 변형 3이면 {lancelotGood}에게도 보여요."
       }
     },
     "knowledgeLabels": {
@@ -569,8 +570,8 @@
         "result": "{targetName}님의 원래 카드는 {card:이었어요}. 지금은 반대로 뒤집혔어요."
       },
       "loyalty": {
-        "none": "{loyalty:이} 공개됐어요: {loyaltyNone}. 두 순례자의 편은 그대로예요.",
-        "switch": "{loyalty:이} 공개됐어요: {loyaltySwitch}! 두 순례자의 편이 서로 바뀌었어요.",
+        "none": "이번 {quest}의 {loyalty}: {loyaltyNone}. 두 순례자의 편은 그대로예요.",
+        "switch": "이번 {quest}의 {loyalty}: {loyaltySwitch}! 두 순례자의 편이 서로 바뀌었어요.",
         "left": "남은 {loyalty} {count}장",
         "mySwitchSecret": "내 편이 바뀌었어요. 지금 나는 {team} 편이에요."
       },
@@ -654,12 +655,12 @@
       },
       {
         "id": "loyaltyRevealed",
-        "when": "lancelot && round >= 2 && proposalNo == 1 && phase == 'propose'",
-        "text": "이번 {quest:이} 시작되며 {loyalty:이} 한 장 공개됐어요. 순례자들의 편을 다시 생각해 보세요."
+        "when": "(lancelot == 1 || lancelot == 2) && loyaltyRevealed.at(-1).round == round && proposalNo == 1 && phase == 'propose'",
+        "text": "이번 {quest}의 {loyalty:이} 적용됐어요. 순례자들의 편을 다시 생각해 보세요."
       },
       {
         "id": "loyaltySoon",
-        "when": "lancelot && round == 1 && phase == 'propose'",
+        "when": "lancelot == 1 && round == 1 && phase == 'propose'",
         "text": "다음 {quest}부터 시작할 때마다 {loyalty:이} 한 장씩 공개돼요."
       },
       {
@@ -781,7 +782,7 @@
         {
           "heading": "익숙해지면 해 볼 확장 규칙",
           "bullets": [
-            "{lancelotGood:과} {lancelotEvil}: 3번째 {quest}부터 {loyalty:이} 공개되며 두 순례자의 편이 바뀔 수 있어요. 처음이면 '조용한 갈림길'을 추천해요.",
+            "{lancelotGood:과} {lancelotEvil}: 변형 1은 3번째 {quest}부터 {loyalty:이} 한 장씩 공개되며 두 순례자의 편이 바뀔 수 있어요. 변형 2는 카드를 처음부터 펼쳐 두고, 변형 3은 편이 바뀌지 않아요. 처음이면 변형 1을 추천해요.",
             "{excalibur}: {leader:이} 팀원 한 명에게 맡기고, 그 사람이 다른 팀원의 카드 한 장을 뒤집을 수 있어요. 7명 이상에서 재미있어요.",
             "다른 팀 인원표: 5명, 7명 게임의 팀 인원이 달라져요. 같은 사람들끼리 여러 판 할 때 바꿔 보세요.",
             "확장 규칙은 한 번에 하나씩만 더해 보세요. 설명이 길어지면 처음 온 친구들이 힘들어해요."
@@ -1020,7 +1021,7 @@
       },
       "expansion": {
         "label": "확장 규칙 맛보기",
-        "desc": "두 순례자(조용한 갈림길)와 {excalibur:을} 더한 구성",
+        "desc": "두 순례자(변형 1)와 {excalibur:을} 더한 구성",
         "byCount": {
           "5": {
             "roles": {
@@ -1144,7 +1145,7 @@
       },
       {
         "term": "{loyalty}",
-        "text": "확장 규칙. 3번째 {quest}부터 한 장씩 공개되며, 순례자들의 편을 바꿀 수 있어요."
+        "text": "확장 규칙. 변형 1에서는 3번째 {quest}부터 한 장씩 공개되고, 변형 2에서는 처음부터 펼쳐 둬요. '{loyaltySwitch}' 카드는 두 순례자의 편을 바꿔요."
       },
       {
         "term": "{assassinate}",
@@ -1375,15 +1376,15 @@
           "module": "lancelot",
           "heading": "Expansion: {lancelotGood} and {lancelotEvil}",
           "body": [
-            "This expansion is used only if the host turns it on. The two Lancelots join the game, and the {lancelotEvil} takes one of the {evil} seats.",
-            "A deck of 5 {loyalty}s (3 {loyaltyNone}, 2 {loyaltySwitch}) is shuffled. At the start of the 3rd, 4th and 5th {quest}s, one card is shown to everyone.",
-            "When a '{loyaltySwitch}' card comes up, the two Lancelots swap sides. If another one comes up, they swap back.",
+            "This expansion is used only if the host turns it on. The two Lancelots join the game: the {lancelotGood} takes one {good} seat and the {lancelotEvil} takes one {evil} seat.",
+            "When roles are revealed, the {evil} (except the {oberon}) learn who the {lancelotEvil} is, but the {lancelotEvil} does not see them. The two Lancelots don't know each other, except in Variant 3.",
+            "The {merlin} sees the {lancelotEvil} as one of the {evil}. The {lancelotEvil} never carries out the {assassinate}.",
             "{quest} cards, the {lady}'s answer and the final result all use each Lancelot's current side. A Lancelot currently with the {good} can only play {success}."
           ],
           "bullets": [
-            "Quiet Crossroads: the {lancelotEvil} and the other {evil} don't know each other. The {merlin} still sees the {lancelotEvil} as one of the {evil}.",
-            "Known Crossroads: the two Lancelots recognise each other, and the {lancelotEvil} and the other {evil} also know each other.",
-            "The {lancelotEvil} never carries out the {assassinate}."
+            "Variant 1: shuffle 5 {loyalty}s (3 '{loyaltyNone}', 2 '{loyaltySwitch}'). At the start of the 3rd, 4th and 5th {quest}, one is turned over for everyone. A '{loyaltySwitch}' card swaps the two Lancelots' sides, and a second one swaps them back.",
+            "Variant 2: from 7 {loyalty}s (5 '{loyaltyNone}', 2 '{loyaltySwitch}'), 5 are laid face up at the start, one for each {quest}, so everyone knows when the sides will switch. Each card takes effect as its {quest} begins, and the Lancelots must play for their current side: always {fail} with the {evil}, always {success} with the {good}.",
+            "Variant 3: no {loyalty}s and no switching. Instead, the two Lancelots know each other."
           ]
         },
         {
@@ -1616,38 +1617,39 @@
         "module": "lancelot",
         "tagline": "A Lancelot of the light, standing at a crossroads",
         "know": [
-          "Quiet Crossroads: you can't see anyone.",
-          "Known Crossroads: you can see the {lancelotEvil}, and they know you too."
+          "You can't see anyone.",
+          "Variant 3 only: you can see the {lancelotEvil}, and they know you too."
         ],
         "goal": [
           "Help your current side win. You start with the {good}.",
-          "From the 3rd {quest} on, a '{loyaltySwitch}' card can move you to the {evil}."
+          "In Variants 1 and 2, a '{loyaltySwitch}' card can move you to the {evil}."
         ],
         "tips": [
-          "Every time a {loyalty} is turned over, check your current side again. The result uses your side at the very end.",
-          "While you're with the {good}, you can only play {success}. With the {evil}, you can play {fail} too.",
-          "Your side may change, so don't sound too certain too early."
+          "Each time a {loyalty} takes effect, check your current side again. The result uses your side at the very end.",
+          "With the {good} you can only play {success}. With the {evil} you may choose in Variant 1, but in Variant 2 you must always play {fail}.",
+          "In Variant 2 the face-up cards show when your side will switch, so plan ahead."
         ],
-        "seenBy": "In Known Crossroads, the {lancelotEvil} can see you. Otherwise nobody can."
+        "seenBy": "Nobody, except the {lancelotEvil} in Variant 3."
       },
       "lancelotEvil": {
         "team": "evil",
         "module": "lancelot",
         "tagline": "A Lancelot in shadow, standing at a crossroads",
         "know": [
-          "Quiet Crossroads: you can't see anyone, and the other {evil} don't know you.",
-          "Known Crossroads: you can see your fellow {evil} and the {lancelotGood}, and they know you too."
+          "You can't see the other {evil}, but they (except the {oberon}) know who you are.",
+          "Variant 3 only: you can see the {lancelotGood}, and they know you too."
         ],
         "goal": [
           "Help your current side win. You start with the {evil}.",
-          "From the 3rd {quest} on, a '{loyaltySwitch}' card can move you to the {good}."
+          "In Variants 1 and 2, a '{loyaltySwitch}' card can move you to the {good}."
         ],
         "tips": [
-          "The {merlin} sees you as one of the {evil} from the start, and isn't told if your side changes.",
-          "If you end up with the {good}, you can only play {success}.",
-          "You never carry out the {assassinate}. Just share your opinion with your teammates."
+          "The {merlin} sees you as one of the {evil} from the start, and isn't told if your side switches.",
+          "With the {good} you can only play {success}. In Variant 2, while with the {evil} you must always play {fail}.",
+          "Your teammates know you, but you don't know them. Watch for their signals.",
+          "You never carry out the {assassinate}. Just share your thoughts with your team."
         ],
-        "seenBy": "The {merlin} sees you as one of the {evil}. In Known Crossroads, your fellow {evil} and the {lancelotGood} see you too."
+        "seenBy": "The {merlin} and your fellow {evil} (except the {oberon}). In Variant 3, the {lancelotGood} too."
       }
     },
     "knowledgeLabels": {
@@ -1739,8 +1741,8 @@
         "result": "{targetName}'s original card was {card}. It has now been flipped."
       },
       "loyalty": {
-        "none": "A {loyalty} was revealed: {loyaltyNone}. The Lancelots keep their sides.",
-        "switch": "A {loyalty} was revealed: {loyaltySwitch}! The two Lancelots have swapped sides.",
+        "none": "This {quest}'s {loyalty}: {loyaltyNone}. The Lancelots keep their sides.",
+        "switch": "This {quest}'s {loyalty}: {loyaltySwitch}! The two Lancelots have swapped sides.",
         "left": "{loyalty}s left: {count}",
         "mySwitchSecret": "Your side has changed. You are now with the {team}."
       },
@@ -1824,12 +1826,12 @@
       },
       {
         "id": "loyaltyRevealed",
-        "when": "lancelot && round >= 2 && proposalNo == 1 && phase == 'propose'",
-        "text": "A {loyalty} was revealed as this {quest} began. Think again about the Lancelots' sides."
+        "when": "(lancelot == 1 || lancelot == 2) && loyaltyRevealed.at(-1).round == round && proposalNo == 1 && phase == 'propose'",
+        "text": "This {quest}'s {loyalty} has taken effect. Think again about the Lancelots' sides."
       },
       {
         "id": "loyaltySoon",
-        "when": "lancelot && round == 1 && phase == 'propose'",
+        "when": "lancelot == 1 && round == 1 && phase == 'propose'",
         "text": "From the next {quest} on, one {loyalty} is revealed at the start of each {quest}."
       },
       {
@@ -1951,7 +1953,7 @@
         {
           "heading": "Expansions to try later",
           "bullets": [
-            "{lancelotGood} and {lancelotEvil}: from the 3rd {quest}, {loyalty}s are revealed and the two Lancelots may swap sides. For a first try, use 'Quiet Crossroads'.",
+            "{lancelotGood} and {lancelotEvil}: in Variant 1, {loyalty}s are turned over from the 3rd {quest} and the two Lancelots may swap sides. Variant 2 lays the cards face up from the start, and in Variant 3 sides never switch. For a first try, use Variant 1.",
             "{excalibur}: the {leader} hands it to a team member, who may flip one other member's card. Great with 7 or more.",
             "Alternate team sizes: changes the team sizes in 5 and 7 player games. Nice when the same group plays several rounds.",
             "Add only one expansion at a time. Long explanations are hard on first-time players."
@@ -2190,7 +2192,7 @@
       },
       "expansion": {
         "label": "Try the expansions",
-        "desc": "Adds the two Lancelots (Quiet Crossroads) and the {excalibur}",
+        "desc": "Adds the two Lancelots (Variant 1) and the {excalibur}",
         "byCount": {
           "5": {
             "roles": {
@@ -2314,7 +2316,7 @@
       },
       {
         "term": "{loyalty}",
-        "text": "Expansion. Revealed one at a time from the 3rd {quest}, and can switch the Lancelots' sides."
+        "text": "Expansion. In Variant 1 one is turned over at the start of each {quest} from the 3rd; in Variant 2 they are laid face up from the start. A '{loyaltySwitch}' card swaps the Lancelots' sides."
       },
       {
         "term": "{assassinate}",

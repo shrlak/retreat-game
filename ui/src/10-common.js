@@ -62,7 +62,8 @@
     const g = K.G(), kl = (g && g.knowledgeLabels) || {};
     if (!list.length) {
       const empty = me.role === 'oberon' ? (kl.emptyOberon || K.L('보이는 동료가 없어요.', 'You can\'t see any teammates.'))
-        : isLan(me.role) ? K.L('보이는 사람이 없어요. 갈림길 카드가 뒤집힐 때마다 지금 내 편을 다시 확인하세요.', 'You can\'t see anyone. Each time a Crossroads card turns over, check which side you\'re on now.')
+        : isLan(me.role) ? (K.lanVariant(v) === 2 ? K.L('보이는 사람이 없어요. 펼쳐 둔 갈림길 카드로 언제 편이 바뀌는지 확인하세요.', 'You can\'t see anyone. Check the Crossroads cards on the table to see when your side changes.')
+          : K.L('보이는 사람이 없어요. 갈림길 카드가 뒤집힐 때마다 지금 내 편을 다시 확인하세요.', 'You can\'t see anyone. Each time a Crossroads card turns over, check which side you\'re on now.'))
         : (kl.emptyGood || K.L('보이는 사람이 없어요. 대화와 투표로 추리해 보세요.', 'You can\'t see anyone. Use conversation and votes to work it out.'));
       return '<p class="ux-p ux-center" style="padding:6px 0">' + esc(empty) + '</p>';
     }

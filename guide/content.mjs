@@ -166,15 +166,15 @@ export const overview = {
       module: "lancelot",
       heading: "확장 규칙: {lancelotGood:과} {lancelotEvil}",
       body: [
-        "진행자가 켜면 쓰는 확장 규칙이에요. 두 순례자가 들어가고, {lancelotEvil:은} {evil} 한 자리를 차지해요.",
-        "{loyalty} 5장({loyaltyNone} 3장, {loyaltySwitch} 2장)을 섞어 두고, 3·4·5번째 {quest:이} 시작될 때마다 한 장씩 모두에게 공개해요.",
-        "'{loyaltySwitch}' 카드가 나오면 두 순례자의 편이 서로 바뀌어요. 또 나오면 다시 바뀌어요.",
+        "진행자가 켜면 쓰는 확장 규칙이에요. 두 순례자가 들어가서 {lancelotGood:은} {good} 한 자리를, {lancelotEvil:은} {evil} 한 자리를 차지해요.",
+        "카드를 확인할 때 {evil}({oberon} 제외)는 {lancelotEvil:이} 누구인지 알지만, {lancelotEvil:은} 동료를 보지 못해요. 두 순례자도 서로를 몰라요(변형 3만 예외).",
+        "{merlin}에게는 {lancelotEvil:이} {evil:으로} 보여요. {lancelotEvil:은} {assassinate:을} 맡지 않아요.",
         "{quest} 카드, {lady}의 결과, 최종 승패는 모두 '지금 편'을 기준으로 정해져요. 순례자가 {good} 편일 때는 {success}만 낼 수 있어요.",
       ],
       bullets: [
-        "조용한 갈림길: {lancelotEvil:과} 다른 {evil:은} 서로를 몰라요. {merlin}에게는 {lancelotEvil:이} {evil:으로} 보여요.",
-        "알려진 갈림길: 두 순례자가 서로를 알아보고, {lancelotEvil:과} {evil} 동료도 서로 알아봐요.",
-        "{lancelotEvil:은} {assassinate:을} 맡지 않아요.",
+        "변형 1: {loyalty} 5장({loyaltyNone} 3장, {loyaltySwitch} 2장)을 섞어 두고, 3·4·5번째 {quest:이} 시작될 때 한 장씩 모두에게 공개해요. '{loyaltySwitch}' 카드가 나오면 두 순례자의 편이 서로 바뀌고, 한 장 더 나오면 다시 바뀌어요.",
+        "변형 2: {loyalty} 7장({loyaltyNone} 5장, {loyaltySwitch} 2장) 중 5장을 처음부터 {quest}마다 한 장씩 앞면으로 펼쳐 둬요. 그래서 언제 편이 바뀔지 모두 미리 알아요. 카드는 그 {quest:이} 시작될 때 효과가 나고, 순례자는 지금 편대로만 내요({evil} 편이면 늘 {fail}, {good} 편이면 늘 {success}).",
+        "변형 3: {loyalty:은} 쓰지 않고 편도 바뀌지 않아요. 대신 두 순례자가 서로를 알아봐요.",
       ],
     },
     {
@@ -360,43 +360,45 @@ export const roles = {
       "{merlin}처럼 보이는 사람을 기억해 두었다가 마지막 지목 때 알려 주세요.",
     ],
     seenBy: "{merlin}에게 {evil:으로} 보여요.",
-  },  lancelotGood: {
+  },
+  lancelotGood: {
     team: "good",
     module: "lancelot",
     tagline: "갈림길 앞에 선 순례자",
     know: [
-      "조용한 갈림길: 아무도 보이지 않아요.",
-      "알려진 갈림길: {lancelotEvil:이} 누구인지 보이고, 그 사람도 나를 알아요.",
+      "아무도 보이지 않아요.",
+      "변형 3에서만 {lancelotEvil:이} 누구인지 보이고, 그 사람도 나를 알아요.",
     ],
     goal: [
       "지금 내 편이 이기도록 도와요. 처음에는 {good} 편이에요.",
-      "3번째 {quest}부터 '{loyaltySwitch}' 카드가 나오면 {evil} 편이 될 수 있어요.",
+      "변형 1·2에서 '{loyaltySwitch}' 카드가 적용되면 {evil} 편이 될 수 있어요.",
     ],
     tips: [
-      "{loyalty:이} 뒤집힐 때마다 지금 내 편을 다시 확인하세요. 승패는 마지막 순간의 편으로 정해져요.",
-      "{good} 편일 때는 {success}만 낼 수 있어요. {evil} 편이 되면 {fail}도 낼 수 있어요.",
-      "편이 바뀔 수 있으니 처음부터 너무 확신에 찬 말은 아껴 두세요.",
+      "{loyalty:이} 적용될 때마다 지금 내 편을 다시 확인하세요. 승패는 마지막 순간의 편으로 정해져요.",
+      "{good} 편일 때는 {success}만 낼 수 있어요. {evil} 편이 되면 변형 1에서는 고를 수 있고, 변형 2에서는 늘 {fail:을} 내야 해요.",
+      "변형 2에서는 펼쳐 둔 카드로 내 편이 언제 바뀔지 미리 보고 계획을 세워 보세요.",
     ],
-    seenBy: "알려진 갈림길이면 {lancelotEvil}에게 보여요. 그 밖에는 아무에게도 보이지 않아요.",
+    seenBy: "아무에게도 보이지 않아요. 변형 3에서만 {lancelotEvil}에게 보여요.",
   },
   lancelotEvil: {
     team: "evil",
     module: "lancelot",
     tagline: "갈림길에 드리운 그림자",
     know: [
-      "조용한 갈림길: 아무도 보이지 않고, 다른 {evil}도 나를 몰라요.",
-      "알려진 갈림길: {evil} 동료와 {lancelotGood:이} 보이고, 그들도 나를 알아요.",
+      "다른 {evil:은} 보이지 않아요. 대신 {evil} 동료({oberon} 제외)는 내가 누구인지 알아요.",
+      "변형 3에서만 {lancelotGood:이} 누구인지 보이고, 그 사람도 나를 알아요.",
     ],
     goal: [
       "지금 내 편이 이기도록 도와요. 처음에는 {evil} 편이에요.",
-      "3번째 {quest}부터 '{loyaltySwitch}' 카드가 나오면 {good} 편이 될 수 있어요.",
+      "변형 1·2에서 '{loyaltySwitch}' 카드가 적용되면 {good} 편이 될 수 있어요.",
     ],
     tips: [
       "{merlin}에게는 처음부터 {evil:으로} 보여요. 편이 바뀌어도 {merlin:은} 그 사실을 따로 알지 못해요.",
-      "{good} 편이 되면 {success}만 낼 수 있어요.",
+      "{good} 편이 되면 {success}만 낼 수 있어요. 변형 2에서는 {evil} 편일 때 늘 {fail:을} 내야 해요.",
+      "동료는 나를 알지만 나는 동료를 몰라요. 동료가 보내는 신호를 잘 읽어 보세요.",
       "{assassinate:은} 내가 하지 않아요. 동료에게 의견만 보태 주세요.",
     ],
-    seenBy: "{merlin}에게 {evil:으로} 보여요. 알려진 갈림길이면 {evil} 동료와 {lancelotGood}에게도 보여요.",
+    seenBy: "{merlin:과} {evil} 동료({oberon} 제외)에게 보여요. 변형 3이면 {lancelotGood}에게도 보여요.",
   },
 };
 
@@ -490,8 +492,8 @@ export const phaseHints = {
     result: "{targetName}님의 원래 카드는 {card:이었어요}. 지금은 반대로 뒤집혔어요.",
   },
   loyalty: {
-    none: "{loyalty:이} 공개됐어요: {loyaltyNone}. 두 순례자의 편은 그대로예요.",
-    switch: "{loyalty:이} 공개됐어요: {loyaltySwitch}! 두 순례자의 편이 서로 바뀌었어요.",
+    none: "이번 {quest}의 {loyalty}: {loyaltyNone}. 두 순례자의 편은 그대로예요.",
+    switch: "이번 {quest}의 {loyalty}: {loyaltySwitch}! 두 순례자의 편이 서로 바뀌었어요.",
     left: "남은 {loyalty} {count}장",
     // 아래 문장은 순례자 본인 폰에만, 본인이 눌렀을 때 보여 주세요 (진영이 드러나요)
     mySwitchSecret: "내 편이 바뀌었어요. 지금 나는 {team} 편이에요.",
@@ -560,9 +562,9 @@ export const alerts = [
     text: "{quest} 성공 2번! 한 번만 더 성공하면 {assassinate:이} 시작돼요." },
   { id: "evilMatchPoint", when: "fails == 2",
     text: "{quest} 실패 2번! 한 번 더 실패하면 {evil:이} 이겨요." },
-  { id: "loyaltyRevealed", when: "lancelot && round >= 2 && proposalNo == 1 && phase == 'propose'",
-    text: "이번 {quest:이} 시작되며 {loyalty:이} 한 장 공개됐어요. 순례자들의 편을 다시 생각해 보세요." },
-  { id: "loyaltySoon", when: "lancelot && round == 1 && phase == 'propose'",
+  { id: "loyaltyRevealed", when: "(lancelot == 1 || lancelot == 2) && loyaltyRevealed.at(-1).round == round && proposalNo == 1 && phase == 'propose'",
+    text: "이번 {quest}의 {loyalty:이} 적용됐어요. 순례자들의 편을 다시 생각해 보세요." },
+  { id: "loyaltySoon", when: "lancelot == 1 && round == 1 && phase == 'propose'",
     text: "다음 {quest}부터 시작할 때마다 {loyalty:이} 한 장씩 공개돼요." },
   { id: "excaliburOn", when: "excalibur && phase == 'propose'",
     text: "이번 팀에는 {excalibur:을} 맡을 사람도 함께 정해요." },
@@ -646,7 +648,7 @@ export const hostGuide = {
     {
       heading: "익숙해지면 해 볼 확장 규칙",
       bullets: [
-        "{lancelotGood:과} {lancelotEvil}: 3번째 {quest}부터 {loyalty:이} 공개되며 두 순례자의 편이 바뀔 수 있어요. 처음이면 '조용한 갈림길'을 추천해요.",
+        "{lancelotGood:과} {lancelotEvil}: 변형 1은 3번째 {quest}부터 {loyalty:이} 한 장씩 공개되며 두 순례자의 편이 바뀔 수 있어요. 변형 2는 카드를 처음부터 펼쳐 두고, 변형 3은 편이 바뀌지 않아요. 처음이면 변형 1을 추천해요.",
         "{excalibur}: {leader:이} 팀원 한 명에게 맡기고, 그 사람이 다른 팀원의 카드 한 장을 뒤집을 수 있어요. 7명 이상에서 재미있어요.",
         "다른 팀 인원표: 5명, 7명 게임의 팀 인원이 달라져요. 같은 사람들끼리 여러 판 할 때 바꿔 보세요.",
         "확장 규칙은 한 번에 하나씩만 더해 보세요. 설명이 길어지면 처음 온 친구들이 힘들어해요.",
@@ -727,7 +729,7 @@ export const presets = {
   },
   expansion: {
     label: "확장 규칙 맛보기",
-    desc: "두 순례자(조용한 갈림길)와 {excalibur:을} 더한 구성",
+    desc: "두 순례자(변형 1)와 {excalibur:을} 더한 구성",
     byCount: {
       5: { roles: { ...base }, lady: false, ...off, lancelot: 1 },
       6: { roles: { ...base, percival: true }, lady: false, ...off, lancelot: 1 },
@@ -749,7 +751,7 @@ export const glossary = [
   { term: "{approve} / {reject}", text: "{leader:이} 고른 팀을 보낼지 정하는 투표." },
   { term: "{lady}", text: "선택 규칙. 한 사람의 진영을 몰래 확인할 수 있는 등불이에요." },
   { term: "{excalibur}", text: "확장 규칙. 팀원 한 명이 다른 팀원의 카드 한 장을 뒤집을 수 있어요." },
-  { term: "{loyalty}", text: "확장 규칙. 3번째 {quest}부터 한 장씩 공개되며, 순례자들의 편을 바꿀 수 있어요." },
+  { term: "{loyalty}", text: "확장 규칙. 변형 1에서는 3번째 {quest}부터 한 장씩 공개되고, 변형 2에서는 처음부터 펼쳐 둬요. '{loyaltySwitch}' 카드는 두 순례자의 편을 바꿔요." },
   { term: "{assassinate}", text: "{good:이} 3번 이긴 뒤 {assassin:이} {merlin:을} 찾아 지목하는 마지막 기회." },
 ];
 

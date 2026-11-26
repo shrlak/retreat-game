@@ -162,15 +162,15 @@ export const overview = {
       module: "lancelot",
       heading: "Expansion: {lancelotGood} and {lancelotEvil}",
       body: [
-        "This expansion is used only if the host turns it on. The two Lancelots join the game, and the {lancelotEvil} takes one of the {evil} seats.",
-        "A deck of 5 {loyalty}s (3 {loyaltyNone}, 2 {loyaltySwitch}) is shuffled. At the start of the 3rd, 4th and 5th {quest}s, one card is shown to everyone.",
-        "When a '{loyaltySwitch}' card comes up, the two Lancelots swap sides. If another one comes up, they swap back.",
+        "This expansion is used only if the host turns it on. The two Lancelots join the game: the {lancelotGood} takes one {good} seat and the {lancelotEvil} takes one {evil} seat.",
+        "When roles are revealed, the {evil} (except the {oberon}) learn who the {lancelotEvil} is, but the {lancelotEvil} does not see them. The two Lancelots don't know each other, except in Variant 3.",
+        "The {merlin} sees the {lancelotEvil} as one of the {evil}. The {lancelotEvil} never carries out the {assassinate}.",
         "{quest} cards, the {lady}'s answer and the final result all use each Lancelot's current side. A Lancelot currently with the {good} can only play {success}.",
       ],
       bullets: [
-        "Quiet Crossroads: the {lancelotEvil} and the other {evil} don't know each other. The {merlin} still sees the {lancelotEvil} as one of the {evil}.",
-        "Known Crossroads: the two Lancelots recognise each other, and the {lancelotEvil} and the other {evil} also know each other.",
-        "The {lancelotEvil} never carries out the {assassinate}.",
+        "Variant 1: shuffle 5 {loyalty}s (3 '{loyaltyNone}', 2 '{loyaltySwitch}'). At the start of the 3rd, 4th and 5th {quest}, one is turned over for everyone. A '{loyaltySwitch}' card swaps the two Lancelots' sides, and a second one swaps them back.",
+        "Variant 2: from 7 {loyalty}s (5 '{loyaltyNone}', 2 '{loyaltySwitch}'), 5 are laid face up at the start, one for each {quest}, so everyone knows when the sides will switch. Each card takes effect as its {quest} begins, and the Lancelots must play for their current side: always {fail} with the {evil}, always {success} with the {good}.",
+        "Variant 3: no {loyalty}s and no switching. Instead, the two Lancelots know each other.",
       ],
     },
     {
@@ -361,38 +361,39 @@ export const roles = {
     module: "lancelot",
     tagline: "A Lancelot of the light, standing at a crossroads",
     know: [
-      "Quiet Crossroads: you can't see anyone.",
-      "Known Crossroads: you can see the {lancelotEvil}, and they know you too.",
+      "You can't see anyone.",
+      "Variant 3 only: you can see the {lancelotEvil}, and they know you too.",
     ],
     goal: [
       "Help your current side win. You start with the {good}.",
-      "From the 3rd {quest} on, a '{loyaltySwitch}' card can move you to the {evil}.",
+      "In Variants 1 and 2, a '{loyaltySwitch}' card can move you to the {evil}.",
     ],
     tips: [
-      "Every time a {loyalty} is turned over, check your current side again. The result uses your side at the very end.",
-      "While you're with the {good}, you can only play {success}. With the {evil}, you can play {fail} too.",
-      "Your side may change, so don't sound too certain too early.",
+      "Each time a {loyalty} takes effect, check your current side again. The result uses your side at the very end.",
+      "With the {good} you can only play {success}. With the {evil} you may choose in Variant 1, but in Variant 2 you must always play {fail}.",
+      "In Variant 2 the face-up cards show when your side will switch, so plan ahead.",
     ],
-    seenBy: "In Known Crossroads, the {lancelotEvil} can see you. Otherwise nobody can.",
+    seenBy: "Nobody, except the {lancelotEvil} in Variant 3.",
   },
   lancelotEvil: {
     team: "evil",
     module: "lancelot",
     tagline: "A Lancelot in shadow, standing at a crossroads",
     know: [
-      "Quiet Crossroads: you can't see anyone, and the other {evil} don't know you.",
-      "Known Crossroads: you can see your fellow {evil} and the {lancelotGood}, and they know you too.",
+      "You can't see the other {evil}, but they (except the {oberon}) know who you are.",
+      "Variant 3 only: you can see the {lancelotGood}, and they know you too.",
     ],
     goal: [
       "Help your current side win. You start with the {evil}.",
-      "From the 3rd {quest} on, a '{loyaltySwitch}' card can move you to the {good}.",
+      "In Variants 1 and 2, a '{loyaltySwitch}' card can move you to the {good}.",
     ],
     tips: [
-      "The {merlin} sees you as one of the {evil} from the start, and isn't told if your side changes.",
-      "If you end up with the {good}, you can only play {success}.",
-      "You never carry out the {assassinate}. Just share your opinion with your teammates.",
+      "The {merlin} sees you as one of the {evil} from the start, and isn't told if your side switches.",
+      "With the {good} you can only play {success}. In Variant 2, while with the {evil} you must always play {fail}.",
+      "Your teammates know you, but you don't know them. Watch for their signals.",
+      "You never carry out the {assassinate}. Just share your thoughts with your team.",
     ],
-    seenBy: "The {merlin} sees you as one of the {evil}. In Known Crossroads, your fellow {evil} and the {lancelotGood} see you too.",
+    seenBy: "The {merlin} and your fellow {evil} (except the {oberon}). In Variant 3, the {lancelotGood} too.",
   },
 };
 
@@ -484,8 +485,8 @@ export const phaseHints = {
     result: "{targetName}'s original card was {card}. It has now been flipped.",
   },
   loyalty: {
-    none: "A {loyalty} was revealed: {loyaltyNone}. The Lancelots keep their sides.",
-    switch: "A {loyalty} was revealed: {loyaltySwitch}! The two Lancelots have swapped sides.",
+    none: "This {quest}'s {loyalty}: {loyaltyNone}. The Lancelots keep their sides.",
+    switch: "This {quest}'s {loyalty}: {loyaltySwitch}! The two Lancelots have swapped sides.",
     left: "{loyalty}s left: {count}",
     // Show only on that Lancelot's own phone, when they tap (it reveals their side).
     mySwitchSecret: "Your side has changed. You are now with the {team}.",
@@ -552,9 +553,9 @@ export const alerts = [
     text: "2 {quest}s complete! One more and the {assassinate} begins." },
   { id: "evilMatchPoint", when: "fails == 2",
     text: "2 {quest}s failed! One more failure and the {evil} win." },
-  { id: "loyaltyRevealed", when: "lancelot && round >= 2 && proposalNo == 1 && phase == 'propose'",
-    text: "A {loyalty} was revealed as this {quest} began. Think again about the Lancelots' sides." },
-  { id: "loyaltySoon", when: "lancelot && round == 1 && phase == 'propose'",
+  { id: "loyaltyRevealed", when: "(lancelot == 1 || lancelot == 2) && loyaltyRevealed.at(-1).round == round && proposalNo == 1 && phase == 'propose'",
+    text: "This {quest}'s {loyalty} has taken effect. Think again about the Lancelots' sides." },
+  { id: "loyaltySoon", when: "lancelot == 1 && round == 1 && phase == 'propose'",
     text: "From the next {quest} on, one {loyalty} is revealed at the start of each {quest}." },
   { id: "excaliburOn", when: "excalibur && phase == 'propose'",
     text: "This team also needs someone to hold the {excalibur}." },
@@ -636,7 +637,7 @@ export const hostGuide = {
     {
       heading: "Expansions to try later",
       bullets: [
-        "{lancelotGood} and {lancelotEvil}: from the 3rd {quest}, {loyalty}s are revealed and the two Lancelots may swap sides. For a first try, use 'Quiet Crossroads'.",
+        "{lancelotGood} and {lancelotEvil}: in Variant 1, {loyalty}s are turned over from the 3rd {quest} and the two Lancelots may swap sides. Variant 2 lays the cards face up from the start, and in Variant 3 sides never switch. For a first try, use Variant 1.",
         "{excalibur}: the {leader} hands it to a team member, who may flip one other member's card. Great with 7 or more.",
         "Alternate team sizes: changes the team sizes in 5 and 7 player games. Nice when the same group plays several rounds.",
         "Add only one expansion at a time. Long explanations are hard on first-time players.",
@@ -716,7 +717,7 @@ export const presets = {
   },
   expansion: {
     label: "Try the expansions",
-    desc: "Adds the two Lancelots (Quiet Crossroads) and the {excalibur}",
+    desc: "Adds the two Lancelots (Variant 1) and the {excalibur}",
     byCount: {
       5: { roles: { ...base }, lady: false, ...off, lancelot: 1 },
       6: { roles: { ...base, percival: true }, lady: false, ...off, lancelot: 1 },
@@ -738,7 +739,7 @@ export const glossary = [
   { term: "{approve} / {reject}", text: "The vote on whether to send the {leader}'s team." },
   { term: "{lady}", text: "Optional rule. A lamp that secretly reveals one player's side." },
   { term: "{excalibur}", text: "Expansion. Lets one team member flip another member's card." },
-  { term: "{loyalty}", text: "Expansion. Revealed one at a time from the 3rd {quest}, and can switch the Lancelots' sides." },
+  { term: "{loyalty}", text: "Expansion. In Variant 1 one is turned over at the start of each {quest} from the 3rd; in Variant 2 they are laid face up from the start. A '{loyaltySwitch}' card swaps the Lancelots' sides." },
   { term: "{assassinate}", text: "After 3 wins for the {good}, the {assassin}'s last chance to find and name the {merlin}." },
 ];
 
