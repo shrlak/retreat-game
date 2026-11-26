@@ -75,8 +75,8 @@
       const lanDesc = lan === 2 ? K.L('두 순례자가 서로 알아보고, ' + K.teamName('evil') + '는 ' + K.roleName('lancelotEvil') + '를 알아요.', 'The two Lancelots see each other, and ' + K.teamName('evil') + ' see the ' + K.roleName('lancelotEvil') + '.')
         : lan === 1 ? K.L('순례자끼리 서로 모르고, ' + K.roleName('lancelotEvil') + '와 ' + K.teamName('evil') + '도 서로 몰라요.', 'The Lancelots don\'t know each other, and the ' + K.roleName('lancelotEvil') + ' and ' + K.teamName('evil') + ' don\'t know each other.')
         : K.L('3번째 ' + K.term('quest', '사명') + '부터 ' + K.term('loyalty', '갈림길 카드') + '에 따라 두 순례자의 편이 바뀔 수 있어요.', 'From the 3rd ' + K.term('quest', 'Mission') + ', a ' + K.term('loyalty', 'Crossroads card') + ' can switch the two Lancelots\' sides.');
-      h += '<div class="ux-setting uxl-mod"><div class="thumb">' + K.roleImg(lan ? 'lancelotEvil' : 'lancelotGood') + '</div><div class="txt"><div class="name">' + esc(K.term('lancelot', K.L('갈림길의 순례자', 'Lancelot'))) + ' ' + modTag + '</div><div class="desc">' + esc(lanDesc) + '</div>' +
-        '<div class="uxl-seg" role="group" aria-label="' + esc(K.term('lancelot', K.L('갈림길의 순례자', 'Lancelot'))) + '">' + [0, 1, 2].map(i => '<button class="' + (lan === i ? 'on' : '') + '" data-act="l-lan" data-n="' + i + '"' + (isHost ? '' : ' disabled') + ' aria-pressed="' + (lan === i) + '">' + esc(i ? vshort(i) : K.L('끔', 'Off')) + '</button>').join('') + '</div></div></div>';
+      h += '<div class="ux-setting uxl-mod"><div class="thumb">' + K.roleImg(lan ? 'lancelotEvil' : 'lancelotGood') + '</div><div class="txt"><div class="name">' + esc(K.term('lancelot', K.L('갈림길의 순례자', 'Lancelot'))) + ' ' + modTag + '</div><div class="desc">' + esc(lanDesc) + '</div></div>' +
+        '<div class="uxl-seg" role="group" aria-label="' + esc(K.term('lancelot', K.L('갈림길의 순례자', 'Lancelot'))) + '">' + [0, 1, 2].map(i => '<button class="' + (lan === i ? 'on' : '') + '" data-act="l-lan" data-n="' + i + '"' + (isHost ? '' : ' disabled') + ' aria-pressed="' + (lan === i) + '">' + esc(i ? vshort(i) : K.L('끔', 'Off')) + '</button>').join('') + '</div></div>';
       h += '<div class="ux-setting"><div class="thumb" style="display:grid;place-items:center">' + K.img(K.asset('excalibur.svg'), 'excalibur', '') + '</div><div class="txt"><div class="name">' + esc(K.term('excalibur', K.L('말씀 두루마리', 'Scroll of the Word'))) + ' ' + modTag + '</div><div class="desc">' +
         esc(K.L(K.term('leader', '조장') + '이 원정대원 한 명에게 주면, 카드를 다 낸 뒤 다른 대원 한 명의 카드를 뒤집을 수 있어요.', 'The ' + K.term('leader', 'Leader') + ' gives it to one team member, who may flip one other member\'s card after all cards are in.')) + '</div></div>' +
         sw('excalibur', K.term('excalibur', K.L('말씀 두루마리', 'Scroll of the Word'))) + '</div>';
@@ -157,7 +157,8 @@
 .uxl-in { animation: uxhCard .7s var(--ease-out) both; }
 .uxl-hint { margin: -2px 6px 0; font-size: 13px; animation: uxhFade .6s both; }
 .uxl-presets { display: flex; flex-wrap: wrap; gap: 6px; margin: -2px 0 8px; } .uxl-presets .ux-chip { color: var(--gold-hi); }
-.uxl-seg { display: flex; gap: 4px; margin-top: 8px; padding: 3px; border-radius: 12px; background: rgba(255,255,255,.06); border: 1px solid var(--line); }
+.uxl-mod { flex-wrap: wrap; }
+.uxl-seg { flex: 1 1 100%; display: flex; gap: 4px; margin-top: 2px; padding: 3px; border-radius: 12px; background: rgba(255,255,255,.06); border: 1px solid var(--line); }
 .uxl-seg button { flex: 1; min-width: 0; min-height: 34px; padding: 4px 6px; border-radius: 9px; font-size: 13px; font-weight: 700; color: var(--text-dim); line-height: 1.2; transition: background .25s, color .25s; }
 .uxl-seg button.on { color: #2a1a02; background: linear-gradient(180deg, var(--gold-hi), var(--gold)); }
 .uxl-seg button:disabled:not(.on) { opacity: .55; }
