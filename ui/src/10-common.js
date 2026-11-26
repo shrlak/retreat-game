@@ -100,8 +100,8 @@
   /* The face-up plan (variant 2): card i belongs to mission i; past/current ones are marked done. */
   K.loyaltyPlanHtml = v => {
     const plan = v && v.loyaltyPlan; if (!Array.isArray(plan) || !plan.length) return '';
-    const cur = v.phase === 'lobby' || v.phase === 'reveal' ? -1 : (v.round || 0);
-    return '<div class="uxc-loy">' + plan.map((c, i) => loyCard(c, i, i <= cur ? 'done' : '')).join('') + '</div>';
+    const done = new Set((v.loyaltyRevealed || []).map(x => x.round));   // cards already in effect (mission 1's applies at the deal)
+    return '<div class="uxc-loy">' + plan.map((c, i) => loyCard(c, i, done.has(i) ? 'done' : '')).join('') + '</div>';
   };
   /* Lancelot: what my side is now, and the Crossroads cards (by variant). */
   K.lancelotNote = v => {

@@ -74,8 +74,8 @@ export const quick = {
         { key: "mordred", line: "{merlin}에게도 안 보이는 숨은 우두머리예요." },
         { key: "oberon", line: "{evil:이지만} 동료를 모르고, 동료도 이 사람을 몰라요." },
         { key: "minion", line: "{evil}의 평범한 일원이에요. 동료를 알아요." },
-        { key: "lancelotGood", module: "lancelot", line: "(확장) {good} 편으로 시작하지만 {loyalty}에 따라 편이 바뀔 수 있어요." },
-        { key: "lancelotEvil", module: "lancelot", line: "(확장) {evil} 편으로 시작하지만 {loyalty}에 따라 편이 바뀔 수 있어요." },
+        { key: "lancelotGood", module: "lancelot", line: "(확장) {good} 편으로 시작해요. 변형 1·2에서는 {loyalty}에 따라 편이 바뀔 수 있어요." },
+        { key: "lancelotEvil", module: "lancelot", line: "(확장) {evil} 편으로 시작해요. 변형 1·2에서는 {loyalty}에 따라 편이 바뀔 수 있어요." },
       ],
     },
     {
@@ -406,7 +406,7 @@ export const roles = {
 export const knowledgeLabels = {
   evil: "{evil}",
   merlinCandidate: "{merlin} 후보",
-  lancelot: "또 다른 순례자",
+  lancelot: "또 다른 랜슬롯",
   emptyGood: "보이는 사람이 없어요. 대화와 투표로 추리해 보세요.",
   emptyOberon: "보이는 동료가 없어요. 혼자서도 해낼 수 있어요.",
 };

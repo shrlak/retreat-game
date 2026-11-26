@@ -92,12 +92,12 @@
           {
             "key": "lancelotGood",
             "module": "lancelot",
-            "line": "(Expansion) Starts with the Workers of Light, but a Crossroads card can switch their side."
+            "line": "(Expansion) Starts with the Workers of Light. In Variants 1 and 2 a Crossroads card can switch their side."
           },
           {
             "key": "lancelotEvil",
             "module": "lancelot",
-            "line": "(Expansion) Starts with the Tempters, but a Crossroads card can switch their side."
+            "line": "(Expansion) Starts with the Tempters. In Variants 1 and 2 a Crossroads card can switch their side."
           }
         ]
       },

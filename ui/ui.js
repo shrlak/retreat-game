@@ -109,7 +109,9 @@
     }
     return (phCache[kind] = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg));
   };
-  K.tokenImg = (name, cls) => K.img(K.asset(name + '.svg'), name, cls);
+  /* token names -> art files (CONTRACT asset list); other names map to <name>.svg */
+  const TOKEN_FILE = { success: 'token-success', fail: 'token-fail', approve: 'vote-approve', reject: 'vote-reject' };
+  K.tokenImg = (name, cls) => K.img(K.asset((TOKEN_FILE[name] || name) + '.svg'), name, cls);
   K.roleImg = (key, cls) => K.img(K.roleArtSrc(key), 'role:' + key, cls);
   K.backImg = cls => K.img(K.asset('card-back.svg'), 'back', cls);
 
@@ -332,8 +334,11 @@
   // ---------- server clock (for starting animations at the same moment on every phone) ----------
   /* The server sends serverNow (ms, when the view was built) and phaseStartedAt (ms, when the phase, round or
      proposal last changed — every vote/quest/lamp result changes one of them in the same action). Every phone
-     starts the cinematics and scene transitions at phaseStartedAt + SYNC_LEAD on the server clock. Without the
-     fields everything plays on arrival. */
+     starts the cinematics and scene transitions at phaseStartedAt + SYNC_LEAD on the server clock. A phone whose
+     view arrives after that moment catches up (ctx.debt in playAll); one that was busy with an earlier cinematic
+     plays from the start. The phase banner (45-journey.js) runs for view.transitionMs and is skipped once that
+     window has passed. A reload or a new device never replays: `seen` is kept per tab and starts from the
+     current view. Without the fields everything plays on arrival. */
   const clockS = [];
   K.clock = {
     offset: null,
@@ -412,11 +417,16 @@
   function makeCtx() {
     const ov = K.el('<div class="ux-overlay" role="dialog" aria-live="polite"><div class="inner"></div></div>');
     const skip = K.el('<button class="ux-skip">' + K.L('건너뛰기', 'Skip') + ' ›</button>');
+    const wait = ms => new Promise(r => { const t = setTimeout(done, ms); function done() { clearTimeout(t); ctx.waiters = ctx.waiters.filter(w => w !== done); r(); } ctx.waiters.push(done); });
     const ctx = {
       el: ov, inner: ov.firstElementChild, skipped: false, waiters: [],
-      sleep(ms) { if (ctx.skipped) return Promise.resolve(); return new Promise(r => { const t = setTimeout(done, ms); function done() { clearTimeout(t); ctx.waiters = ctx.waiters.filter(w => w !== done); r(); } ctx.waiters.push(done); }); },
-      /* wait for a tap anywhere (or ms timeout) */
-      tapOrWait(ms) { if (ctx.skipped) return Promise.resolve(); return new Promise(r => { let fin = false; const go = () => { if (fin) return; fin = true; ov.removeEventListener('click', go); r(); }; ov.addEventListener('click', go); ctx.sleep(ms).then(go); }); },
+      /* debt (ms): how far behind the other phones this one started (its view arrived late). Timed steps eat it
+         first, so the beats (countdown, flips, result) land at the same moment as on the other phones. */
+      debt: 0,
+      takeDebt(max) { const d = Math.max(0, Math.min(ctx.debt, max == null ? ctx.debt : max)); ctx.debt -= d; return d; },
+      sleep(ms) { if (ctx.skipped) return Promise.resolve(); ms -= ctx.takeDebt(ms); return ms > 0 ? wait(ms) : Promise.resolve(); },
+      /* wait for a tap anywhere (or ms timeout); the closing hold is never shortened by debt */
+      tapOrWait(ms) { if (ctx.skipped) return Promise.resolve(); return new Promise(r => { let fin = false; const go = () => { if (fin) return; fin = true; ov.removeEventListener('click', go); r(); }; ov.addEventListener('click', go); wait(ms).then(go); }); },
       set(html) { ctx.inner.innerHTML = html; },
       skip() { ctx.skipped = true; ctx.waiters.slice().forEach(w => w()); }
     };
@@ -424,16 +434,20 @@
     ov.appendChild(skip); document.body.appendChild(ov);
     return ctx;
   }
-  async function playAll(evs) {
-    let first = true;
+  /* queued: these events waited behind an earlier cinematic on this phone, so start them from the beginning.
+     Otherwise a phone whose view arrived late (slow network, reload) catches up: its first cinematic starts with
+     debt = how late it is, so the beats line up with the phones that started on time. */
+  async function playAll(evs, queued) {
+    let debt = 0, first = true;
     for (const e of evs) {
-      if (first) { first = false; e.late = await K.syncWait(K.evAt(e, K.view)); } else e.late = 0;
-      const ctx = makeCtx(); ctx.late = e.late;
+      if (first) { first = false; e.late = await K.syncWait(K.evAt(e, K.view)); if (!queued) debt = e.late; } else e.late = 0;
+      const ctx = makeCtx(); ctx.late = e.late; ctx.debt = debt;
       try { await K.cine[e.type](ctx, e, K.view, K); } catch (err) { console.error('[UI] cinematic failed', e.type, err); }
+      debt = ctx.debt;   // whatever this one could not absorb carries over to the next in the batch
       ctx.el.classList.add('out'); await K.sleep(ctx.skipped ? 120 : 380); ctx.el.remove();
     }
   }
-  function pump() {
+  function pump(queued) {
     const v = K.view;
     if (!v) { renderScreen(null); return; }
     if (!seen || seen.code !== v.code) loadSeen(v);
@@ -442,7 +456,7 @@
     if (evs.length) {
       cineBusy = true;
       // Render the screen underneath first only when it does not spoil the result (lobby->reveal deal).
-      playAll(evs).then(() => { cineBusy = false; pump(); });
+      playAll(evs, queued).then(() => { cineBusy = false; pump(true); });
       return;
     }
     renderScreen(v);
@@ -539,8 +553,8 @@
       mordred: { name: 'Wolf in Sheep\'s Clothing', short: 'Wolf', desc: 'A Tempter even the Prophet cannot see. Hide among the Workers of Light.' },
       oberon: { name: 'Wanderer', short: 'Wanderer', desc: 'You are a Tempter, but you don\'t know the others and they don\'t know you. The Prophet can see you.' },
       minion: { name: 'Tempter', short: 'Tempter', desc: 'You know your fellow Tempters. Quietly hinder the missions.' },
-      lancelotGood: { name: 'Pilgrim at the Crossroads', short: 'Pilgrim', desc: 'You start with the Workers of Light, but from the 3rd mission a Crossroads card can switch your side. Always play for your current side.' },
-      lancelotEvil: { name: 'Shadow at the Crossroads', short: 'Shadow', desc: 'You start with the Tempters, but from the 3rd mission a Crossroads card can switch your side. Always play for your current side.' }
+      lancelotGood: { name: 'Pilgrim at the Crossroads', short: 'Pilgrim', desc: 'You start with the Workers of Light. In Variants 1 and 2 a Crossroads card can switch your side. Always play for your current side.' },
+      lancelotEvil: { name: 'Shadow at the Crossroads', short: 'Shadow', desc: 'You start with the Tempters. In Variants 1 and 2 a Crossroads card can switch your side. Always play for your current side.' }
     },
     terms: {
       quest: 'Mission', questTeam: 'Team', leader: 'Leader',
@@ -554,7 +568,7 @@
       excalibur: 'Scroll of the Word', excaliburAction: 'Flip one card', excaliburPass: 'Don\'t flip',
       allowRejoin: 'Allow rejoin', claimHost: 'Become host'
     },
-    knowledgeText: { evil: 'Tempter', merlinCandidate: 'Prophet candidate', lancelot: 'The other pilgrim' },
+    knowledgeText: { evil: 'Tempter', merlinCandidate: 'Prophet candidate', lancelot: 'The other Lancelot' },
     winText: {
       quests: 'The Workers of Light completed three missions',
       assassinFailed: 'The Spy could not find the Prophet',
@@ -796,8 +810,8 @@
   /* The face-up plan (variant 2): card i belongs to mission i; past/current ones are marked done. */
   K.loyaltyPlanHtml = v => {
     const plan = v && v.loyaltyPlan; if (!Array.isArray(plan) || !plan.length) return '';
-    const cur = v.phase === 'lobby' || v.phase === 'reveal' ? -1 : (v.round || 0);
-    return '<div class="uxc-loy">' + plan.map((c, i) => loyCard(c, i, i <= cur ? 'done' : '')).join('') + '</div>';
+    const done = new Set((v.loyaltyRevealed || []).map(x => x.round));   // cards already in effect (mission 1's applies at the deal)
+    return '<div class="uxc-loy">' + plan.map((c, i) => loyCard(c, i, done.has(i) ? 'done' : '')).join('') + '</div>';
   };
   /* Lancelot: what my side is now, and the Crossroads cards (by variant). */
   K.lancelotNote = v => {
@@ -1510,6 +1524,8 @@
 .ux-seat .sub .off { color: var(--text-mute); }
 .ux-seat .sub .tm { color: var(--gold); }
 .ux-seat .knowtag.bd-kt-xc { background: rgba(255,255,255,.1); color: var(--text-dim); }
+.ux-seat .knowtag.bd-kt-lan { background: rgba(94,200,190,.16); color: #a8ebe2; }
+.bd-pvs .bd-xlast { margin: 14px 0 0; }
 .ux-seat .done { flex: none; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: rgba(111,227,166,.16); animation: popIn .4s var(--ease-spring) both; }
 .ux-seat.on-team { background: rgba(244,201,107,.07); }
 .ux-seat.selectable { cursor: pointer; }
@@ -1735,7 +1751,7 @@
       if (p.online === false) sub += '<span class="off">' + e(K.L('연결 끊김', 'Offline')) + '</span>';
       if (cls.indexOf('on-team') >= 0) sub += '<span class="tm">' + e(W.team()) + '</span>';
       if (marks && p.id !== me) {
-        K.knowOf(v, p.id).forEach(t => { sub += '<span class="knowtag ' + (t === 'merlinCandidate' ? 'merlinCandidate' : 'evil') + '">' + e(K.knowText(t)) + '</span>'; });
+        K.knowOf(v, p.id).forEach(t => { sub += '<span class="knowtag ' + (t === 'merlinCandidate' ? 'merlinCandidate' : t === 'lancelot' ? 'bd-kt-lan' : 'evil') + '">' + (t === 'lancelot' ? '🧭 ' : '') + e(K.knowText(t)) + '</span>'; });
         const lt = K.ladyOf(v, p.id);
         if (lt) sub += '<span class="knowtag ' + (lt === 'evil' ? 'evil' : 'good') + '">🪔 ' + e(K.teamName(lt)) + '</span>';
         // Scroll of the Word results I learned (private, behind the eye toggle like the other marks)
@@ -1770,6 +1786,8 @@
     e(W.xc()) + ': <b>' + nm(v, holder) + '</b>' + (v.phase === 'quest' ? ' · 카드가 모이면 한 장을 뒤집을 수 있어요' : ''),
     e(W.xc()) + ': <b>' + nm(v, holder) + '</b>' + (v.phase === 'quest' ? ' · may flip one card once all are in' : '')) + '</p>';
   const hintLine = (phase, key, params) => { const h = typeof K.hint === 'function' ? K.hint(phase, key, params) : ''; return h ? '<p class="ux-muted bd-hint">' + e(h) + '</p>' : ''; };
+  /* Lancelot variant 2: shown to every team member (same text on every phone, so it reveals nothing). */
+  const lanForcedNote = v => v.lancelot === 2 ? '<p class="bd-xnote">🧭 ' + e((K.lanVarShort ? K.lanVarShort(2) + ' · ' : '') + K.L('랜슬롯은 지금 편대로만 카드를 내요', 'Lancelots must play for their current side')) + '</p>' : '';
   const twoNote = v => K.questFails(v, v.round) >= 2 ? '<p class="bd-note">' + K.L('이번 ' + e(jo(W.quest(), '은', '는')) + ' ' + e(W.fail()) + ' 카드가 2장 나와야 실패해요', 'This ' + e(W.quest()) + ' fails only if 2 ' + e(W.fail()) + ' cards come up') + '</p>' : '';
   const waiting = (iconHtml) => '<div class="ux-waiting">' + (iconHtml ? '<div class="bd-wait-ic">' + iconHtml + '</div>' : '') + '<span class="ux-dots"><i></i><i></i><i></i></span></div>';
   const progress = (label, k, n) => '<div class="bd-prog-l"><span>' + label + '</span><b>' + k + ' / ' + n + '</b></div><div class="ux-progress"><i style="width:' + (n ? Math.round(100 * k / n) : 0) + '%"></i></div>';
@@ -1851,7 +1869,7 @@
       if (mine && !me.myQuestPlayed) {
         P.mood = 'turn';
         P.head = '<h3 class="ux-action-title">' + K.L(e(W.quest()) + ' 카드를 내 주세요', 'Play your ' + e(W.quest()) + ' card') + '</h3>' +
-          '<p class="ux-action-sub">' + K.L('몰래 한 장을 골라요. 누가 무엇을 냈는지는 아무도 몰라요.', 'Secretly choose one. No one will know who played what.') + '</p>' + teamChips(v) + twoNote(v);
+          '<p class="ux-action-sub">' + K.L('몰래 한 장을 골라요. 누가 무엇을 냈는지는 아무도 몰라요.', 'Secretly choose one. No one will know who played what.') + '</p>' + teamChips(v) + twoNote(v) + lanForcedNote(v);
         // Both cards look identical for everyone (a neighbour must not learn my team). Good players get a toast on fail.
         P.ctl = choiceCards({ cls: 'success', tok: 'success', label: W.success() }, { cls: 'fail', tok: 'fail', label: W.fail() }) +
           '<button type="button" class="ux-btn ux-btn-gold" data-act="bd-quest" data-bd="go" disabled>' + K.L('제출하기', 'Submit') + '</button>';
@@ -1919,6 +1937,18 @@
     return P;
   }
 
+  /* Public: how the Scroll was used on the mission just played (view.lastExcalibur), shown to everyone during the next
+     mission so it isn't only in the cinematic. Never says what the card was. */
+  function xcLastHtml(v) {
+    const x = v.lastExcalibur;
+    if (!xcOn(v) || !x || !x.holderId || x.round !== (v.round || 0) - 1 || !/^(propose|vote|quest|lady)$/.test(v.phase)) return '';
+    const p = { holderName: K.pname(v, x.holderId), targetName: x.targetId ? K.pname(v, x.targetId) : '' };
+    const h = typeof K.hint === 'function' ? K.hint('excalibur', x.targetId ? 'used' : 'passed', p) : '';
+    const t = h || (x.targetId ? K.L(p.holderName + '님이 ' + p.targetName + '님의 카드를 뒤집었어요', p.holderName + ' flipped ' + p.targetName + '\'s card')
+      : K.L(p.holderName + '님은 카드를 뒤집지 않았어요', p.holderName + ' chose not to flip any card'));
+    return '<p class="bd-xnote bd-xlast">' + K.tokenImg('excalibur') + ' ' + e(W.quest() + ' ' + (x.round + 1) + ' · ' + t) + '</p>';
+  }
+
   /* Holder's private Scroll result: a folded note (tap to open, closes by itself) shown only on the holder's phone,
      for the mission just played. Nothing readable at a glance. */
   function privateNoteHtml(v) {
@@ -1971,7 +2001,7 @@
       c.classList.toggle('dim', L.choice != null && L.choice !== val);
       c.setAttribute('aria-pressed', String(L.choice === val));
     });
-    K.patch(K.$('[data-bd="pv"]', el), v.phase === 'excalibur' ? '' : privateNoteHtml(v));
+    K.patch(K.$('[data-bd="pv"]', el), v.phase === 'excalibur' ? '' : xcLastHtml(v) + privateNoteHtml(v));
   }
 
   // ---------- screen ----------
@@ -2477,7 +2507,7 @@
     const R = K.reduced();
     const bg = K.el('<div class="cn-bgl" aria-hidden="true"></div>'); ov.insertBefore(bg, ov.firstChild);
     const fl = K.el('<div class="cn-fxl" aria-hidden="true"></div>'); ov.appendChild(fl);
-    const live = () => !ctx.skipped;
+    const live = () => !ctx.skipped && !(ctx.debt > 0);   // no bursts or sounds while a late phone catches up
     // K.fx draws on a canvas under the overlays; use it only if the integrator raised it above them.
     const canvasOnTop = () => { const c = document.querySelector('.ux-fx'); if (!c) return false; const z = parseInt(getComputedStyle(c).zIndex, 10); const oz = parseInt(getComputedStyle(ov).zIndex, 10) || 50; return z > oz; };
     const S = {
@@ -3179,13 +3209,18 @@
     const w = K.el('<div class="ux-wipe" aria-hidden="true"><i class="iris"></i><i class="ring"></i></div>');
     document.body.appendChild(w); setTimeout(() => w.remove(), 1300);
   }
+  /* The phase banner is the shared scene transition: every phone runs it for view.transitionMs from the synced start.
+     A phone that gets there late jumps into it (negative delay); once the moment has passed it is skipped. */
   async function banner(v, tok) {
     const f = BANNER[v.phase]; if (!f) return;
-    await K.syncWait(K.evAt(null, v));
+    const late = await K.syncWait(K.evAt(null, v));
+    const dur = v.transitionMs > 0 ? v.transitionMs : 2200;
+    if (late > dur - 400) return;
     if (tok !== wipeTok || !K.view || K.view.phase !== v.phase || K.cineBusy()) return;
     const b = f(v);
     const el = K.el('<div class="ux-sweep" aria-hidden="true"><div class="bar"><span class="ic">' + b.ic + '</span><span class="tx"><b>' + esc(b.t) + '</b><small>' + esc(b.s) + '</small></span></div></div>');
-    document.body.appendChild(el); setTimeout(() => el.remove(), 2300);
+    const bar = el.firstElementChild; bar.style.animationDuration = dur + 'ms'; if (late > 0) bar.style.animationDelay = (-late) + 'ms';
+    document.body.appendChild(el); setTimeout(() => el.remove(), dur - late + 100);
   }
   (K.onRender = K.onRender || []).push((v, name) => {
     setScene(K.sceneKey(v));
@@ -3305,8 +3340,9 @@
       if (!ctx.skipped) {
         const D = 2500;
         tok.classList.add('walk');
+        const ahead = ctx.takeDebt ? ctx.takeDebt(D) : 0;   // a late phone starts the walk part-way along
         await new Promise(res => {
-          const t0 = performance.now();
+          const t0 = performance.now() - ahead;
           const step = now => {
             const t = ctx.skipped ? 1 : Math.min(1, (now - t0) / D), p = place(a + (b - a) * ease(t));
             panTo(p[1]);

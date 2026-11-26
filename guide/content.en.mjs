@@ -70,8 +70,8 @@ export const quick = {
         { key: "mordred", line: "The hidden leader that even the {merlin} cannot see." },
         { key: "oberon", line: "One of the {evil}, but doesn't know the others, and they don't know them." },
         { key: "minion", line: "An ordinary member of the {evil}. Knows their teammates." },
-        { key: "lancelotGood", module: "lancelot", line: "(Expansion) Starts with the {good}, but a {loyalty} can switch their side." },
-        { key: "lancelotEvil", module: "lancelot", line: "(Expansion) Starts with the {evil}, but a {loyalty} can switch their side." },
+        { key: "lancelotGood", module: "lancelot", line: "(Expansion) Starts with the {good}. In Variants 1 and 2 a {loyalty} can switch their side." },
+        { key: "lancelotEvil", module: "lancelot", line: "(Expansion) Starts with the {evil}. In Variants 1 and 2 a {loyalty} can switch their side." },
       ],
     },
     {
