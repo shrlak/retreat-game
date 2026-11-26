@@ -35,8 +35,8 @@
       mordred: { name: 'Wolf in Sheep\'s Clothing', short: 'Wolf', desc: 'A Tempter even the Prophet cannot see. Hide among the Workers of Light.' },
       oberon: { name: 'Wanderer', short: 'Wanderer', desc: 'You are a Tempter, but you don\'t know the others and they don\'t know you. The Prophet can see you.' },
       minion: { name: 'Tempter', short: 'Tempter', desc: 'You know your fellow Tempters. Quietly hinder the missions.' },
-      lancelotGood: { name: 'Pilgrim at the Crossroads', short: 'Pilgrim', desc: 'You start with the Workers of Light, but from the 3rd mission a Crossroads card can switch your side. Always play for your current side.' },
-      lancelotEvil: { name: 'Shadow at the Crossroads', short: 'Shadow', desc: 'You start with the Tempters, but from the 3rd mission a Crossroads card can switch your side. Always play for your current side.' }
+      lancelotGood: { name: 'Pilgrim at the Crossroads', short: 'Pilgrim', desc: 'You start with the Workers of Light. In Variants 1 and 2 a Crossroads card can switch your side. Always play for your current side.' },
+      lancelotEvil: { name: 'Shadow at the Crossroads', short: 'Shadow', desc: 'You start with the Tempters. In Variants 1 and 2 a Crossroads card can switch your side. Always play for your current side.' }
     },
     terms: {
       quest: 'Mission', questTeam: 'Team', leader: 'Leader',
@@ -50,7 +50,7 @@
       excalibur: 'Scroll of the Word', excaliburAction: 'Flip one card', excaliburPass: 'Don\'t flip',
       allowRejoin: 'Allow rejoin', claimHost: 'Become host'
     },
-    knowledgeText: { evil: 'Tempter', merlinCandidate: 'Prophet candidate', lancelot: 'The other pilgrim' },
+    knowledgeText: { evil: 'Tempter', merlinCandidate: 'Prophet candidate', lancelot: 'The other Lancelot' },
     winText: {
       quests: 'The Workers of Light completed three missions',
       assassinFailed: 'The Spy could not find the Prophet',

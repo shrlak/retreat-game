@@ -109,7 +109,9 @@
     }
     return (phCache[kind] = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg));
   };
-  K.tokenImg = (name, cls) => K.img(K.asset(name + '.svg'), name, cls);
+  /* token art file names (assets/manifest.json "tokens"); anything else is assets/<name>.svg */
+  const TOKEN_FILE = { success: 'token-success', fail: 'token-fail', approve: 'vote-approve', reject: 'vote-reject' };
+  K.tokenImg = (name, cls) => K.img(K.asset((TOKEN_FILE[name] || name) + '.svg'), name, cls);
   K.roleImg = (key, cls) => K.img(K.roleArtSrc(key), 'role:' + key, cls);
   K.backImg = cls => K.img(K.asset('card-back.svg'), 'back', cls);
 
@@ -332,8 +334,11 @@
   // ---------- server clock (for starting animations at the same moment on every phone) ----------
   /* The server sends serverNow (ms, when the view was built) and phaseStartedAt (ms, when the phase, round or
      proposal last changed — every vote/quest/lamp result changes one of them in the same action). Every phone
-     starts the cinematics and scene transitions at phaseStartedAt + SYNC_LEAD on the server clock. Without the
-     fields everything plays on arrival. */
+     starts the cinematics and scene transitions at phaseStartedAt + SYNC_LEAD on the server clock. A phone whose
+     view arrives after that moment catches up (ctx.debt in playAll); one that was busy with an earlier cinematic
+     plays from the start. The phase banner (45-journey.js) runs for view.transitionMs and is skipped once that
+     window has passed. A reload or a new device never replays: `seen` is kept per tab and starts from the
+     current view. Without the fields everything plays on arrival. */
   const clockS = [];
   K.clock = {
     offset: null,
@@ -412,11 +417,16 @@
   function makeCtx() {
     const ov = K.el('<div class="ux-overlay" role="dialog" aria-live="polite"><div class="inner"></div></div>');
     const skip = K.el('<button class="ux-skip">' + K.L('건너뛰기', 'Skip') + ' ›</button>');
+    const wait = ms => new Promise(r => { const t = setTimeout(done, ms); function done() { clearTimeout(t); ctx.waiters = ctx.waiters.filter(w => w !== done); r(); } ctx.waiters.push(done); });
     const ctx = {
       el: ov, inner: ov.firstElementChild, skipped: false, waiters: [],
-      sleep(ms) { if (ctx.skipped) return Promise.resolve(); return new Promise(r => { const t = setTimeout(done, ms); function done() { clearTimeout(t); ctx.waiters = ctx.waiters.filter(w => w !== done); r(); } ctx.waiters.push(done); }); },
-      /* wait for a tap anywhere (or ms timeout) */
-      tapOrWait(ms) { if (ctx.skipped) return Promise.resolve(); return new Promise(r => { let fin = false; const go = () => { if (fin) return; fin = true; ov.removeEventListener('click', go); r(); }; ov.addEventListener('click', go); ctx.sleep(ms).then(go); }); },
+      /* debt (ms): how far behind the other phones this one started (its view arrived late). Timed steps eat it
+         first, so the beats (countdown, flips, result) land at the same moment as on the other phones. */
+      debt: 0,
+      takeDebt(max) { const d = Math.max(0, Math.min(ctx.debt, max == null ? ctx.debt : max)); ctx.debt -= d; return d; },
+      sleep(ms) { if (ctx.skipped) return Promise.resolve(); ms -= ctx.takeDebt(ms); return ms > 0 ? wait(ms) : Promise.resolve(); },
+      /* wait for a tap anywhere (or ms timeout); the closing hold is never shortened by debt */
+      tapOrWait(ms) { if (ctx.skipped) return Promise.resolve(); return new Promise(r => { let fin = false; const go = () => { if (fin) return; fin = true; ov.removeEventListener('click', go); r(); }; ov.addEventListener('click', go); wait(ms).then(go); }); },
       set(html) { ctx.inner.innerHTML = html; },
       skip() { ctx.skipped = true; ctx.waiters.slice().forEach(w => w()); }
     };
@@ -424,16 +434,20 @@
     ov.appendChild(skip); document.body.appendChild(ov);
     return ctx;
   }
-  async function playAll(evs) {
-    let first = true;
+  /* queued: these events waited behind an earlier cinematic on this phone, so start them from the beginning.
+     Otherwise a phone whose view arrived late (slow network, reload) catches up: its first cinematic starts with
+     debt = how late it is, so the beats line up with the phones that started on time. */
+  async function playAll(evs, queued) {
+    let debt = 0, first = true;
     for (const e of evs) {
-      if (first) { first = false; e.late = await K.syncWait(K.evAt(e, K.view)); } else e.late = 0;
-      const ctx = makeCtx(); ctx.late = e.late;
+      if (first) { first = false; e.late = await K.syncWait(K.evAt(e, K.view)); if (!queued) debt = e.late; } else e.late = 0;
+      const ctx = makeCtx(); ctx.late = e.late; ctx.debt = debt;
       try { await K.cine[e.type](ctx, e, K.view, K); } catch (err) { console.error('[UI] cinematic failed', e.type, err); }
+      debt = ctx.debt;   // whatever this one could not absorb carries over to the next in the batch
       ctx.el.classList.add('out'); await K.sleep(ctx.skipped ? 120 : 380); ctx.el.remove();
     }
   }
-  function pump() {
+  function pump(queued) {
     const v = K.view;
     if (!v) { renderScreen(null); return; }
     if (!seen || seen.code !== v.code) loadSeen(v);
@@ -442,7 +456,7 @@
     if (evs.length) {
       cineBusy = true;
       // Render the screen underneath first only when it does not spoil the result (lobby->reveal deal).
-      playAll(evs).then(() => { cineBusy = false; pump(); });
+      playAll(evs, queued).then(() => { cineBusy = false; pump(true); });
       return;
     }
     renderScreen(v);
@@ -539,8 +553,8 @@
       mordred: { name: 'Wolf in Sheep\'s Clothing', short: 'Wolf', desc: 'A Tempter even the Prophet cannot see. Hide among the Workers of Light.' },
       oberon: { name: 'Wanderer', short: 'Wanderer', desc: 'You are a Tempter, but you don\'t know the others and they don\'t know you. The Prophet can see you.' },
       minion: { name: 'Tempter', short: 'Tempter', desc: 'You know your fellow Tempters. Quietly hinder the missions.' },
-      lancelotGood: { name: 'Pilgrim at the Crossroads', short: 'Pilgrim', desc: 'You start with the Workers of Light, but from the 3rd mission a Crossroads card can switch your side. Always play for your current side.' },
-      lancelotEvil: { name: 'Shadow at the Crossroads', short: 'Shadow', desc: 'You start with the Tempters, but from the 3rd mission a Crossroads card can switch your side. Always play for your current side.' }
+      lancelotGood: { name: 'Pilgrim at the Crossroads', short: 'Pilgrim', desc: 'You start with the Workers of Light. In Variants 1 and 2 a Crossroads card can switch your side. Always play for your current side.' },
+      lancelotEvil: { name: 'Shadow at the Crossroads', short: 'Shadow', desc: 'You start with the Tempters. In Variants 1 and 2 a Crossroads card can switch your side. Always play for your current side.' }
     },
     terms: {
       quest: 'Mission', questTeam: 'Team', leader: 'Leader',
@@ -554,7 +568,7 @@
       excalibur: 'Scroll of the Word', excaliburAction: 'Flip one card', excaliburPass: 'Don\'t flip',
       allowRejoin: 'Allow rejoin', claimHost: 'Become host'
     },
-    knowledgeText: { evil: 'Tempter', merlinCandidate: 'Prophet candidate', lancelot: 'The other pilgrim' },
+    knowledgeText: { evil: 'Tempter', merlinCandidate: 'Prophet candidate', lancelot: 'The other Lancelot' },
     winText: {
       quests: 'The Workers of Light completed three missions',
       assassinFailed: 'The Spy could not find the Prophet',
@@ -796,8 +810,8 @@
   /* The face-up plan (variant 2): card i belongs to mission i; past/current ones are marked done. */
   K.loyaltyPlanHtml = v => {
     const plan = v && v.loyaltyPlan; if (!Array.isArray(plan) || !plan.length) return '';
-    const cur = v.phase === 'lobby' || v.phase === 'reveal' ? -1 : (v.round || 0);
-    return '<div class="uxc-loy">' + plan.map((c, i) => loyCard(c, i, i <= cur ? 'done' : '')).join('') + '</div>';
+    const done = new Set((v.loyaltyRevealed || []).map(x => x.round));   // cards already in effect (mission 1's applies at the deal)
+    return '<div class="uxc-loy">' + plan.map((c, i) => loyCard(c, i, done.has(i) ? 'done' : '')).join('') + '</div>';
   };
   /* Lancelot: what my side is now, and the Crossroads cards (by variant). */
   K.lancelotNote = v => {
@@ -869,7 +883,7 @@
     const host = ps.find(p => p.isHost);
     let h = '';
     if (v.hostAway && !me.isHost) {
-      h += '<div class="uxc-seatnote"><span>' + esc(sys('hostAway', { targetName: host ? host.name : '' }, '방장이 1분 넘게 자리를 비웠어요. 누구든 \'방장 맡기\'를 누르면 이어서 진행할 수 있어요.', 'The Host has been away for over a minute. Anyone can tap \'Become host\' to keep the game going.')) + '</span>' +
+      h += '<div class="uxc-seatnote away"><span>' + esc(sys('hostAway', { targetName: host ? host.name : '' }, '방장이 1분 넘게 자리를 비웠어요. 누구든 \'방장 맡기\'를 누르면 이어서 진행할 수 있어요.', 'The Host has been away for over a minute. Anyone can tap \'Become host\' to keep the game going.')) + '</span>' +
         '<button class="ux-btn ux-btn-sm ux-btn-gold" data-act="cm-claim">' + esc(K.term('claimHost', K.L('방장 맡기', 'Become host'))) + '</button></div>';
     }
     if (inGame && me.isHost) {
@@ -1039,6 +1053,9 @@
 .uxc-loy-c.done { opacity: .5; }
 .uxc-loy-c img { width: 34px; height: 48px; object-fit: cover; border-radius: 6px; box-shadow: 0 0 0 1px var(--line); } .uxc-loy-c.sw img { box-shadow: 0 0 0 1.5px var(--gold); }
 .uxc-seatnote { display: flex; align-items: center; gap: 10px; margin: 8px 0; padding: 10px 12px; border-radius: 12px; font-size: 13px; line-height: 1.45; color: #ffcf8a; background: rgba(255,170,60,.1); border: 1px solid rgba(255,170,60,.25); }
+/* "host away" stays in view while scrolling (rare, and only someone here can fix it) */
+[data-slot=seat]:has(> .uxc-seatnote.away), [data-bd=seat]:has(> .uxc-seatnote.away) { position: sticky; top: calc(6px + var(--safe-top)); z-index: 6; }
+.uxc-seatnote.away { background: linear-gradient(rgba(255,170,60,.14), rgba(255,170,60,.14)), #161b38; box-shadow: 0 8px 22px rgba(0,0,0,.45); }
 .uxc-seatnote.ok { color: var(--ok); background: rgba(111,227,166,.08); border-color: rgba(111,227,166,.3); }
 .uxc-seatnote span { flex: 1; min-width: 0; } .uxc-seatnote .ux-btn { flex: none; width: auto; padding-left: 12px; padding-right: 12px; }
 .uxc-seats .ux-players { display: flex; flex-direction: column; gap: 6px; } .uxc-seats .ux-player .ux-btn { flex: none; width: auto; padding: 6px 10px; }
@@ -1162,6 +1179,23 @@
   const K = window.UI._k, esc = K.esc;
   const TOPK = ['lady', 'balance', 'excalibur'];   // top-level boolean settings (the rest are settings.roles)
   const ui = (k, ko, en) => { const g = K.G(), u = g && g.ui; return (u && u[k]) || K.L(ko, en); };
+  /* Seer dependency (engine rule): without the seer there is no Watchman and no final naming, so both switch off;
+     with the seer the Spy is always in. Shown on the row (and as a toast on change) so nothing changes silently. */
+  const depOf = (k, merlinOn) => (k === 'percival' || k === 'assassin') ? (!merlinOn ? 'needs' : k === 'assassin' ? 'forced' : '') : '';
+  const seer = () => K.roleName('merlin') || K.L('선지자', 'Prophet');
+  const josa = (w, t) => (K.josa ? K.josa(w, t) : w + t);
+  const depText = (k, dep) => dep === 'needs'
+    ? K.L(josa(seer(), '이') + ' 있어야 넣을 수 있어요', 'Needs the ' + seer() + ' in the game')
+    : K.L(josa(seer(), '이') + ' 있으면 늘 함께해요 (마지막 지목)', 'Always in while the ' + seer() + ' is in (for the final naming)');
+  /* Why start is refused, in the chosen language, plus which Tempter roles take the seats (Lancelot takes one too). */
+  const setupText = v => v.setupError ? (K.isEn() ? (v.setupErrorEn || K.trMsg(v.setupError)) : v.setupError) : '';
+  function setupHint(v) {
+    if (v.setupErrorKey !== 'tooManyEvilSpecials' && !/유혹의 무리는|Tempters, so/.test(v.setupError || '')) return '';
+    const s = v.settings || {}, r = s.roles || {};
+    const on = ['assassin', 'morgana', 'mordred', 'oberon'].filter(k => r[k]).concat(Number(s.lancelot) ? ['lancelotEvil'] : []);
+    if (!on.length) return '';
+    return K.L('지금 켜진 ' + K.teamName('evil') + ' 역할: ', K.teamName('evil').replace(/^The /, '') + ' roles on now: ') + on.map(K.roleName).join(', ');
+  }
 
   K.screens.lobby = {
     build(v) {
@@ -1218,9 +1252,10 @@
         (isHost ? '<button data-act="l-max" data-d="-1" aria-label="' + esc(K.L('줄이기', 'Fewer')) + '"' + (max <= Math.max(5, n) ? ' disabled' : '') + '>−</button>' : '') + '<span class="val">' + max + '</span>' +
         (isHost ? '<button data-act="l-max" data-d="1" aria-label="' + esc(K.L('늘리기', 'More')) + '"' + (max >= 10 ? ' disabled' : '') + '>+</button>' : '') + '</div></div>';
       K.OPTIONAL_ROLES.forEach(k => {
-        const on = val(k), ev = K.teamOf(k) === 'evil';
-        h += '<div class="ux-setting"><div class="thumb">' + K.roleImg(k) + '</div><div class="txt"><div class="name">' + esc(K.roleName(k)) + ' <span class="ux-badge ' + (ev ? 'evil' : 'gold') + '" style="padding:2px 7px">' + esc(ev ? K.teamName('evil') : K.teamName('good')) + '</span></div><div class="desc">' + esc(K.roleDesc(k)) + '</div></div>' +
-          '<button class="ux-switch' + (on ? ' on' : '') + (ev ? ' evil' : '') + '" data-act="l-toggle" data-k="' + k + '"' + (isHost ? '' : ' disabled') + ' aria-pressed="' + on + '" aria-label="' + esc(K.roleName(k)) + '"></button></div>';
+        const on = val(k), ev = K.teamOf(k) === 'evil', dep = depOf(k, val('merlin'));
+        h += '<div class="ux-setting' + (dep ? ' uxl-dep ' + dep : '') + '"><div class="thumb">' + K.roleImg(k) + '</div><div class="txt"><div class="name">' + esc(K.roleName(k)) + ' <span class="ux-badge ' + (ev ? 'evil' : 'gold') + '" style="padding:2px 7px">' + esc(ev ? K.teamName('evil') : K.teamName('good')) + '</span></div><div class="desc">' + esc(K.roleDesc(k)) + '</div>' +
+          (dep ? '<div class="uxl-depnote" id="uxl-dep-' + k + '">🔒 ' + esc(depText(k, dep)) + '</div>' : '') + '</div>' +
+          '<button class="ux-switch' + (on ? ' on' : '') + (ev ? ' evil' : '') + (dep ? ' uxl-locked' : '') + '" data-act="l-toggle" data-k="' + k + '"' + (isHost ? '' : ' disabled') + ' aria-pressed="' + on + '" aria-label="' + esc(K.roleName(k)) + '"' + (dep ? ' aria-describedby="uxl-dep-' + k + '"' : '') + '></button></div>';
       });
       h += '<div class="ux-setting"><div class="thumb" style="display:grid;place-items:center">' + K.tokenImg('lady') + '</div><div class="txt"><div class="name">' + esc(K.term('lady', K.L('등불', 'Lamp'))) + '</div><div class="desc">' + esc(K.L('2·3·4번째 ' + K.term('quest', '사명') + ' 뒤에 한 사람의 진영을 몰래 확인해요. 7명 이상 추천.', 'After the 2nd, 3rd and 4th ' + K.term('quest', 'Mission') + 's, secretly check one player\'s side. Best with 7+.')) + '</div></div>' +
         sw('lady', K.term('lady', K.L('등불', 'Lamp'))) + '</div>';
@@ -1236,8 +1271,9 @@
       h += '<div class="ux-setting"><div class="thumb" style="display:grid;place-items:center">' + K.img(K.asset('excalibur.svg'), 'excalibur', '') + '</div><div class="txt"><div class="name">' + esc(K.term('excalibur', K.L('말씀 두루마리', 'Scroll of the Word'))) + ' ' + modTag + '</div><div class="desc">' +
         esc(K.L(K.term('leader', '조장') + '이 원정대원 한 명에게 주면, 카드를 다 낸 뒤 다른 대원 한 명의 카드를 뒤집을 수 있어요.', 'The ' + K.term('leader', 'Leader') + ' gives it to one team member, who may flip one other member\'s card after all cards are in.')) + '</div></div>' +
         sw('excalibur', K.term('excalibur', K.L('말씀 두루마리', 'Scroll of the Word'))) + '</div>';
-      const se = v.setupError ? (K.isEn() ? (v.setupErrorEn || K.trMsg(v.setupError)) : v.setupError) : '';
-      if (se) h += '<div class="ux-warn" style="margin-top:8px">⚠️ ' + esc(se) + '</div>';
+      const se = setupText(v), seHint = se ? setupHint(v) : '';
+      // guests see why the host can't start here; the host sees it in the dock next to the start button
+      if (se && !isHost) h += '<div class="ux-warn" style="margin-top:8px">⚠️ ' + esc(se) + (seHint ? '<br>' + esc(seHint) : '') + '</div>';
       K.patch(el.querySelector('[data-slot=settings]'), h);
 
       // dock
@@ -1246,8 +1282,10 @@
       let d;
       if (isHost) {
         const can = n >= 5 && n <= 10 && allReady && !v.setupError;
-        const why = n < 5 ? K.L((5 - n) + '명이 더 필요해요', (5 - n) + ' more needed') : !allReady ? K.L('모두 준비하면 시작할 수 있어요 (' + readyN + '/' + others.length + ')', 'You can start when everyone is ready (' + readyN + '/' + others.length + ')') : v.setupError ? K.L('설정을 확인해 주세요', 'Please check the settings') : K.L('모두 준비됐어요!', 'Everyone is ready!');
-        d = '<div class="ux-progress"><i style="width:' + (others.length ? Math.round(100 * readyN / others.length) : 0) + '%"></i></div><p class="ux-muted ux-center">' + esc(why) + '</p>' +
+        const why = n < 5 ? K.L((5 - n) + '명이 더 필요해요', (5 - n) + ' more needed') : !allReady ? K.L('모두 준비하면 시작할 수 있어요 (' + readyN + '/' + others.length + ')', 'You can start when everyone is ready (' + readyN + '/' + others.length + ')') : se ? '' : K.L('모두 준비됐어요!', 'Everyone is ready!');
+        d = '<div class="ux-progress"><i style="width:' + (others.length ? Math.round(100 * readyN / others.length) : 0) + '%"></i></div>' +
+          (se ? '<div class="ux-warn uxl-dockwarn" role="alert">⚠️ ' + esc(se) + (seHint ? '<small>' + esc(seHint) + '</small>' : '') + '</div>' : '') +
+          (why ? '<p class="ux-muted ux-center">' + esc(why) + '</p>' : '') +
           '<button class="ux-btn ux-btn-gold uxl-start' + (can ? ' can' : '') + '" data-act="l-start"' + (can ? '' : ' disabled') + '>✝️ ' + esc(K.L('게임 시작', 'Start game')) + '</button>';
       } else {
         const r = !!me.ready;
@@ -1257,10 +1295,15 @@
       K.patch(el.querySelector('[data-slot=dock]'), d);
 
       // celebrate when the room becomes startable
-      const can2 = n >= 5 && allReady;
+      const can2 = n >= 5 && allReady && !v.setupError;
       if (can2 && K.local.couldStart === false) { K.fb('chime'); const b = el.querySelector('.uxl-start'); if (b) K.fx.burstAt(b, { n: 30 }); }
       K.local.couldStart = can2;
       K.local.pend = {};
+      // a settings change un-readies everyone on the server; tell guests why their button went back
+      const sKey = JSON.stringify(s);
+      if (!isHost && K.local.sKey && K.local.sKey !== sKey && K.local.wasReady && !me.ready)
+        K.toast(K.L('방장이 설정을 바꿨어요. 확인하고 다시 준비해 주세요', 'The host changed the settings. Check them and get ready again'), 'info');
+      K.local.sKey = sKey; K.local.wasReady = !!me.ready;
     }
   };
 
@@ -1290,10 +1333,20 @@
   K.actions['l-toggle'] = (d, btn) => {
     const v = K.view, s = v.settings || {}, k = d.k;
     const cur = TOPK.indexOf(k) >= 0 ? !!s[k] : !!(s.roles || {})[k];
+    const roles = s.roles || {};
+    const dep = TOPK.indexOf(k) < 0 && depOf(k, !!roles.merlin);
+    if (dep) { K.shake(btn.closest('.ux-setting') || btn); K.buzz('tick'); K.toast(K.roleName(k) + ': ' + depText(k, dep), 'info'); return; }
     btn.classList.toggle('on', !cur); K.fb('pick');
-    K.local.pend = Object.assign({}, K.local.pend, { [k]: !cur });
+    const pend = { [k]: !cur };
+    if (k === 'merlin') {
+      // the server switches the dependent roles with the seer; show it right away and say so
+      const gone = ['percival', 'assassin'].filter(r => roles[r]).map(K.roleName);
+      if (cur) { pend.percival = false; pend.assassin = false; if (gone.length) K.toast(K.L(josa(seer(), '을') + ' 빼서 ' + gone.join('·') + '도 함께 빠졌어요', 'Without the ' + seer() + ', the ' + gone.join(' and the ') + (gone.length > 1 ? ' are' : ' is') + ' out too'), 'info'); }
+      else { pend.assassin = true; if (!roles.assassin) K.toast(K.L(josa(seer(), '을') + ' 넣어서 ' + K.roleName('assassin') + '도 함께 들어가요', 'With the ' + seer() + ' in, the ' + K.roleName('assassin') + ' is in too'), 'info'); }
+    }
+    K.local.pend = Object.assign({}, K.local.pend, pend);
     if (TOPK.indexOf(k) >= 0) K.call('settings', { [k]: !cur });
-    else K.call('settings', { roles: Object.assign({}, s.roles || {}, { [k]: !cur }) });
+    else K.call('settings', { roles: Object.assign({}, roles, { [k]: !cur }) });
   };
   K.actions['l-lan'] = (d, btn) => {
     const n = Number(d.n) || 0, cur = Number((K.view.settings || {}).lancelot) || 0; if (n === cur) return;
@@ -1319,6 +1372,10 @@
 .uxl-seg button.on { color: #2a1a02; background: linear-gradient(180deg, var(--gold-hi), var(--gold)); }
 .uxl-seg button:disabled:not(.on) { opacity: .55; }
 .ux-en .uxl-seg button { font-size: 12px; }
+.uxl-depnote { font-size: 11.5px; color: #ffcf8a; margin-top: 4px; line-height: 1.35; }
+.uxl-dep.needs .thumb, .uxl-dep.needs .name, .uxl-dep.needs .desc { opacity: .55; }
+.ux-switch.uxl-locked { opacity: .45; }
+.uxl-dockwarn { text-align: center; background: linear-gradient(rgba(255,170,60,.12), rgba(255,170,60,.12)), #141a33; } .uxl-dockwarn small { display: block; margin-top: 3px; font-size: 11.5px; color: var(--text-dim); }
 .uxl-start.can { animation: uxlGlow 1.6s ease-in-out infinite; }
 @keyframes uxlGlow { 0%,100% { box-shadow: 0 8px 28px rgba(244,201,107,.35); } 50% { box-shadow: 0 8px 44px rgba(244,201,107,.8), 0 0 0 6px rgba(244,201,107,.15); } }
 `;
@@ -1414,6 +1471,7 @@
 .uxr-backglow { position: absolute; inset: 0; background: radial-gradient(circle at 50% 50%, rgba(255,231,168,.35), transparent 60%); animation: breathe 2.4s ease-in-out infinite; pointer-events: none; }
 .uxr-in { animation: uxhCard .7s var(--ease-out) both; }
 .uxr-info { display: flex; flex-direction: column; gap: 12px; }
+.uxr > .ux-dock { position: relative; }   /* in the flow under the card (only the lobby dock sticks) */
 `;
   const st = document.createElement('style'); st.id = 'uxr-style'; st.textContent = css; document.head.appendChild(st);
 })();
@@ -1510,6 +1568,8 @@
 .ux-seat .sub .off { color: var(--text-mute); }
 .ux-seat .sub .tm { color: var(--gold); }
 .ux-seat .knowtag.bd-kt-xc { background: rgba(255,255,255,.1); color: var(--text-dim); }
+.ux-seat .knowtag.bd-kt-lan { background: rgba(94,200,190,.16); color: #a8ebe2; }
+.bd-pvs .bd-xlast { margin: 14px 0 0; }
 .ux-seat .done { flex: none; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: rgba(111,227,166,.16); animation: popIn .4s var(--ease-spring) both; }
 .ux-seat.on-team { background: rgba(244,201,107,.07); }
 .ux-seat.selectable { cursor: pointer; }
@@ -1524,7 +1584,7 @@
 .bd-glow { position: absolute; left: 50%; top: -60px; width: 260px; height: 160px; margin-left: -130px; border-radius: 50%; pointer-events: none;
   background: radial-gradient(closest-side, rgba(255,215,122,.22), transparent); animation: breathe 3.6s ease-in-out infinite; }
 .bd-action.dark .bd-glow { background: radial-gradient(closest-side, rgba(224,72,110,.22), transparent); }
-.bd-action > div { position: relative; }
+.bd-action > div:not(.bd-glow) { position: relative; }   /* the glow stays absolute (no empty band above the title) */
 .bd-tag { display: flex; justify-content: center; margin-bottom: 8px; }
 .bd-hint { text-align: center; margin: -4px 0 12px; }
 .bd-note { text-align: center; font-size: 12px; color: #ffb3c4; margin: -6px 0 12px; }
@@ -1622,12 +1682,12 @@
   function topHtml(v) {
     const n = (v.round || 0) + 1, pn = v.proposalNo || 1;
     let title = e(W.quest()) + ' ' + n, sub = '';
-    if (v.phase === 'propose') sub = K.L(pn + '번째 제안', 'Proposal ' + pn) + ' · ' + e(W.leader()) + ' ' + nm(v, v.leaderId);
+    if (v.phase === 'propose') sub = K.L(e(W.leader()) + ' ' + nm(v, v.leaderId) + ' · ' + pn + '번째 제안', nm(v, v.leaderId) + ' leads · try ' + pn);   // name first: the bar is ~110px wide at 360px
     else if (v.phase === 'vote') sub = K.L(pn + '번째 제안 · 투표 중', 'Proposal ' + pn + ' · Voting');
     else if (v.phase === 'quest') sub = K.L(e(W.quest()) + ' 수행 중', 'On the ' + e(W.quest()));
     else if (v.phase === 'excalibur') sub = e(W.xc()) + ' · ' + nm(v, xcHolder(v));
     else if (v.phase === 'lady') sub = e(W.lady()) + ' · ' + nm(v, v.ladyHolderId);
-    else if (v.phase === 'assassin') { title = K.L('마지막 ' + e(W.assassinate()), 'The final choice'); sub = K.L('모든 것이 이 한 번에 달렸어요', 'Everything rides on this one choice'); }
+    else if (v.phase === 'assassin') { title = K.L('마지막 선택', 'The final choice'); sub = e(K.roleName('assassin') || K.L('정탐꾼', 'Spy')) + ' · ' + nm(v, v.assassinId); }   // short: the bar has ~140px at 360–390px
     const marks = showMarks();
     return '<div class="grow"><div class="ux-top-title">' + title + '</div><div class="ux-top-sub">' + sub + '</div></div>' +
       '<button class="ux-icon-btn' + (marks ? ' on' : '') + '" data-act="bd-marks" aria-label="' + e(K.L('알고 있는 정보 표시', 'Show what I know')) + '" aria-pressed="' + marks + '">' + (marks ? '👁' : '🙈') + '</button>' +
@@ -1735,7 +1795,7 @@
       if (p.online === false) sub += '<span class="off">' + e(K.L('연결 끊김', 'Offline')) + '</span>';
       if (cls.indexOf('on-team') >= 0) sub += '<span class="tm">' + e(W.team()) + '</span>';
       if (marks && p.id !== me) {
-        K.knowOf(v, p.id).forEach(t => { sub += '<span class="knowtag ' + (t === 'merlinCandidate' ? 'merlinCandidate' : 'evil') + '">' + e(K.knowText(t)) + '</span>'; });
+        K.knowOf(v, p.id).forEach(t => { sub += '<span class="knowtag ' + (t === 'merlinCandidate' ? 'merlinCandidate' : t === 'lancelot' ? 'bd-kt-lan' : 'evil') + '">' + (t === 'lancelot' ? '🧭 ' : '') + e(K.knowText(t)) + '</span>'; });
         const lt = K.ladyOf(v, p.id);
         if (lt) sub += '<span class="knowtag ' + (lt === 'evil' ? 'evil' : 'good') + '">🪔 ' + e(K.teamName(lt)) + '</span>';
         // Scroll of the Word results I learned (private, behind the eye toggle like the other marks)
@@ -1770,6 +1830,8 @@
     e(W.xc()) + ': <b>' + nm(v, holder) + '</b>' + (v.phase === 'quest' ? ' · 카드가 모이면 한 장을 뒤집을 수 있어요' : ''),
     e(W.xc()) + ': <b>' + nm(v, holder) + '</b>' + (v.phase === 'quest' ? ' · may flip one card once all are in' : '')) + '</p>';
   const hintLine = (phase, key, params) => { const h = typeof K.hint === 'function' ? K.hint(phase, key, params) : ''; return h ? '<p class="ux-muted bd-hint">' + e(h) + '</p>' : ''; };
+  /* Lancelot variant 2: shown to every team member (same text on every phone, so it reveals nothing). */
+  const lanForcedNote = v => v.lancelot === 2 ? '<p class="bd-xnote">🧭 ' + e((K.lanVarShort ? K.lanVarShort(2) + ' · ' : '') + K.L('랜슬롯은 지금 편대로만 카드를 내요', 'Lancelots must play for their current side')) + '</p>' : '';
   const twoNote = v => K.questFails(v, v.round) >= 2 ? '<p class="bd-note">' + K.L('이번 ' + e(jo(W.quest(), '은', '는')) + ' ' + e(W.fail()) + ' 카드가 2장 나와야 실패해요', 'This ' + e(W.quest()) + ' fails only if 2 ' + e(W.fail()) + ' cards come up') + '</p>' : '';
   const waiting = (iconHtml) => '<div class="ux-waiting">' + (iconHtml ? '<div class="bd-wait-ic">' + iconHtml + '</div>' : '') + '<span class="ux-dots"><i></i><i></i><i></i></span></div>';
   const progress = (label, k, n) => '<div class="bd-prog-l"><span>' + label + '</span><b>' + k + ' / ' + n + '</b></div><div class="ux-progress"><i style="width:' + (n ? Math.round(100 * k / n) : 0) + '%"></i></div>';
@@ -1851,7 +1913,7 @@
       if (mine && !me.myQuestPlayed) {
         P.mood = 'turn';
         P.head = '<h3 class="ux-action-title">' + K.L(e(W.quest()) + ' 카드를 내 주세요', 'Play your ' + e(W.quest()) + ' card') + '</h3>' +
-          '<p class="ux-action-sub">' + K.L('몰래 한 장을 골라요. 누가 무엇을 냈는지는 아무도 몰라요.', 'Secretly choose one. No one will know who played what.') + '</p>' + teamChips(v) + twoNote(v);
+          '<p class="ux-action-sub">' + K.L('몰래 한 장을 골라요. 누가 무엇을 냈는지는 아무도 몰라요.', 'Secretly choose one. No one will know who played what.') + '</p>' + teamChips(v) + twoNote(v) + lanForcedNote(v);
         // Both cards look identical for everyone (a neighbour must not learn my team). Good players get a toast on fail.
         P.ctl = choiceCards({ cls: 'success', tok: 'success', label: W.success() }, { cls: 'fail', tok: 'fail', label: W.fail() }) +
           '<button type="button" class="ux-btn ux-btn-gold" data-act="bd-quest" data-bd="go" disabled>' + K.L('제출하기', 'Submit') + '</button>';
@@ -1919,6 +1981,18 @@
     return P;
   }
 
+  /* Public: how the Scroll was used on the mission just played (view.lastExcalibur), shown to everyone during the next
+     mission so it isn't only in the cinematic. Never says what the card was. */
+  function xcLastHtml(v) {
+    const x = v.lastExcalibur;
+    if (!xcOn(v) || !x || !x.holderId || x.round !== (v.round || 0) - 1 || !/^(propose|vote|quest|lady)$/.test(v.phase)) return '';
+    const p = { holderName: K.pname(v, x.holderId), targetName: x.targetId ? K.pname(v, x.targetId) : '' };
+    const h = typeof K.hint === 'function' ? K.hint('excalibur', x.targetId ? 'used' : 'passed', p) : '';
+    const t = h || (x.targetId ? K.L(p.holderName + '님이 ' + p.targetName + '님의 카드를 뒤집었어요', p.holderName + ' flipped ' + p.targetName + '\'s card')
+      : K.L(p.holderName + '님은 카드를 뒤집지 않았어요', p.holderName + ' chose not to flip any card'));
+    return '<p class="bd-xnote bd-xlast">' + K.tokenImg('excalibur') + ' ' + e(W.quest() + ' ' + (x.round + 1) + ' · ' + t) + '</p>';
+  }
+
   /* Holder's private Scroll result: a folded note (tap to open, closes by itself) shown only on the holder's phone,
      for the mission just played. Nothing readable at a glance. */
   function privateNoteHtml(v) {
@@ -1971,7 +2045,7 @@
       c.classList.toggle('dim', L.choice != null && L.choice !== val);
       c.setAttribute('aria-pressed', String(L.choice === val));
     });
-    K.patch(K.$('[data-bd="pv"]', el), v.phase === 'excalibur' ? '' : privateNoteHtml(v));
+    K.patch(K.$('[data-bd="pv"]', el), v.phase === 'excalibur' ? '' : xcLastHtml(v) + privateNoteHtml(v));
   }
 
   // ---------- screen ----------
@@ -2477,7 +2551,7 @@
     const R = K.reduced();
     const bg = K.el('<div class="cn-bgl" aria-hidden="true"></div>'); ov.insertBefore(bg, ov.firstChild);
     const fl = K.el('<div class="cn-fxl" aria-hidden="true"></div>'); ov.appendChild(fl);
-    const live = () => !ctx.skipped;
+    const live = () => !ctx.skipped && !(ctx.debt > 0);   // no bursts or sounds while a late phone catches up
     // K.fx draws on a canvas under the overlays; use it only if the integrator raised it above them.
     const canvasOnTop = () => { const c = document.querySelector('.ux-fx'); if (!c) return false; const z = parseInt(getComputedStyle(c).zIndex, 10); const oz = parseInt(getComputedStyle(ov).zIndex, 10) || 50; return z > oz; };
     const S = {
@@ -3179,13 +3253,18 @@
     const w = K.el('<div class="ux-wipe" aria-hidden="true"><i class="iris"></i><i class="ring"></i></div>');
     document.body.appendChild(w); setTimeout(() => w.remove(), 1300);
   }
+  /* The phase banner is the shared scene transition: every phone runs it for view.transitionMs from the synced start.
+     A phone that gets there late jumps into it (negative delay); once the moment has passed it is skipped. */
   async function banner(v, tok) {
     const f = BANNER[v.phase]; if (!f) return;
-    await K.syncWait(K.evAt(null, v));
+    const late = await K.syncWait(K.evAt(null, v));
+    const dur = v.transitionMs > 0 ? v.transitionMs : 2200;
+    if (late > dur - 400) return;
     if (tok !== wipeTok || !K.view || K.view.phase !== v.phase || K.cineBusy()) return;
     const b = f(v);
     const el = K.el('<div class="ux-sweep" aria-hidden="true"><div class="bar"><span class="ic">' + b.ic + '</span><span class="tx"><b>' + esc(b.t) + '</b><small>' + esc(b.s) + '</small></span></div></div>');
-    document.body.appendChild(el); setTimeout(() => el.remove(), 2300);
+    const bar = el.firstElementChild; bar.style.animationDuration = dur + 'ms'; if (late > 0) bar.style.animationDelay = (-late) + 'ms';
+    document.body.appendChild(el); setTimeout(() => el.remove(), dur - late + 100);
   }
   (K.onRender = K.onRender || []).push((v, name) => {
     setScene(K.sceneKey(v));
@@ -3305,8 +3384,9 @@
       if (!ctx.skipped) {
         const D = 2500;
         tok.classList.add('walk');
+        const ahead = ctx.takeDebt ? ctx.takeDebt(D) : 0;   // a late phone starts the walk part-way along
         await new Promise(res => {
-          const t0 = performance.now();
+          const t0 = performance.now() - ahead;
           const step = now => {
             const t = ctx.skipped ? 1 : Math.min(1, (now - t0) / D), p = place(a + (b - a) * ease(t));
             panTo(p[1]);
@@ -3532,6 +3612,7 @@
   K.actions['e-home'] = async () => { if (await K.confirm(K.L('처음 화면으로 갈까요?', 'Go back to the home screen?'), esc(K.L('이 방에서 나가요.', 'You\'ll leave this room.')), { ok: K.L('나가기', 'Leave'), cancel: K.L('취소', 'Cancel') })) { await K.call('home'); window.UI.render(null); } };
 
   const css = `
+.uxe > .ux-dock { position: relative; }   /* in the flow under the roles (only the lobby dock sticks) */
 .uxe-crest { position: relative; width: 140px; height: 140px; display: grid; place-items: center; }
 .uxe-crest .ux-rose { transform: scale(.62); }
 .uxe-crest .crest { position: relative; font-size: 64px; animation: bannerIn 1.2s var(--ease-spring) both, uxeBob 3s 1.2s ease-in-out infinite; }

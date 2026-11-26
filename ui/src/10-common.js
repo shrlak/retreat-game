@@ -100,8 +100,8 @@
   /* The face-up plan (variant 2): card i belongs to mission i; past/current ones are marked done. */
   K.loyaltyPlanHtml = v => {
     const plan = v && v.loyaltyPlan; if (!Array.isArray(plan) || !plan.length) return '';
-    const cur = v.phase === 'lobby' || v.phase === 'reveal' ? -1 : (v.round || 0);
-    return '<div class="uxc-loy">' + plan.map((c, i) => loyCard(c, i, i <= cur ? 'done' : '')).join('') + '</div>';
+    const done = new Set((v.loyaltyRevealed || []).map(x => x.round));   // cards already in effect (mission 1's applies at the deal)
+    return '<div class="uxc-loy">' + plan.map((c, i) => loyCard(c, i, done.has(i) ? 'done' : '')).join('') + '</div>';
   };
   /* Lancelot: what my side is now, and the Crossroads cards (by variant). */
   K.lancelotNote = v => {
@@ -173,7 +173,7 @@
     const host = ps.find(p => p.isHost);
     let h = '';
     if (v.hostAway && !me.isHost) {
-      h += '<div class="uxc-seatnote"><span>' + esc(sys('hostAway', { targetName: host ? host.name : '' }, '방장이 1분 넘게 자리를 비웠어요. 누구든 \'방장 맡기\'를 누르면 이어서 진행할 수 있어요.', 'The Host has been away for over a minute. Anyone can tap \'Become host\' to keep the game going.')) + '</span>' +
+      h += '<div class="uxc-seatnote away"><span>' + esc(sys('hostAway', { targetName: host ? host.name : '' }, '방장이 1분 넘게 자리를 비웠어요. 누구든 \'방장 맡기\'를 누르면 이어서 진행할 수 있어요.', 'The Host has been away for over a minute. Anyone can tap \'Become host\' to keep the game going.')) + '</span>' +
         '<button class="ux-btn ux-btn-sm ux-btn-gold" data-act="cm-claim">' + esc(K.term('claimHost', K.L('방장 맡기', 'Become host'))) + '</button></div>';
     }
     if (inGame && me.isHost) {
@@ -343,6 +343,9 @@
 .uxc-loy-c.done { opacity: .5; }
 .uxc-loy-c img { width: 34px; height: 48px; object-fit: cover; border-radius: 6px; box-shadow: 0 0 0 1px var(--line); } .uxc-loy-c.sw img { box-shadow: 0 0 0 1.5px var(--gold); }
 .uxc-seatnote { display: flex; align-items: center; gap: 10px; margin: 8px 0; padding: 10px 12px; border-radius: 12px; font-size: 13px; line-height: 1.45; color: #ffcf8a; background: rgba(255,170,60,.1); border: 1px solid rgba(255,170,60,.25); }
+/* "host away" stays in view while scrolling (rare, and only someone here can fix it) */
+[data-slot=seat]:has(> .uxc-seatnote.away), [data-bd=seat]:has(> .uxc-seatnote.away) { position: sticky; top: calc(6px + var(--safe-top)); z-index: 6; }
+.uxc-seatnote.away { background: linear-gradient(rgba(255,170,60,.14), rgba(255,170,60,.14)), #161b38; box-shadow: 0 8px 22px rgba(0,0,0,.45); }
 .uxc-seatnote.ok { color: var(--ok); background: rgba(111,227,166,.08); border-color: rgba(111,227,166,.3); }
 .uxc-seatnote span { flex: 1; min-width: 0; } .uxc-seatnote .ux-btn { flex: none; width: auto; padding-left: 12px; padding-right: 12px; }
 .uxc-seats .ux-players { display: flex; flex-direction: column; gap: 6px; } .uxc-seats .ux-player .ux-btn { flex: none; width: auto; padding: 6px 10px; }

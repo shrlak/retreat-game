@@ -42,7 +42,7 @@ img { -webkit-user-drag: none; user-select: none; }
 
 /* ---------- App shell ---------- */
 .ux-app {
-  position: relative; min-height: 100%; min-height: 100dvh; overflow: hidden;
+  position: relative; min-height: 100%; min-height: 100dvh; overflow: hidden; overflow: clip; /* clip, not a scroll box, so .ux-dock can stick to the bottom */
   background:
     radial-gradient(120% 70% at 50% -10%, rgba(255, 196, 102, 0.20), transparent 60%),
     radial-gradient(90% 60% at 100% 110%, rgba(143, 108, 240, 0.22), transparent 60%),

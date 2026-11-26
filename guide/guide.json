@@ -93,12 +93,12 @@
             {
               "key": "lancelotGood",
               "module": "lancelot",
-              "line": "(확장) {good} 편으로 시작하지만 {loyalty}에 따라 편이 바뀔 수 있어요."
+              "line": "(확장) {good} 편으로 시작해요. 변형 1·2에서는 {loyalty}에 따라 편이 바뀔 수 있어요."
             },
             {
               "key": "lancelotEvil",
               "module": "lancelot",
-              "line": "(확장) {evil} 편으로 시작하지만 {loyalty}에 따라 편이 바뀔 수 있어요."
+              "line": "(확장) {evil} 편으로 시작해요. 변형 1·2에서는 {loyalty}에 따라 편이 바뀔 수 있어요."
             }
           ]
         },
@@ -484,7 +484,7 @@
     "knowledgeLabels": {
       "evil": "{evil}",
       "merlinCandidate": "{merlin} 후보",
-      "lancelot": "또 다른 순례자",
+      "lancelot": "또 다른 랜슬롯",
       "emptyGood": "보이는 사람이 없어요. 대화와 투표로 추리해 보세요.",
       "emptyOberon": "보이는 동료가 없어요. 혼자서도 해낼 수 있어요."
     },
@@ -1264,12 +1264,12 @@
             {
               "key": "lancelotGood",
               "module": "lancelot",
-              "line": "(Expansion) Starts with the {good}, but a {loyalty} can switch their side."
+              "line": "(Expansion) Starts with the {good}. In Variants 1 and 2 a {loyalty} can switch their side."
             },
             {
               "key": "lancelotEvil",
               "module": "lancelot",
-              "line": "(Expansion) Starts with the {evil}, but a {loyalty} can switch their side."
+              "line": "(Expansion) Starts with the {evil}. In Variants 1 and 2 a {loyalty} can switch their side."
             }
           ]
         },

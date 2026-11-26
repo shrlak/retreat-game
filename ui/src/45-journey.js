@@ -84,13 +84,18 @@
     const w = K.el('<div class="ux-wipe" aria-hidden="true"><i class="iris"></i><i class="ring"></i></div>');
     document.body.appendChild(w); setTimeout(() => w.remove(), 1300);
   }
+  /* The phase banner is the shared scene transition: every phone runs it for view.transitionMs from the synced start.
+     A phone that gets there late jumps into it (negative delay); once the moment has passed it is skipped. */
   async function banner(v, tok) {
     const f = BANNER[v.phase]; if (!f) return;
-    await K.syncWait(K.evAt(null, v));
+    const late = await K.syncWait(K.evAt(null, v));
+    const dur = v.transitionMs > 0 ? v.transitionMs : 2200;
+    if (late > dur - 400) return;
     if (tok !== wipeTok || !K.view || K.view.phase !== v.phase || K.cineBusy()) return;
     const b = f(v);
     const el = K.el('<div class="ux-sweep" aria-hidden="true"><div class="bar"><span class="ic">' + b.ic + '</span><span class="tx"><b>' + esc(b.t) + '</b><small>' + esc(b.s) + '</small></span></div></div>');
-    document.body.appendChild(el); setTimeout(() => el.remove(), 2300);
+    const bar = el.firstElementChild; bar.style.animationDuration = dur + 'ms'; if (late > 0) bar.style.animationDelay = (-late) + 'ms';
+    document.body.appendChild(el); setTimeout(() => el.remove(), dur - late + 100);
   }
   (K.onRender = K.onRender || []).push((v, name) => {
     setScene(K.sceneKey(v));
@@ -210,8 +215,9 @@
       if (!ctx.skipped) {
         const D = 2500;
         tok.classList.add('walk');
+        const ahead = ctx.takeDebt ? ctx.takeDebt(D) : 0;   // a late phone starts the walk part-way along
         await new Promise(res => {
-          const t0 = performance.now();
+          const t0 = performance.now() - ahead;
           const step = now => {
             const t = ctx.skipped ? 1 : Math.min(1, (now - t0) / D), p = place(a + (b - a) * ease(t));
             panTo(p[1]);

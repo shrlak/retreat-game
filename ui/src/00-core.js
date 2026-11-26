@@ -106,7 +106,9 @@
     }
     return (phCache[kind] = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg));
   };
-  K.tokenImg = (name, cls) => K.img(K.asset(name + '.svg'), name, cls);
+  /* token art file names (assets/manifest.json "tokens"); anything else is assets/<name>.svg */
+  const TOKEN_FILE = { success: 'token-success', fail: 'token-fail', approve: 'vote-approve', reject: 'vote-reject' };
+  K.tokenImg = (name, cls) => K.img(K.asset((TOKEN_FILE[name] || name) + '.svg'), name, cls);
   K.roleImg = (key, cls) => K.img(K.roleArtSrc(key), 'role:' + key, cls);
   K.backImg = cls => K.img(K.asset('card-back.svg'), 'back', cls);
 
@@ -329,8 +331,11 @@
   // ---------- server clock (for starting animations at the same moment on every phone) ----------
   /* The server sends serverNow (ms, when the view was built) and phaseStartedAt (ms, when the phase, round or
      proposal last changed — every vote/quest/lamp result changes one of them in the same action). Every phone
-     starts the cinematics and scene transitions at phaseStartedAt + SYNC_LEAD on the server clock. Without the
-     fields everything plays on arrival. */
+     starts the cinematics and scene transitions at phaseStartedAt + SYNC_LEAD on the server clock. A phone whose
+     view arrives after that moment catches up (ctx.debt in playAll); one that was busy with an earlier cinematic
+     plays from the start. The phase banner (45-journey.js) runs for view.transitionMs and is skipped once that
+     window has passed. A reload or a new device never replays: `seen` is kept per tab and starts from the
+     current view. Without the fields everything plays on arrival. */
   const clockS = [];
   K.clock = {
     offset: null,
@@ -409,11 +414,16 @@
   function makeCtx() {
     const ov = K.el('<div class="ux-overlay" role="dialog" aria-live="polite"><div class="inner"></div></div>');
     const skip = K.el('<button class="ux-skip">' + K.L('건너뛰기', 'Skip') + ' ›</button>');
+    const wait = ms => new Promise(r => { const t = setTimeout(done, ms); function done() { clearTimeout(t); ctx.waiters = ctx.waiters.filter(w => w !== done); r(); } ctx.waiters.push(done); });
     const ctx = {
       el: ov, inner: ov.firstElementChild, skipped: false, waiters: [],
-      sleep(ms) { if (ctx.skipped) return Promise.resolve(); return new Promise(r => { const t = setTimeout(done, ms); function done() { clearTimeout(t); ctx.waiters = ctx.waiters.filter(w => w !== done); r(); } ctx.waiters.push(done); }); },
-      /* wait for a tap anywhere (or ms timeout) */
-      tapOrWait(ms) { if (ctx.skipped) return Promise.resolve(); return new Promise(r => { let fin = false; const go = () => { if (fin) return; fin = true; ov.removeEventListener('click', go); r(); }; ov.addEventListener('click', go); ctx.sleep(ms).then(go); }); },
+      /* debt (ms): how far behind the other phones this one started (its view arrived late). Timed steps eat it
+         first, so the beats (countdown, flips, result) land at the same moment as on the other phones. */
+      debt: 0,
+      takeDebt(max) { const d = Math.max(0, Math.min(ctx.debt, max == null ? ctx.debt : max)); ctx.debt -= d; return d; },
+      sleep(ms) { if (ctx.skipped) return Promise.resolve(); ms -= ctx.takeDebt(ms); return ms > 0 ? wait(ms) : Promise.resolve(); },
+      /* wait for a tap anywhere (or ms timeout); the closing hold is never shortened by debt */
+      tapOrWait(ms) { if (ctx.skipped) return Promise.resolve(); return new Promise(r => { let fin = false; const go = () => { if (fin) return; fin = true; ov.removeEventListener('click', go); r(); }; ov.addEventListener('click', go); wait(ms).then(go); }); },
       set(html) { ctx.inner.innerHTML = html; },
       skip() { ctx.skipped = true; ctx.waiters.slice().forEach(w => w()); }
     };
@@ -421,16 +431,20 @@
     ov.appendChild(skip); document.body.appendChild(ov);
     return ctx;
   }
-  async function playAll(evs) {
-    let first = true;
+  /* queued: these events waited behind an earlier cinematic on this phone, so start them from the beginning.
+     Otherwise a phone whose view arrived late (slow network, reload) catches up: its first cinematic starts with
+     debt = how late it is, so the beats line up with the phones that started on time. */
+  async function playAll(evs, queued) {
+    let debt = 0, first = true;
     for (const e of evs) {
-      if (first) { first = false; e.late = await K.syncWait(K.evAt(e, K.view)); } else e.late = 0;
-      const ctx = makeCtx(); ctx.late = e.late;
+      if (first) { first = false; e.late = await K.syncWait(K.evAt(e, K.view)); if (!queued) debt = e.late; } else e.late = 0;
+      const ctx = makeCtx(); ctx.late = e.late; ctx.debt = debt;
       try { await K.cine[e.type](ctx, e, K.view, K); } catch (err) { console.error('[UI] cinematic failed', e.type, err); }
+      debt = ctx.debt;   // whatever this one could not absorb carries over to the next in the batch
       ctx.el.classList.add('out'); await K.sleep(ctx.skipped ? 120 : 380); ctx.el.remove();
     }
   }
-  function pump() {
+  function pump(queued) {
     const v = K.view;
     if (!v) { renderScreen(null); return; }
     if (!seen || seen.code !== v.code) loadSeen(v);
@@ -439,7 +453,7 @@
     if (evs.length) {
       cineBusy = true;
       // Render the screen underneath first only when it does not spoil the result (lobby->reveal deal).
-      playAll(evs).then(() => { cineBusy = false; pump(); });
+      playAll(evs, queued).then(() => { cineBusy = false; pump(true); });
       return;
     }
     renderScreen(v);

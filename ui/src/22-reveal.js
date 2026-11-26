@@ -85,6 +85,7 @@
 .uxr-backglow { position: absolute; inset: 0; background: radial-gradient(circle at 50% 50%, rgba(255,231,168,.35), transparent 60%); animation: breathe 2.4s ease-in-out infinite; pointer-events: none; }
 .uxr-in { animation: uxhCard .7s var(--ease-out) both; }
 .uxr-info { display: flex; flex-direction: column; gap: 12px; }
+.uxr > .ux-dock { position: relative; }   /* in the flow under the card (only the lobby dock sticks) */
 `;
   const st = document.createElement('style'); st.id = 'uxr-style'; st.textContent = css; document.head.appendChild(st);
 })();

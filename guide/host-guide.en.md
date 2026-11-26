@@ -121,8 +121,8 @@ A guide to help you run a fun game in about 30 minutes at a retreat or small gro
 - **Wolf in Sheep's Clothing**: The hidden leader that even the Prophet cannot see.
 - **Wanderer**: One of the Tempters, but doesn't know the others, and they don't know them.
 - **Tempter**: An ordinary member of the Tempters. Knows their teammates.
-- **Good Lancelot**: (Expansion) Starts with the Workers of Light, but a Crossroads card can switch their side.
-- **Evil Lancelot**: (Expansion) Starts with the Tempters, but a Crossroads card can switch their side.
+- **Good Lancelot**: (Expansion) Starts with the Workers of Light. In Variants 1 and 2 a Crossroads card can switch their side.
+- **Evil Lancelot**: (Expansion) Starts with the Tempters. In Variants 1 and 2 a Crossroads card can switch their side.
 
 ### Remember
 

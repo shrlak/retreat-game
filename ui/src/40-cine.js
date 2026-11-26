@@ -325,7 +325,7 @@
     const R = K.reduced();
     const bg = K.el('<div class="cn-bgl" aria-hidden="true"></div>'); ov.insertBefore(bg, ov.firstChild);
     const fl = K.el('<div class="cn-fxl" aria-hidden="true"></div>'); ov.appendChild(fl);
-    const live = () => !ctx.skipped;
+    const live = () => !ctx.skipped && !(ctx.debt > 0);   // no bursts or sounds while a late phone catches up
     // K.fx draws on a canvas under the overlays; use it only if the integrator raised it above them.
     const canvasOnTop = () => { const c = document.querySelector('.ux-fx'); if (!c) return false; const z = parseInt(getComputedStyle(c).zIndex, 10); const oz = parseInt(getComputedStyle(ov).zIndex, 10) || 50; return z > oz; };
     const S = {

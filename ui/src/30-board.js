@@ -88,6 +88,8 @@
 .ux-seat .sub .off { color: var(--text-mute); }
 .ux-seat .sub .tm { color: var(--gold); }
 .ux-seat .knowtag.bd-kt-xc { background: rgba(255,255,255,.1); color: var(--text-dim); }
+.ux-seat .knowtag.bd-kt-lan { background: rgba(94,200,190,.16); color: #a8ebe2; }
+.bd-pvs .bd-xlast { margin: 14px 0 0; }
 .ux-seat .done { flex: none; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: rgba(111,227,166,.16); animation: popIn .4s var(--ease-spring) both; }
 .ux-seat.on-team { background: rgba(244,201,107,.07); }
 .ux-seat.selectable { cursor: pointer; }
@@ -102,7 +104,7 @@
 .bd-glow { position: absolute; left: 50%; top: -60px; width: 260px; height: 160px; margin-left: -130px; border-radius: 50%; pointer-events: none;
   background: radial-gradient(closest-side, rgba(255,215,122,.22), transparent); animation: breathe 3.6s ease-in-out infinite; }
 .bd-action.dark .bd-glow { background: radial-gradient(closest-side, rgba(224,72,110,.22), transparent); }
-.bd-action > div { position: relative; }
+.bd-action > div:not(.bd-glow) { position: relative; }   /* the glow stays absolute (no empty band above the title) */
 .bd-tag { display: flex; justify-content: center; margin-bottom: 8px; }
 .bd-hint { text-align: center; margin: -4px 0 12px; }
 .bd-note { text-align: center; font-size: 12px; color: #ffb3c4; margin: -6px 0 12px; }
@@ -200,12 +202,12 @@
   function topHtml(v) {
     const n = (v.round || 0) + 1, pn = v.proposalNo || 1;
     let title = e(W.quest()) + ' ' + n, sub = '';
-    if (v.phase === 'propose') sub = K.L(pn + '번째 제안', 'Proposal ' + pn) + ' · ' + e(W.leader()) + ' ' + nm(v, v.leaderId);
+    if (v.phase === 'propose') sub = K.L(e(W.leader()) + ' ' + nm(v, v.leaderId) + ' · ' + pn + '번째 제안', nm(v, v.leaderId) + ' leads · try ' + pn);   // name first: the bar is ~110px wide at 360px
     else if (v.phase === 'vote') sub = K.L(pn + '번째 제안 · 투표 중', 'Proposal ' + pn + ' · Voting');
     else if (v.phase === 'quest') sub = K.L(e(W.quest()) + ' 수행 중', 'On the ' + e(W.quest()));
     else if (v.phase === 'excalibur') sub = e(W.xc()) + ' · ' + nm(v, xcHolder(v));
     else if (v.phase === 'lady') sub = e(W.lady()) + ' · ' + nm(v, v.ladyHolderId);
-    else if (v.phase === 'assassin') { title = K.L('마지막 ' + e(W.assassinate()), 'The final choice'); sub = K.L('모든 것이 이 한 번에 달렸어요', 'Everything rides on this one choice'); }
+    else if (v.phase === 'assassin') { title = K.L('마지막 선택', 'The final choice'); sub = e(K.roleName('assassin') || K.L('정탐꾼', 'Spy')) + ' · ' + nm(v, v.assassinId); }   // short: the bar has ~140px at 360–390px
     const marks = showMarks();
     return '<div class="grow"><div class="ux-top-title">' + title + '</div><div class="ux-top-sub">' + sub + '</div></div>' +
       '<button class="ux-icon-btn' + (marks ? ' on' : '') + '" data-act="bd-marks" aria-label="' + e(K.L('알고 있는 정보 표시', 'Show what I know')) + '" aria-pressed="' + marks + '">' + (marks ? '👁' : '🙈') + '</button>' +
@@ -313,7 +315,7 @@
       if (p.online === false) sub += '<span class="off">' + e(K.L('연결 끊김', 'Offline')) + '</span>';
       if (cls.indexOf('on-team') >= 0) sub += '<span class="tm">' + e(W.team()) + '</span>';
       if (marks && p.id !== me) {
-        K.knowOf(v, p.id).forEach(t => { sub += '<span class="knowtag ' + (t === 'merlinCandidate' ? 'merlinCandidate' : 'evil') + '">' + e(K.knowText(t)) + '</span>'; });
+        K.knowOf(v, p.id).forEach(t => { sub += '<span class="knowtag ' + (t === 'merlinCandidate' ? 'merlinCandidate' : t === 'lancelot' ? 'bd-kt-lan' : 'evil') + '">' + (t === 'lancelot' ? '🧭 ' : '') + e(K.knowText(t)) + '</span>'; });
         const lt = K.ladyOf(v, p.id);
         if (lt) sub += '<span class="knowtag ' + (lt === 'evil' ? 'evil' : 'good') + '">🪔 ' + e(K.teamName(lt)) + '</span>';
         // Scroll of the Word results I learned (private, behind the eye toggle like the other marks)
@@ -348,6 +350,8 @@
     e(W.xc()) + ': <b>' + nm(v, holder) + '</b>' + (v.phase === 'quest' ? ' · 카드가 모이면 한 장을 뒤집을 수 있어요' : ''),
     e(W.xc()) + ': <b>' + nm(v, holder) + '</b>' + (v.phase === 'quest' ? ' · may flip one card once all are in' : '')) + '</p>';
   const hintLine = (phase, key, params) => { const h = typeof K.hint === 'function' ? K.hint(phase, key, params) : ''; return h ? '<p class="ux-muted bd-hint">' + e(h) + '</p>' : ''; };
+  /* Lancelot variant 2: shown to every team member (same text on every phone, so it reveals nothing). */
+  const lanForcedNote = v => v.lancelot === 2 ? '<p class="bd-xnote">🧭 ' + e((K.lanVarShort ? K.lanVarShort(2) + ' · ' : '') + K.L('랜슬롯은 지금 편대로만 카드를 내요', 'Lancelots must play for their current side')) + '</p>' : '';
   const twoNote = v => K.questFails(v, v.round) >= 2 ? '<p class="bd-note">' + K.L('이번 ' + e(jo(W.quest(), '은', '는')) + ' ' + e(W.fail()) + ' 카드가 2장 나와야 실패해요', 'This ' + e(W.quest()) + ' fails only if 2 ' + e(W.fail()) + ' cards come up') + '</p>' : '';
   const waiting = (iconHtml) => '<div class="ux-waiting">' + (iconHtml ? '<div class="bd-wait-ic">' + iconHtml + '</div>' : '') + '<span class="ux-dots"><i></i><i></i><i></i></span></div>';
   const progress = (label, k, n) => '<div class="bd-prog-l"><span>' + label + '</span><b>' + k + ' / ' + n + '</b></div><div class="ux-progress"><i style="width:' + (n ? Math.round(100 * k / n) : 0) + '%"></i></div>';
@@ -429,7 +433,7 @@
       if (mine && !me.myQuestPlayed) {
         P.mood = 'turn';
         P.head = '<h3 class="ux-action-title">' + K.L(e(W.quest()) + ' 카드를 내 주세요', 'Play your ' + e(W.quest()) + ' card') + '</h3>' +
-          '<p class="ux-action-sub">' + K.L('몰래 한 장을 골라요. 누가 무엇을 냈는지는 아무도 몰라요.', 'Secretly choose one. No one will know who played what.') + '</p>' + teamChips(v) + twoNote(v);
+          '<p class="ux-action-sub">' + K.L('몰래 한 장을 골라요. 누가 무엇을 냈는지는 아무도 몰라요.', 'Secretly choose one. No one will know who played what.') + '</p>' + teamChips(v) + twoNote(v) + lanForcedNote(v);
         // Both cards look identical for everyone (a neighbour must not learn my team). Good players get a toast on fail.
         P.ctl = choiceCards({ cls: 'success', tok: 'success', label: W.success() }, { cls: 'fail', tok: 'fail', label: W.fail() }) +
           '<button type="button" class="ux-btn ux-btn-gold" data-act="bd-quest" data-bd="go" disabled>' + K.L('제출하기', 'Submit') + '</button>';
@@ -497,6 +501,18 @@
     return P;
   }
 
+  /* Public: how the Scroll was used on the mission just played (view.lastExcalibur), shown to everyone during the next
+     mission so it isn't only in the cinematic. Never says what the card was. */
+  function xcLastHtml(v) {
+    const x = v.lastExcalibur;
+    if (!xcOn(v) || !x || !x.holderId || x.round !== (v.round || 0) - 1 || !/^(propose|vote|quest|lady)$/.test(v.phase)) return '';
+    const p = { holderName: K.pname(v, x.holderId), targetName: x.targetId ? K.pname(v, x.targetId) : '' };
+    const h = typeof K.hint === 'function' ? K.hint('excalibur', x.targetId ? 'used' : 'passed', p) : '';
+    const t = h || (x.targetId ? K.L(p.holderName + '님이 ' + p.targetName + '님의 카드를 뒤집었어요', p.holderName + ' flipped ' + p.targetName + '\'s card')
+      : K.L(p.holderName + '님은 카드를 뒤집지 않았어요', p.holderName + ' chose not to flip any card'));
+    return '<p class="bd-xnote bd-xlast">' + K.tokenImg('excalibur') + ' ' + e(W.quest() + ' ' + (x.round + 1) + ' · ' + t) + '</p>';
+  }
+
   /* Holder's private Scroll result: a folded note (tap to open, closes by itself) shown only on the holder's phone,
      for the mission just played. Nothing readable at a glance. */
   function privateNoteHtml(v) {
@@ -549,7 +565,7 @@
       c.classList.toggle('dim', L.choice != null && L.choice !== val);
       c.setAttribute('aria-pressed', String(L.choice === val));
     });
-    K.patch(K.$('[data-bd="pv"]', el), v.phase === 'excalibur' ? '' : privateNoteHtml(v));
+    K.patch(K.$('[data-bd="pv"]', el), v.phase === 'excalibur' ? '' : xcLastHtml(v) + privateNoteHtml(v));
   }
 
   // ---------- screen ----------
