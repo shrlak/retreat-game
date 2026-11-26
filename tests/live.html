@@ -12,20 +12,23 @@ import { playGame } from "./lib/harness.mjs";
 import { httpTransport } from "./lib/transport-http.mjs";
 const out = document.getElementById("out");
 const log = (s) => { out.textContent += s + "\n"; };
-const cfg = window.BACKEND || {};
 async function run() {
+  const cfg = window.BACKEND || {};
   const anon = cfg.anonKey, url = cfg.fnUrl;
   if (!url) { log("config.js 의 window.BACKEND 를 먼저 불러와야 해요 (?config=../web/config.js)"); return; }
   const t = httpTransport({ url, anon });
   const games = Number(document.getElementById("g").value) || 1;
+  const base = { merlin: true, percival: true, morgana: true, assassin: true };
   const setups = [
     [5, { merlin: true, assassin: true }, false], [6, { merlin: true, percival: true, morgana: true, assassin: true }, false],
     [7, { merlin: true, percival: true, morgana: true, assassin: true }, true], [8, { merlin: true, percival: true, morgana: true, mordred: true, assassin: true }, true],
     [9, { merlin: true, percival: true, morgana: true, mordred: true, assassin: true }, true], [10, { merlin: true, percival: true, morgana: true, mordred: true, oberon: true, assassin: true }, true],
+    // expansions: Lancelot quiet/known × Excalibur
+    [7, base, true, { lancelot: 1 }], [8, base, true, { lancelot: 2, excalibur: true }], [9, base, false, { excalibur: true }], [10, base, true, { lancelot: 1, excalibur: true }],
   ];
   let total = 0, bad = 0;
-  for (const [n, roles, lady] of setups) for (let g = 0; g < games; g++) {
-    const r = await playGame(t, { n, roles, lady, seed: n * 13 + g, chaos: 0.1 });
+  for (const [n, roles, lady, exp = {}] of setups) for (let g = 0; g < games; g++) {
+    const r = await playGame(t, { n, roles, lady, ...exp, seed: n * 13 + g, chaos: 0.1 });
     total++; bad += r.findings.length;
     log(`${r.tag}: ${r.result ? r.result.winner + "/" + r.result.winReason : r.setupRefused || "중단"} — 문제 ${r.findings.length}`);
     for (const f of r.findings.slice(0, 5)) log(`   [${f.id}] ${f.msg}`);
@@ -36,7 +39,7 @@ async function run() {
   for (const [a, arr] of Object.entries(by)) { arr.sort((x, y) => x - y); log(`  ${a}: p50 ${arr[arr.length >> 1].toFixed(0)}ms, p95 ${arr[Math.floor(arr.length * 0.95)].toFixed(0)}ms (${arr.length}회)`); }
   window.__liveResult = { total, bad };
 }
-const p = new URLSearchParams(location.search).get("config");
+const p = new URLSearchParams(location.search).get("config") || "../web/config.js";
 if (p) { const s = document.createElement("script"); s.src = p; s.onload = () => {}; document.head.append(s); }
 document.getElementById("go").onclick = () => run().catch((e) => log("오류: " + e.message));
 </script>
