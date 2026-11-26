@@ -1,6 +1,6 @@
 # Status snapshot
 
-Auto-generated on every push by sync.sh (2026-11-26 10:10 UTC). The written handoff is HANDOFF.md.
+Auto-generated on every push by sync.sh (2026-11-26 10:15 UTC). The written handoff is HANDOFF.md.
 
 ### Engine tests
 ```
@@ -11,11 +11,12 @@ Auto-generated on every push by sync.sh (2026-11-26 10:10 UTC). The written hand
 - `ui/`: 18 files, newest 2026-11-26 10:06 UTC
 - `assets/`: 114 files, newest 2026-11-26 09:25 UTC
 - `guide/`: 12 files, newest 2026-11-26 10:09 UTC
-- `tests/`: 19 files, newest 2026-11-26 09:41 UTC
+- `tests/`: 20 files, newest 2026-11-26 10:15 UTC
 - `web/`: 4 files, newest 2026-11-26 10:04 UTC
 - `server/`: 4 files, newest 2026-11-26 09:54 UTC
 ### Recent commits
 ```
+4d24325 Auto-sync (10:10 UTC)
 c999504 Auto-sync (10:07 UTC)
 01441d1 Auto-sync (10:06 UTC)
 adeda75 Auto-sync (10:04 UTC)
@@ -23,7 +24,6 @@ adeda75 Auto-sync (10:04 UTC)
 d018cc0 Auto-sync (10:02 UTC)
 cafe942 Auto-sync (10:01 UTC)
 9ec5c78 Auto-sync (10:00 UTC)
-f03c53c Auto-sync (09:55 UTC)
 ```
 ### Files
 ```
@@ -183,6 +183,7 @@ tests/lib/transport-occ.mjs
 tests/live.html
 tests/mutation-check.mjs
 tests/perf.mjs
+tests/results/stress-100000.json
 tests/run-matrix.mjs
 tests/stress.mjs
 ui/README.md

@@ -1,0 +1,205 @@
+{
+ "at": "2026-11-26T10:14:54.589Z",
+ "perN": 100000,
+ "seconds": 2036.174,
+ "byN": {
+  "5": {
+   "n": 5,
+   "games": 100000,
+   "setups": 216,
+   "refused": 0,
+   "winners": {
+    "evil": 81086,
+    "good": 18914
+   },
+   "reasons": {
+    "fails": 42209,
+    "assassinHit": 3013,
+    "assassinFailed": 6785,
+    "quests": 12129,
+    "rejections": 35864
+   },
+   "cover": {
+    "hammer": 35864,
+    "twoFailSaved": 0,
+    "twoFailFailed": 0,
+    "assassinHit": 3013,
+    "assassinMiss": 6785,
+    "ladyUses": 58860,
+    "switches": 20993,
+    "lancelotSwitchedGames": 15373,
+    "balance": 50000,
+    "lancelot1": 22224,
+    "lancelot2": 22224,
+    "excalibur": 50000
+   },
+   "findings": {},
+   "steps": 1875807
+  },
+  "6": {
+   "n": 6,
+   "games": 100000,
+   "setups": 108,
+   "refused": 0,
+   "winners": {
+    "evil": 84094,
+    "good": 15906
+   },
+   "reasons": {
+    "fails": 35176,
+    "assassinFailed": 5956,
+    "assassinHit": 1791,
+    "quests": 9950,
+    "rejections": 47127
+   },
+   "cover": {
+    "hammer": 47127,
+    "twoFailSaved": 0,
+    "twoFailFailed": 0,
+    "assassinHit": 1791,
+    "assassinMiss": 5956,
+    "ladyUses": 49492,
+    "switches": 17688,
+    "lancelotSwitchedGames": 13072,
+    "balance": 0,
+    "lancelot1": 22224,
+    "lancelot2": 22224,
+    "excalibur": 50000
+   },
+   "findings": {},
+   "steps": 1835590
+  },
+  "7": {
+   "n": 7,
+   "games": 100000,
+   "setups": 416,
+   "refused": 0,
+   "winners": {
+    "evil": 79435,
+    "good": 20565
+   },
+   "reasons": {
+    "fails": 38868,
+    "quests": 9966,
+    "assassinFailed": 10599,
+    "assassinHit": 3045,
+    "rejections": 37522
+   },
+   "cover": {
+    "hammer": 37522,
+    "twoFailSaved": 13842,
+    "twoFailFailed": 7819,
+    "assassinHit": 3045,
+    "assassinMiss": 10599,
+    "ladyUses": 57224,
+    "switches": 26304,
+    "lancelotSwitchedGames": 19090,
+    "balance": 50000,
+    "lancelot1": 28852,
+    "lancelot2": 28852,
+    "excalibur": 50000
+   },
+   "findings": {},
+   "steps": 1835100
+  },
+  "8": {
+   "n": 8,
+   "games": 100000,
+   "setups": 208,
+   "refused": 0,
+   "winners": {
+    "evil": 83031,
+    "good": 16969
+   },
+   "reasons": {
+    "rejections": 44804,
+    "fails": 36291,
+    "assassinFailed": 8943,
+    "assassinHit": 1936,
+    "quests": 8026
+   },
+   "cover": {
+    "hammer": 44804,
+    "twoFailSaved": 10150,
+    "twoFailFailed": 7352,
+    "assassinHit": 1936,
+    "assassinMiss": 8943,
+    "ladyUses": 48716,
+    "switches": 22254,
+    "lancelotSwitchedGames": 16792,
+    "balance": 0,
+    "lancelot1": 28850,
+    "lancelot2": 28850,
+    "excalibur": 50000
+   },
+   "findings": {},
+   "steps": 1797887
+  },
+  "9": {
+   "n": 9,
+   "games": 100000,
+   "setups": 208,
+   "refused": 0,
+   "winners": {
+    "good": 20610,
+    "evil": 79390
+   },
+   "reasons": {
+    "quests": 9611,
+    "fails": 39352,
+    "rejections": 38127,
+    "assassinFailed": 10999,
+    "assassinHit": 1911
+   },
+   "cover": {
+    "hammer": 38127,
+    "twoFailSaved": 12613,
+    "twoFailFailed": 8438,
+    "assassinHit": 1911,
+    "assassinMiss": 10999,
+    "ladyUses": 55363,
+    "switches": 25717,
+    "lancelotSwitchedGames": 18807,
+    "balance": 0,
+    "lancelot1": 28850,
+    "lancelot2": 28850,
+    "excalibur": 50000
+   },
+   "findings": {},
+   "steps": 1808654
+  },
+  "10": {
+   "n": 10,
+   "games": 100000,
+   "setups": 272,
+   "refused": 0,
+   "winners": {
+    "good": 16050,
+    "evil": 83950
+   },
+   "reasons": {
+    "quests": 6372,
+    "fails": 36025,
+    "rejections": 46234,
+    "assassinFailed": 9678,
+    "assassinHit": 1691
+   },
+   "cover": {
+    "hammer": 46234,
+    "twoFailSaved": 9358,
+    "twoFailFailed": 7224,
+    "assassinHit": 1691,
+    "assassinMiss": 9678,
+    "ladyUses": 46453,
+    "switches": 23995,
+    "lancelotSwitchedGames": 18167,
+    "balance": 0,
+    "lancelot1": 32354,
+    "lancelot2": 32354,
+    "excalibur": 50000
+   },
+   "findings": {},
+   "steps": 1755423
+  }
+ }
+}
