@@ -153,7 +153,6 @@
 .ux-en .bd-top .ux-role-chip { padding-right: 8px; }
 .ux-en .bd-root .ux-choice { font-size: 19px; }
 `;
-    s.textContent += '.ux-quest .two { max-width: 64px; }';
     document.head.appendChild(s);
   }
 

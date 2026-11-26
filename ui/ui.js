@@ -704,7 +704,7 @@
     '<rect x="51" y="58" width="18" height="40" rx="3" fill="url(#uxe-c)"/><path d="M51 64 q9 4 18 0" stroke="#cdb98f" stroke-width="1.5" fill="none"/>' +
     '<rect x="40" y="97" width="40" height="7" rx="3.5" fill="#c98d2e"/><rect x="46" y="104" width="28" height="4" rx="2" fill="#8a5a18"/></svg></div>';
 
-  // ---------- verses (short, for flavour). Korean: 개역개정 phrases; English: World English Bible (public domain). ----------
+  // ---------- verses (short, for flavour). Korean unchanged; English: World English Bible (public domain). ----------
   const VERSES_KO = {
     home: ['너희는 세상의 빛이라', '마태복음 5:14'],
     lobby: ['두세 사람이 내 이름으로 모인 곳에는', '마태복음 18:20'],
@@ -1535,7 +1535,6 @@
 .ux-en .bd-top .ux-role-chip { padding-right: 8px; }
 .ux-en .bd-root .ux-choice { font-size: 19px; }
 `;
-    s.textContent += '.ux-quest .two { max-width: 64px; }';
     document.head.appendChild(s);
   }
 
@@ -2361,7 +2360,7 @@
   const TEAMW = () => term('questTeam', term('team', L('원정대', 'Expedition')));
   const XC = () => term('excalibur', L('말씀 두루마리', 'Scroll of the Word'));
   const LOY = () => term('loyalty', L('갈림길 카드', 'Crossroads card'));
-  const LANC = () => term('lancelot', L('갈림길의 순례자', 'Lancelot'));
+  const LANC = () => term('lancelot', L('갈림길의 순례자 (랜슬롯)', 'Lancelot'));
   const ROLE = (key, ko, en) => K.roleName(key) || L(ko, en);
   const SPY = () => ROLE('assassin', '정탐꾼', 'Spy');
   const PROPHET = () => ROLE('merlin', '선지자', 'Prophet');

@@ -25,9 +25,9 @@ window.THEME = {
     minion:   { classic: "minion",      name: "유혹하는 자",     short: "유혹",   team: "evil", art: "./assets/roles/minion.svg",
                 desc: "동료 유혹하는 자들을 알고 있어요. 몰래 사명을 방해하세요." },
     // optional module: 갈림길의 순례자 (classic: Lancelot). Can switch sides when a 갈림길 카드 says so.
-    lancelotGood: { classic: "good lancelot", en: "Good Lancelot", name: "갈림길의 순례자", short: "순례자", team: "good", art: "./assets/roles/lancelotGood.svg",
+    lancelotGood: { classic: "good lancelot", en: "Good Lancelot", name: "갈림길의 순례자 (선한 랜슬롯)", baseName: "갈림길의 순례자", subtitle: "선한 랜슬롯", short: "순례자", team: "good", art: "./assets/roles/lancelotGood.svg",
                 desc: "빛의 일꾼 편으로 시작하지만, 3번째 사명부터 갈림길 카드가 뒤집히면 편이 바뀔 수 있어요. 지금 내 편으로 카드를 내세요." },
-    lancelotEvil: { classic: "evil lancelot", en: "Evil Lancelot", name: "갈림길의 그림자", short: "그림자", team: "evil", art: "./assets/roles/lancelotEvil.svg",
+    lancelotEvil: { classic: "evil lancelot", en: "Evil Lancelot", name: "갈림길의 그림자 (악한 랜슬롯)", baseName: "갈림길의 그림자", subtitle: "악한 랜슬롯", short: "그림자", team: "evil", art: "./assets/roles/lancelotEvil.svg",
                 desc: "유혹의 무리 편으로 시작하지만, 3번째 사명부터 갈림길 카드가 뒤집히면 편이 바뀔 수 있어요. 지금 내 편으로 카드를 내세요." },
   },
   terms: {
@@ -37,7 +37,7 @@ window.THEME = {
     lady: "등불", ladyAction: "등불로 비추기",
     assassinate: "선지자 지목", host: "방장",
     ready: "준비 완료", notReady: "준비하기",
-    lancelot: "갈림길의 순례자", loyalty: "갈림길 카드", loyaltyNone: "그대로", loyaltySwitch: "편이 바뀜",
+    lancelot: "갈림길의 순례자 (랜슬롯)", loyalty: "갈림길 카드", loyaltyNone: "그대로", loyaltySwitch: "편이 바뀜",
     lancelotVariant1: "조용한 갈림길 (서로 모름)", lancelotVariant2: "알려진 갈림길 (순례자끼리 알아봄)",
     excalibur: "말씀 두루마리", excaliburEn: "Excalibur", lancelotEn: "Lancelot", excaliburAction: "카드 하나 뒤집기", excaliburPass: "뒤집지 않기",
     allowRejoin: "다시 입장 허용", claimHost: "방장 맡기",
@@ -72,8 +72,8 @@ window.THEME.i18n = {
       mordred:  { name: "Wolf in Sheep's Clothing", short: "Wolf", desc: "A Tempter the Prophet can't see. Hide as a Worker of Light." },
       oberon:   { name: "Wanderer", short: "Wanderer", desc: "You're a Tempter, but you don't know the others and they don't know you. The Prophet can see you." },
       minion:   { name: "Tempter", short: "Tempter", desc: "You know your fellow Tempters. Quietly hinder the missions." },
-      lancelotGood: { name: "Good Lancelot", short: "Lancelot", desc: "You start with the Light, but from the 3rd mission a crossroads card may switch your side. Always play for your current side." },
-      lancelotEvil: { name: "Evil Lancelot", short: "Lancelot", desc: "You start with the Tempters, but from the 3rd mission a crossroads card may switch your side. Always play for your current side." },
+      lancelotGood: { name: "Good Lancelot", baseName: "Good Lancelot", subtitle: "", short: "Lancelot", desc: "You start with the Light, but from the 3rd mission a crossroads card may switch your side. Always play for your current side." },
+      lancelotEvil: { name: "Evil Lancelot", baseName: "Evil Lancelot", subtitle: "", short: "Lancelot", desc: "You start with the Tempters, but from the 3rd mission a crossroads card may switch your side. Always play for your current side." },
     },
     terms: {
       quest: "Mission", questTeam: "Expedition", leader: "Leader",

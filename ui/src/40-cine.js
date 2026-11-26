@@ -278,7 +278,7 @@
   const TEAMW = () => term('questTeam', term('team', L('원정대', 'Expedition')));
   const XC = () => term('excalibur', L('말씀 두루마리', 'Scroll of the Word'));
   const LOY = () => term('loyalty', L('갈림길 카드', 'Crossroads card'));
-  const LANC = () => term('lancelot', L('갈림길의 순례자', 'Lancelot'));
+  const LANC = () => term('lancelot', L('갈림길의 순례자 (랜슬롯)', 'Lancelot'));
   const ROLE = (key, ko, en) => K.roleName(key) || L(ko, en);
   const SPY = () => ROLE('assassin', '정탐꾼', 'Spy');
   const PROPHET = () => ROLE('merlin', '선지자', 'Prophet');

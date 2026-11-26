@@ -34,8 +34,8 @@ Deployed site root = repo root (GitHub Pages from `main`), so paths are `./web/c
 | `mordred` | hidden leader | 양의 탈을 쓴 늑대 | evil |
 | `oberon` | lone evil | 방황하는 자 | evil |
 | `minion` | evil | 유혹하는 자 | evil |
-| `lancelotGood` | good Lancelot (module) | 갈림길의 순례자 | good (can switch) |
-| `lancelotEvil` | evil Lancelot (module) | 갈림길의 그림자 | evil (can switch) |
+| `lancelotGood` | good Lancelot (module) | 갈림길의 순례자 (선한 랜슬롯) | good (can switch) |
+| `lancelotEvil` | evil Lancelot (module) | 갈림길의 그림자 (악한 랜슬롯) | evil (can switch) |
 Token `lady` (lady of the lake) = **등불**. Token `excalibur` = **말씀 두루마리**. Loyalty deck (Lancelot module) = **갈림길 카드** (`none` 그대로 / `switch` 편이 바뀜). Teams: `good` = 빛의 일꾼들, `evil` = 유혹의 무리. Quest = 사명, leader = 조장, success card = 축복, fail card = 방해, approve = 찬성, reject = 반대.
 
 `THEME` shape (config.js):
@@ -177,6 +177,7 @@ GUIDE.build(theme, lang)    // build one language from a theme
 Every preset passes engine `buildRoles`. Deployed path: `./guide/guide.js`.
 
 ## Languages (Korean / English)
+- Lancelot names (Spencer): Korean shows the church name and Lancelot together. `roles.lancelotGood.name` = "갈림길의 순례자 (선한 랜슬롯)"; also `baseName` ("갈림길의 순례자") and `subtitle` ("선한 랜슬롯") so tight cards can show the base name large and the subtitle small. Same for lancelotEvil (악한 랜슬롯). English: Good Lancelot / Evil Lancelot, `subtitle` empty.
 - One language per phone, chosen on the home screen: `Net.getLang()` → `"ko"|"en"`, `Net.setLang(l)` (stored in localStorage `mist.lang`, default `"ko"`). Switching re-renders everything; layout, art and animation are identical in both.
 - Names and texts: `THEME` holds Korean; `THEME.i18n.en` holds English with the same keys (`title, subtitle, teams.<good|evil>.name/short, roles.<key>.name/short/desc, terms.*, knowledgeText.*, winText.*`). Overlay `THEME.i18n[lang]` on `THEME`. `guide/guide.js` follows the same rule: `window.GUIDE.i18n.ko` and `window.GUIDE.i18n.en` (same shape), switched with `GUIDE.setLang`.
 - Server messages: every refusal is `{ok:false, error, errorKey, errorParams, errorEn}`: `error` Korean, `errorEn` English, `errorKey` a stable key from `server/messages.js` (params already filled in both texts). Show `Net.errorText(result)`. Lobby view: `setupError` / `setupErrorEn` / `setupErrorKey` the same way. Client-only failures from Net use keys `offline`, `badResponse`, `noSession`.
