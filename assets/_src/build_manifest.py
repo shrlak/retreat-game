@@ -88,7 +88,17 @@ m = {
     },
     "logo": {"full": path("logo.svg"), "light": path("logo-light.svg"), "mark": path("logo-mark.svg")},
     "avatars": [BASE + "avatars/" + f for f in sorted(listdir("avatars"), key=lambda s: int(''.join(c for c in s if c.isdigit()) or 0))],
-    "icons": {f[:-4]: BASE + "icons/" + f for f in listdir("icons")},
+    "icons": {f[:-4]: BASE + "icons/" + f for f in listdir("icons") if not f.startswith(("favicon", "icon-"))},
+    "favicon": {
+        "svg": path("icons/favicon.svg"),
+        "png16": path("icons/favicon-16.png"),
+        "png32": path("icons/favicon-32.png"),
+        "appleTouch": path("icons/apple-touch-icon.png"),
+        "pwa192": path("icons/icon-192.png"),
+        "pwa512": path("icons/icon-512.png"),
+        "maskable512": path("icons/icon-maskable-512.png"),
+        "html": '<link rel="icon" href="./assets/icons/favicon.svg" type="image/svg+xml"><link rel="icon" href="./assets/icons/favicon-32.png" sizes="32x32" type="image/png"><link rel="apple-touch-icon" href="./assets/icons/apple-touch-icon.png">',
+    },
 }
 
 with open(os.path.join(A, "manifest.json"), "w", encoding="utf-8") as f:

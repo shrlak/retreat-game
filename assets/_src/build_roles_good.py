@@ -120,57 +120,51 @@ def percival():
 def servant():
     p = "rse_"
     defs = (
-        lin(p + "sky", [(0, "#2C3E6B"), (0.45, "#7B5A8C"), (0.8, "#E58F6B"), (1, "#F4B678")])
+        lin(p + "sky", [(0, "#22325C"), (0.45, "#6B5A8C"), (0.8, "#E58F6B"), (1, "#F4B678")])
         + glow_def(p + "can", "#FFE3A0", 1)
-        + lin(p + "wax", [(0, "#FFFFFF"), (1, "#F1E4CC")], 0, 0, 1, 0)
-        + lin(p + "tent", [(0, "#F3E2C3"), (1, "#D9B98A")])
+        + glow_def(p + "star", "#FFF6D8", 0.9)
     )
     sc = [f'<rect x="30" y="30" width="540" height="650" fill="url(#{p}sky)"/>']
-    sc.append(stars(31, 24, 40, 40, 560, 230, "#FFF6D8", 1.0, 2.4, 0.15))
-    # string lights
-    import math as _m
-    pts = []
-    for i in range(14):
-        t = i / 13
-        x = 30 + 540 * t
-        y = 110 + 60 * _m.sin(_m.pi * t)
-        pts.append((x, y))
-    sc.append('<path d="M30,110 Q300,230 570,110" fill="none" stroke="#2A2238" stroke-width="2" opacity=".7"/>')
-    cols = ["#FFD36E", "#F28B6B", "#8EC5E8", "#FFD36E", "#B9E2A0"]
-    for i, (x, y) in enumerate(pts[1:-1]):
-        yy = 110 + (230 - 110) * 2 * ((i + 1) / 13) * (1 - (i + 1) / 13)
-        sc.append(f'<circle cx="{x:.1f}" cy="{yy+6:.1f}" r="6" fill="{cols[i%5]}" class="{["tw","tw2","tw3"][i%3]}"/>')
+    sc.append(stars(31, 26, 40, 40, 560, 300, "#FFF6D8", 1.0, 2.4, 0.15))
+    # one bright star
+    sc.append(f'<circle cx="446" cy="128" r="80" fill="url(#{p}star)" class="glow"/>')
+    sc.append(sparkle_star(446, 128, 30, "#FFFFFF", "tw"))
+    sc.append(sparkle_star(446, 128, 12, "#FFF3C4", ""))
+    sc.append(hills([("M30,470 Q140,420 260,452 Q380,415 480,445 Q530,432 570,440 V680 H30Z", "#4A5A7E", 1)]))
+    # little stone town (flat roofs, arched lit windows)
+    town = []
+    for hx_, hw, hh, col in [(40, 70, 70, "#C9A982"), (100, 60, 95, "#D8BC94"), (150, 80, 60, "#B99A74"),
+                              (400, 70, 80, "#D8BC94"), (460, 60, 105, "#C9A982"), (512, 70, 66, "#B99A74")]:
+        top = 520 - hh
+        town.append(f'<rect x="{hx_}" y="{top}" width="{hw}" height="{hh+10}" fill="{col}"/>'
+                    f'<rect x="{hx_-3}" y="{top-6}" width="{hw+6}" height="8" rx="2" fill="#A88A66"/>'
+                    f'<path d="M{hx_+hw/2-8},{top+hh*0.55:.0f} v-10 a8,8 0 0,1 16,0 v10z" fill="#FFD36E" class="glow"/>')
+    town.append('<path d="M116,425 v-12 a14,14 0 0,1 28,0 v12z" fill="#D8BC94"/>')
+    sc.append("".join(town))
+    for ox, oy, k in [(215, 522, 1.0), (360, 516, 0.85)]:
+        sc.append(f'<g transform="translate({ox},{oy}) scale({k})"><path d="M-5,0 Q-9,-30 1,-52 Q7,-30 6,0Z" fill="#6B4A2E"/>'
+                  f'<g fill="#6E8F5E"><ellipse cx="-18" cy="-60" rx="26" ry="18"/><ellipse cx="16" cy="-66" rx="28" ry="20"/><ellipse cx="0" cy="-84" rx="24" ry="17"/></g>'
+                  f'<g fill="#8FB07A" opacity=".7"><ellipse cx="-10" cy="-70" rx="12" ry="7"/><ellipse cx="18" cy="-78" rx="12" ry="7"/></g></g>')
     sc.append(hills([
-        ("M30,470 Q140,420 260,452 Q380,415 480,445 Q530,432 570,440 V680 H30Z", "#4A5A7E", 1),
-        ("M30,520 Q170,480 320,505 Q450,485 570,500 V680 H30Z", "#4C6B4F", 1),
-        ("M30,600 Q200,570 320,590 Q460,572 570,585 V680 H30Z", "#5E8F5C", 1),
+        ("M30,530 Q170,500 320,515 Q450,500 570,510 V680 H30Z", "#5B7A4F", 1),
+        ("M30,600 Q200,570 320,590 Q460,572 570,585 V680 H30Z", "#6E9A5E", 1),
     ]))
-    # tents with glowing doors
-    for tx, ty, sz in [(110, 505, 1.0), (470, 492, 0.85)]:
-        sc.append(f'<g transform="translate({tx},{ty}) scale({sz})">'
-                  f'<path d="M-60,0 L0,-78 L60,0Z" fill="url(#{p}tent)"/>'
-                  f'<path d="M0,-78 L60,0 L28,0Z" fill="#000" opacity=".1"/>'
-                  f'<path d="M-14,0 L0,-40 L14,0Z" fill="#FFD36E" class="glow"/>'
-                  f'<path d="M0,-78 L0,-92" stroke="#6B4A2E" stroke-width="4"/></g>')
-    # fireflies
-    for i, (x, y) in enumerate([(80, 420), (520, 380), (150, 600), (480, 610), (420, 330), (60, 300)]):
-        sc.append(f'<circle cx="{x}" cy="{y}" r="4" fill="#FFF3A0" class="{["tw","tw2","tw3"][i%3]}"/>')
-    # candle glow behind
-    sc.append(f'<circle cx="280" cy="470" r="210" fill="url(#{p}can)" class="glow"/>')
-    body, hands, (hx, hy) = figure(280, 690, 1.12, P["amber"], P["amber_d"], P["skin1"], "#2E2420",
-                                   "long", "happy",
-                                   arms=[("L", 264, 588), ("R", 296, 588)])
+    for i, (x, y) in enumerate([(80, 420), (520, 380), (150, 600), (480, 560), (60, 300)]):
+        sc.append(f'<circle cx="{x}" cy="{y}" r="3.5" fill="#FFF3A0" class="{["tw","tw2","tw3"][i%3]}"/>')
+    sc.append(f'<circle cx="320" cy="530" r="210" fill="url(#{p}can)" class="glow"/>')
+    body, hands, (hx, hy) = figure(280, 690, 1.12, "#C96F4A", "#A85638", P["skin1"], "#2E2420",
+                                   "hood", "happy", hood_col="#F3E2C3", trim="#E9B949",
+                                   arms=[("L", 252, 574), ("R", 318, 574)])
     sc.append(body)
-    # hoodie pocket + strings
-    sc.append('<path d="M236,628 Q280,620 324,628 L318,664 Q280,672 242,664Z" fill="#D9813A" opacity=".7"/>')
-    # candle
-    sc.append(f'<rect x="268" y="514" width="24" height="76" rx="6" fill="url(#{p}wax)"/>')
-    sc.append('<path d="M272,516 Q274,532 271,542" stroke="#FFFFFF" stroke-width="3" fill="none" stroke-linecap="round"/>')
-    sc.append('<path d="M280,514 L280,504" stroke="#3B2A22" stroke-width="2.5"/>')
-    sc.append(flame(280, 508, 0.62, "#F6A04D", "#FFD36E", "#FFFFFF"))
-    sc.append('<ellipse cx="280" cy="592" rx="30" ry="8" fill="#C9973E"/>')
+    sc.append('<path d="M204,612 Q280,630 356,612 L358,628 Q280,646 202,628Z" fill="#E9B949"/>')
+    # clay oil lamp held in both hands
+    sc.append('<path d="M232,566 Q236,538 280,536 Q318,536 330,550 L356,544 Q364,550 354,560 L330,566 Q300,586 264,584 Q236,582 232,566Z" fill="#B7764A"/>')
+    sc.append('<path d="M244,558 Q262,546 290,546 Q310,548 316,556" fill="none" stroke="#8C5634" stroke-width="3"/>')
+    sc.append('<ellipse cx="282" cy="544" rx="12" ry="4" fill="#5C3A1C"/>')
+    sc.append('<path d="M244,572 Q280,582 318,568" fill="none" stroke="#E3A877" stroke-width="3" opacity=".6"/>')
+    sc.append(flame(354, 548, 0.6, "#F6A04D", "#FFD36E", "#FFFFFF"))
     sc.append(hands)
-    sc.append(sheep(462, 612, 0.82, cls="bob"))
+    sc.append(sheep(468, 618, 0.78, cls="bob"))
     write("servant.svg", card(p, "good", "".join(sc), defs))
 
 

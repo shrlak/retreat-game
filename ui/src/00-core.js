@@ -223,8 +223,11 @@
 
   // ---------- toasts, sheets, confirm ----------
   let toastsEl;
+  let lastToast = '', lastToastAt = 0;
   UI.toast = (msg, kind) => {
-    if (!toastsEl) return;
+    if (!toastsEl || !msg) return;
+    if (msg === lastToast && Date.now() - lastToastAt < 1500) return;   // app.js also toasts api errors
+    lastToast = msg; lastToastAt = Date.now();
     const t = K.el('<div class="ux-toast ' + (kind === 'info' ? 'info' : '') + '">' + esc(msg) + '</div>');
     toastsEl.appendChild(t); if (kind !== 'info') K.buzz('tap');
     setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 320); }, kind === 'info' ? 1800 : 3200);
@@ -264,7 +267,9 @@
     busy.add(name); document.documentElement.classList.add('ux-busy');
     try {
       const r = await api[name](...args);
+      if (r && r.offline) { netDown = Date.now(); connCheck(); }
       if (r && r.ok === false) { if (r.error) UI.toast(r.error); }
+      else if (r) { netDown = 0; connCheck(); }
       else if (r && r.view) UI.render(r.view);
       return r || { ok: true };
     } catch (e) { UI.toast('연결이 불안정해요. 다시 시도해 주세요.'); return { ok: false }; }
@@ -379,7 +384,7 @@
   K.cineBusy = () => cineBusy;
 
   // ---------- connection watchdog ----------
-  let lastViewAt = 0, connEl = null, connForced = null;
+  let lastViewAt = 0, connEl = null, connForced = null, netDown = 0;
   function connShow(msg) {
     if (!connEl) { connEl = K.el('<div class="ux-conn" role="status"><span class="ux-dots"><i></i><i></i><i></i></span><span class="t"></span></div>'); document.body.appendChild(connEl); }
     connEl.querySelector('.t').textContent = msg;
@@ -388,16 +393,20 @@
   function connCheck() {
     if (connForced === 'offline' || connForced === 'reconnecting') return connShow(connForced === 'offline' ? '연결이 끊겼어요. 다시 연결하는 중…' : '다시 연결하는 중…');
     if (navigator.onLine === false) return connShow('인터넷 연결이 끊겼어요. 다시 연결하는 중…');
-    if (K.view && lastViewAt && Date.now() - lastViewAt > 13000) return connShow('연결 확인 중… 잠시만요');
+    if (netDown && Date.now() - netDown < 8000) return connShow('연결이 불안정해요. 다시 연결하는 중…');
     connHide();
   }
   /* Optional extra (not in contract): app.js may call UI.setConnection('online'|'offline'|'reconnecting'). */
   UI.setConnection = s => { connForced = s === 'online' ? null : s; connCheck(); };
 
   // ---------- public API ----------
-  UI.init = (root, apiObj, theme, opts) => {
+  /* UI.init(root, api, THEME, extra?) — extra may be window.GUIDE (app.js passes it) or {assetBase, guide}. */
+  UI.init = (root, apiObj, theme, extra) => {
     rootEl = root; api = apiObj || {}; T = theme || window.THEME || {};
-    opts = opts || {}; if (opts.assetBase) assetBase = opts.assetBase.replace(/\/?$/, '/');
+    const opts = extra && (extra.build || extra.quick || extra.phaseHints) ? { guide: extra } : (extra || {});
+    if (opts.guide && !window.GUIDE) window.GUIDE = opts.guide;
+    if (opts.assetBase) assetBase = opts.assetBase.replace(/\/?$/, '/');
+    K.api = api;
     Sound.init();
     rootEl.innerHTML = '';
     appEl = K.el('<div class="ux-app"><div class="ux-pattern"></div><canvas class="ux-fx" aria-hidden="true"></canvas><div class="ux-stage"></div></div>');
@@ -413,7 +422,9 @@
     if (T.title) document.title = T.title;
     if (K.onInit) K.onInit.forEach(f => f(K));
   };
-  UI.render = v => {
+  /* UI.render(view|null, homeOpts?) — homeOpts {code} prefills the join code on the home screen. */
+  UI.render = (v, homeOpts) => {
+    if (!v && homeOpts) K.homeOpts = homeOpts;
     if (v && K.view && v.code === K.view.code && typeof v.v === 'number' && typeof K.view.v === 'number' && v.v < K.view.v) { lastViewAt = Date.now(); connCheck(); return; }
     if (!v) { seen = null; }
     K.view = v || null; lastViewAt = v ? Date.now() : 0; connCheck();

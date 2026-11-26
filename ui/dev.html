@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#14101f">
+<title>빛의 원정대 · 개발용</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  html,body{margin:0;background:#14101f;color:#f6efe2;min-height:100%;}
+  .dev-missing{max-width:420px;margin:18vh auto 0;padding:24px 20px;font:15px/1.6 -apple-system,'Noto Sans KR',sans-serif;text-align:center;}
+  .dev-missing b{display:block;font-size:18px;margin-bottom:8px;color:#ffe7a8;}
+  .dev-missing code{background:rgba(255,255,255,.08);padding:1px 5px;border-radius:4px;}
+</style>
+<!-- Dev harness: the real UI against an in-browser mock server with bots. Not linked from index.html. -->
+<script src="../web/config.js" onerror="void 0"></script>
+<script src="./dev/theme-fallback.js"></script>
+<script src="../guide/guide.js" onerror="void 0"></script>
+<link rel="stylesheet" href="./ui.css">
+</head>
+<body>
+<div id="app"></div>
+<script src="./ui.js" onerror="void 0"></script>
+<script src="./dev/mock.js"></script>
+<script>
+  (function () {
+    var root = document.getElementById("app");
+    if (!window.UI || typeof window.UI.init !== "function") {
+      root.innerHTML = '<div class="dev-missing"><b>UI가 아직 없어요</b>' +
+        '<code>ui/ui.js</code>가 준비되면 이 페이지를 새로고침하세요.<br>' +
+        '아래 DEV 버튼으로 목업 서버와 봇은 지금도 돌려 볼 수 있어요.</div>';
+    } else {
+      UI.init(root, MockServer.api, window.THEME, { assetBase: "../assets/", guide: window.GUIDE || null, dev: true });
+      UI.render(null);
+    }
+    MockServer.boot();
+  })();
+</script>
+</body>
+</html>
