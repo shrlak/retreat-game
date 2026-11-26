@@ -98,7 +98,7 @@
 /* deal */
 .cn-table { position: relative; flex: none; }
 .cn-seat { position: absolute; left: 50%; top: 50%; width: 66px; margin: -27px 0 0 -33px; display: flex; flex-direction: column; align-items: center; gap: 3px; animation: cnFade .5s both; }
-.cn-seat span { font-size: 11px; max-width: 66px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-dim); }
+.cn-seat span { font-size: 12px; max-width: 66px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-dim); }
 .cn-seat .ux-avatar { transition: transform .4s var(--ease-spring); }
 .cn-seat.got .ux-avatar { transform: scale(1.12); box-shadow: 0 0 0 2px rgba(244,201,107,.7), 0 0 16px rgba(244,201,107,.5); }
 .cn-seat.me span { color: var(--gold-hi); font-weight: 700; }
@@ -165,7 +165,7 @@
 .cn-but { font-family: var(--font-display); font-size: 20px; color: #d9c2ff; animation: cnRise .7s both; }
 .cn-turn .ux-banner { animation-delay: .35s; }
 .cn-who { display: inline-flex; align-items: center; gap: 10px; padding: 8px 16px 8px 8px; border-radius: 999px; background: rgba(91,58,122,.35); border: 1px solid rgba(180,140,224,.45); animation: cnRise .7s .8s both; text-align: left; }
-.cn-who small { display: block; font-size: 11px; color: #d9c2ff; }
+.cn-who small { display: block; font-size: 12.5px; color: #d9c2ff; }
 .cn-who b { font-size: 16px; }
 .cn-turn .cn-note { animation: cnRise .7s 1.1s both; }
 

@@ -48,7 +48,7 @@
 .bd-trackp .ux-track { padding: 12px 6px 14px; }
 .bd-qwrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 9px; min-width: 0; }
 .bd-qwrap .ux-quest { width: 100%; }
-.bd-qn { font-size: 10px; color: var(--text-mute); letter-spacing: .06em; }
+.bd-qn { font-size: 11.5px; font-weight: 700; color: var(--text-dim); letter-spacing: .06em; }
 .bd-qwrap.cur .bd-qn { color: var(--gold); }
 .bd-qwrap .two + .bd-qn, .bd-qwrap.two-b .bd-qn { margin-top: 3px; }
 .ux-quest.current::after { content: ''; position: absolute; inset: -7px; border-radius: 50%; border: 1px dashed rgba(244,201,107,.55); animation: spin 14s linear infinite; }

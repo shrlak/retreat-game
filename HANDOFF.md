@@ -12,33 +12,36 @@ Phone-based online hidden-role game in the style of the classic team-quest deduc
 
 ## Done
 - Rules engine: 5–10 players, evil counts, team sizes, quest 4 double-fail for 7+, balance mode (5p/7p alt sizes), optional roles (선지자/파수꾼/거짓 선지자/양의 탈을 쓴 늑대/방황하는 자/정탐꾼), knowledge rules, 5-rejection loss, 등불 (lady) inspections after quests 2–4, assassination endgame, restart. 1,800 simulated games pass invariants.
-- Edge function deployed (v2+), table created with RLS.
-- web/config.js (names), web/net.js (API, realtime, rejoin via saved token or same name), web/app.js, web/dev-ui.js (plain fallback UI).
+- Expansions (host toggles): 갈림길의 순례자/그림자 (Good/Evil Lancelot, `settings.lancelot` 1 = quiet, 2 = known), loyalty deck flipped from round 3, current side tracked (`curTeam`); 말씀 두루마리 (Excalibur, `settings.excalibur`, phase `excalibur`). Tests: tests/expansions.test.mjs.
+- Secure rejoin: seats bound to the device token; name rejoin only after host `allowRejoin` (2 min, one use). `claimHost` when host offline ≥60 s.
+- Synced transitions: engine stamps `phaseSeq/phaseStartedAt/prevPhase/transitionMs/serverNow`; Net estimates server clock (`Net.serverTime()`, `view.serverOffsetMs`).
+- Handler: jittered backoff on optimistic-lock retries (14 attempts); realtime broadcast no longer delays the reply (EdgeRuntime.waitUntil).
+- Edge function `mist-game` v4 deployed, pinned to commit 5287161 via jsDelivr. Table `mist_rooms` with RLS.
+- Favicon, apple-touch icon, site.webmanifest in index.html. README.md (Korean) at repo root.
+- web/config.js (names, incl. English names for Lancelot/Excalibur as `en`), web/net.js, web/app.js (api: excalibur, allowRejoin, claimHost, propose(ids, excaliburTo)), web/dev-ui.js covers all phases.
 
 ## In progress (parallel helpers)
-- `assets/` original SVG card art (helper thread).
-- `ui/` real screens + animations (helper thread) — must expose `window.UI` per CONTRACT.md.
-- `tests/` rules checklist + bot harness (helper thread).
-- `guide/guide.js` Korean rules/tutorial (helper thread).
+- `ui/` real screens + animations (UI thread): needs excalibur phase, Lancelot loyalty cards, rejoin/claimHost buttons, synced transitions from phaseStartedAt.
+- `tests/` thread: concurrency + handler models.
 
 ## Next, in priority order
-1. Integrate `ui/` once delivered; make sure index.html loads all its scripts.
-2. End-to-end test with 5–10 simulated players against the live function (browser tabs or tests/transport-http).
-3. Polish: vote reveal, quest card shuffle, role card flip, win/lose screens, sound toggle.
-4. QR code / share link for room code (`?code=XXXXX` already prefills join).
+1. Run tests/e2e.html matrix 5–10 on GitHub Pages incl. expansions; fix anything found.
+2. Verify the real UI on the live site with the new view fields.
+3. Clean up test leftovers in Supabase: function `mist-admin`, storage bucket `mist-game`.
+4. Keep README.md, HANDOFF.md, CLAUDE.md in step with every feature change.
 
 ## Open decisions
 - Role names: church-retreat names in `web/config.js` (Spencer asked for church-themed names; current set is a first pick).
 - Hosting: Supabase (free, in existing project "health-dashboard") + GitHub Pages. Cloudflare not possible from the cloud session (connector can't deploy Workers).
 
-## Snapshot (2026-11-26 09:27 UTC, auto-generated every push)
+## Snapshot (2026-11-26 09:30 UTC, auto-generated every push)
 
 ### Engine tests
 ```
 tests did not run
 ```
 ### Helper folders (files, newest change)
-- `ui/`: 17 files, newest 2026-11-26 09:28 UTC
+- `ui/`: 17 files, newest 2026-11-26 09:30 UTC
 - `assets/`: 114 files, newest 2026-11-26 09:25 UTC
 - `guide/`: 8 files, newest 2026-11-26 09:01 UTC
 - `tests/`: 18 files, newest 2026-11-26 09:26 UTC
@@ -46,6 +49,7 @@ tests did not run
 - `server/`: 3 files, newest 2026-11-26 09:22 UTC
 ### Recent commits
 ```
+5287161 Sync progress
 8742f12 Auto-sync work in progress (09:26 UTC)
 7140171 Auto-sync work in progress (09:19 UTC)
 43ce8c2 Auto-sync work in progress (09:12 UTC)
@@ -53,7 +57,6 @@ e30af1c Handoff snapshot: tests, helper status, commits
 5c44ef9 Add .nojekyll
 2024bc9 Add live end-to-end bot test page
 d804a45 Server: SDK-free handler.js; index.ts is a thin wrapper
-5663a2b Engine: name rejoin only for offline seats, no self-target; net slot param
 ```
 ### Files
 ```
@@ -61,6 +64,7 @@ d804a45 Server: SDK-free handler.js; index.ts is a thin wrapper
 CLAUDE.md
 CONTRACT.md
 HANDOFF.md
+README.md
 assets/STYLE.md
 assets/_src/build_expansion.py
 assets/_src/build_manifest.py

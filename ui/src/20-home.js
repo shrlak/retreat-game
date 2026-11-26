@@ -19,7 +19,7 @@
         '<div class="uxh-rays" aria-hidden="true"></div>' +
         '<div class="ux-home-hero">' + K.emblem(156) +
         '<h1 class="ux-h1 uxh-title">' + letters + '</h1>' +
-        '<p class="ux-subtitle uxh-fade" style="animation-delay:.9s">' + esc(T.subtitle || '수련회 숨은 역할 추리 게임') + '</p>' +
+        '<p class="ux-subtitle uxh-sub uxh-fade" style="animation-delay:.9s">' + esc(T.subtitle || '수련회 숨은 역할 추리 게임') + '</p>' +
         '<div class="uxh-fade" style="animation-delay:1.1s">' + K.verse('home') + '</div></div>' +
         '<div class="ux-panel uxh-card" style="animation-delay:.5s"><div class="ux-stack">' +
         '<label class="ux-field"><span class="ux-label">내 이름</span><input class="ux-input" id="uxh-name" maxlength="10" autocomplete="nickname" enterkeyhint="done" placeholder="예) 은혜" value="' + esc(name) + '"></label>' +
@@ -72,7 +72,9 @@
   background: repeating-conic-gradient(from 0deg at 50% 50%, rgba(255,220,150,.13) 0 4deg, transparent 4deg 16deg);
   -webkit-mask: radial-gradient(circle, #000 10%, transparent 62%); mask: radial-gradient(circle, #000 10%, transparent 62%);
   animation: spin 90s linear infinite; will-change: transform; }
+.uxh-title { font-size: 48px; letter-spacing: .04em; margin-top: -6px; white-space: nowrap; }
 .uxh-title span { display: inline-block; animation: uxhDrop .7s var(--ease-spring) both; }
+.uxh-sub { display: inline-block; padding: 6px 16px; border-radius: 999px; background: rgba(7,10,28,.72); border: 1px solid var(--line-strong); }
 @keyframes uxhDrop { from { opacity: 0; transform: translateY(-26px) scale(1.3); } to { opacity: 1; transform: none; } }
 .uxh-fade { animation: uxhFade .9s var(--ease-out) both; }
 @keyframes uxhFade { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }

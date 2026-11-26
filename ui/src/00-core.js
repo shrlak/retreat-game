@@ -335,7 +335,8 @@
       K.clock.offset = Math.max.apply(null, clockS);   // the least-delayed sample is closest to the truth
     },
     now() { return Date.now() + (K.clock.offset || 0); },
-    has() { return K.clock.offset !== null; }
+    has() { return K.clock.offset !== null; },
+    reset() { clockS.length = 0; K.clock.offset = null; }
   };
   K.SYNC_LEAD = 900;     // ms after the server moment that every phone starts together
   K.evAt = (e, v) => {
@@ -375,7 +376,10 @@
     if (v.phase === 'assassin' && seen.phase && seen.phase !== 'assassin') ev.push({ type: 'assassin' });
     if (v.phase === 'end' && seen.phase && seen.phase !== 'end') ev.push({ type: 'end' });
     seen.phase = v.phase; seen.round = v.round;
-    return ev.filter(e => K.cine[e.type]);
+    // when several results land in one view (slow phone, reconnect), play them in the order they happened
+    const R = v.round || 0, rank = e => e.type === 'deal' ? -100 : e.type === 'begin' ? -50 : e.type === 'vote' ? (e.d.round || 0) * 10 + 3
+      : e.type === 'quest' ? (e.d.round || 0) * 10 + 5 : e.type === 'lady' ? R * 10 + .5 : e.type === 'journey' ? e.to * 10 + 1 : e.type === 'assassin' ? 1000 : 1001;
+    return ev.map((e, i) => [rank(e), i, e]).sort((a, b) => a[0] - b[0] || a[1] - b[1]).map(x => x[2]).filter(e => K.cine[e.type]);
   }
   function makeCtx() {
     const ov = K.el('<div class="ux-overlay" role="dialog" aria-live="polite"><div class="inner"></div></div>');

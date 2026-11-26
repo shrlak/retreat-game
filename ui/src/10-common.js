@@ -159,7 +159,7 @@
 .uxc-mini.evil { box-shadow: 0 0 0 1.5px var(--evil), 0 0 30px var(--evil-glow); }
 .uxc-mini .plate { position: absolute; left: 0; right: 0; bottom: 0; padding: 26px 6px 8px; text-align: center; background: linear-gradient(180deg, transparent, rgba(7,10,28,.92) 50%); }
 .uxc-mini .rname { font-family: var(--font-display); font-weight: 700; font-size: 17px; color: var(--gold-hi); }
-.uxc-mini .rteam { font-size: 11px; color: var(--text-dim); }
+.uxc-mini .rteam { font-size: 12px; color: var(--text-dim); }
 .uxc-tips { margin-top: 14px; padding: 10px 12px; border-radius: 12px; background: rgba(255,255,255,.04); border: 1px solid var(--line); font-size: 13px; color: var(--text-dim); line-height: 1.55; }
 .uxc-tips summary { color: var(--gold-hi); font-weight: 700; cursor: pointer; }
 .uxc-tips ul { margin: 4px 0 8px; padding-left: 18px; }

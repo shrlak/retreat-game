@@ -338,7 +338,8 @@
       K.clock.offset = Math.max.apply(null, clockS);   // the least-delayed sample is closest to the truth
     },
     now() { return Date.now() + (K.clock.offset || 0); },
-    has() { return K.clock.offset !== null; }
+    has() { return K.clock.offset !== null; },
+    reset() { clockS.length = 0; K.clock.offset = null; }
   };
   K.SYNC_LEAD = 900;     // ms after the server moment that every phone starts together
   K.evAt = (e, v) => {
@@ -378,7 +379,10 @@
     if (v.phase === 'assassin' && seen.phase && seen.phase !== 'assassin') ev.push({ type: 'assassin' });
     if (v.phase === 'end' && seen.phase && seen.phase !== 'end') ev.push({ type: 'end' });
     seen.phase = v.phase; seen.round = v.round;
-    return ev.filter(e => K.cine[e.type]);
+    // when several results land in one view (slow phone, reconnect), play them in the order they happened
+    const R = v.round || 0, rank = e => e.type === 'deal' ? -100 : e.type === 'begin' ? -50 : e.type === 'vote' ? (e.d.round || 0) * 10 + 3
+      : e.type === 'quest' ? (e.d.round || 0) * 10 + 5 : e.type === 'lady' ? R * 10 + .5 : e.type === 'journey' ? e.to * 10 + 1 : e.type === 'assassin' ? 1000 : 1001;
+    return ev.map((e, i) => [rank(e), i, e]).sort((a, b) => a[0] - b[0] || a[1] - b[1]).map(x => x[2]).filter(e => K.cine[e.type]);
   }
   function makeCtx() {
     const ov = K.el('<div class="ux-overlay" role="dialog" aria-live="polite"><div class="inner"></div></div>');
@@ -634,7 +638,7 @@
 .uxc-mini.evil { box-shadow: 0 0 0 1.5px var(--evil), 0 0 30px var(--evil-glow); }
 .uxc-mini .plate { position: absolute; left: 0; right: 0; bottom: 0; padding: 26px 6px 8px; text-align: center; background: linear-gradient(180deg, transparent, rgba(7,10,28,.92) 50%); }
 .uxc-mini .rname { font-family: var(--font-display); font-weight: 700; font-size: 17px; color: var(--gold-hi); }
-.uxc-mini .rteam { font-size: 11px; color: var(--text-dim); }
+.uxc-mini .rteam { font-size: 12px; color: var(--text-dim); }
 .uxc-tips { margin-top: 14px; padding: 10px 12px; border-radius: 12px; background: rgba(255,255,255,.04); border: 1px solid var(--line); font-size: 13px; color: var(--text-dim); line-height: 1.55; }
 .uxc-tips summary { color: var(--gold-hi); font-weight: 700; cursor: pointer; }
 .uxc-tips ul { margin: 4px 0 8px; padding-left: 18px; }
@@ -677,7 +681,7 @@
         '<div class="uxh-rays" aria-hidden="true"></div>' +
         '<div class="ux-home-hero">' + K.emblem(156) +
         '<h1 class="ux-h1 uxh-title">' + letters + '</h1>' +
-        '<p class="ux-subtitle uxh-fade" style="animation-delay:.9s">' + esc(T.subtitle || '수련회 숨은 역할 추리 게임') + '</p>' +
+        '<p class="ux-subtitle uxh-sub uxh-fade" style="animation-delay:.9s">' + esc(T.subtitle || '수련회 숨은 역할 추리 게임') + '</p>' +
         '<div class="uxh-fade" style="animation-delay:1.1s">' + K.verse('home') + '</div></div>' +
         '<div class="ux-panel uxh-card" style="animation-delay:.5s"><div class="ux-stack">' +
         '<label class="ux-field"><span class="ux-label">내 이름</span><input class="ux-input" id="uxh-name" maxlength="10" autocomplete="nickname" enterkeyhint="done" placeholder="예) 은혜" value="' + esc(name) + '"></label>' +
@@ -730,7 +734,9 @@
   background: repeating-conic-gradient(from 0deg at 50% 50%, rgba(255,220,150,.13) 0 4deg, transparent 4deg 16deg);
   -webkit-mask: radial-gradient(circle, #000 10%, transparent 62%); mask: radial-gradient(circle, #000 10%, transparent 62%);
   animation: spin 90s linear infinite; will-change: transform; }
+.uxh-title { font-size: 48px; letter-spacing: .04em; margin-top: -6px; white-space: nowrap; }
 .uxh-title span { display: inline-block; animation: uxhDrop .7s var(--ease-spring) both; }
+.uxh-sub { display: inline-block; padding: 6px 16px; border-radius: 999px; background: rgba(7,10,28,.72); border: 1px solid var(--line-strong); }
 @keyframes uxhDrop { from { opacity: 0; transform: translateY(-26px) scale(1.3); } to { opacity: 1; transform: none; } }
 .uxh-fade { animation: uxhFade .9s var(--ease-out) both; }
 @keyframes uxhFade { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
@@ -1023,7 +1029,7 @@
 .bd-trackp .ux-track { padding: 12px 6px 14px; }
 .bd-qwrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 9px; min-width: 0; }
 .bd-qwrap .ux-quest { width: 100%; }
-.bd-qn { font-size: 10px; color: var(--text-mute); letter-spacing: .06em; }
+.bd-qn { font-size: 11.5px; font-weight: 700; color: var(--text-dim); letter-spacing: .06em; }
 .bd-qwrap.cur .bd-qn { color: var(--gold); }
 .bd-qwrap .two + .bd-qn, .bd-qwrap.two-b .bd-qn { margin-top: 3px; }
 .ux-quest.current::after { content: ''; position: absolute; inset: -7px; border-radius: 50%; border: 1px dashed rgba(244,201,107,.55); animation: spin 14s linear infinite; }
@@ -1558,7 +1564,7 @@
 /* deal */
 .cn-table { position: relative; flex: none; }
 .cn-seat { position: absolute; left: 50%; top: 50%; width: 66px; margin: -27px 0 0 -33px; display: flex; flex-direction: column; align-items: center; gap: 3px; animation: cnFade .5s both; }
-.cn-seat span { font-size: 11px; max-width: 66px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-dim); }
+.cn-seat span { font-size: 12px; max-width: 66px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-dim); }
 .cn-seat .ux-avatar { transition: transform .4s var(--ease-spring); }
 .cn-seat.got .ux-avatar { transform: scale(1.12); box-shadow: 0 0 0 2px rgba(244,201,107,.7), 0 0 16px rgba(244,201,107,.5); }
 .cn-seat.me span { color: var(--gold-hi); font-weight: 700; }
@@ -1625,7 +1631,7 @@
 .cn-but { font-family: var(--font-display); font-size: 20px; color: #d9c2ff; animation: cnRise .7s both; }
 .cn-turn .ux-banner { animation-delay: .35s; }
 .cn-who { display: inline-flex; align-items: center; gap: 10px; padding: 8px 16px 8px 8px; border-radius: 999px; background: rgba(91,58,122,.35); border: 1px solid rgba(180,140,224,.45); animation: cnRise .7s .8s both; text-align: left; }
-.cn-who small { display: block; font-size: 11px; color: #d9c2ff; }
+.cn-who small { display: block; font-size: 12.5px; color: #d9c2ff; }
 .cn-who b { font-size: 16px; }
 .cn-turn .cn-note { animation: cnRise .7s 1.1s both; }
 
@@ -2403,8 +2409,8 @@
 .ux-scene-l.in { opacity: 1; }
 .ux-scene-l.out { opacity: 0; transition-duration: 1.4s; }
 .ux-scene-l .img { position: absolute; inset: -4%; background-size: cover; background-position: center; opacity: 0; transition: opacity 1.2s ease; transform: scale(1.04); animation: scnDrift 30s ease-in-out infinite alternate; }
-.ux-scene-l .img.on { opacity: .62; }
-.ux-scene-l .veil { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(7,10,28,.35), rgba(7,10,28,.15) 35%, rgba(7,10,28,.55)); }
+.ux-scene-l .img.on { opacity: .55; }
+.ux-scene-l .veil { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(7,10,28,.45), rgba(7,10,28,.32) 35%, rgba(7,10,28,.62)); }
 .ux-scene-l .deco { position: absolute; inset: 0; }
 .ux-scene-l .deco i { position: absolute; display: block; }
 @keyframes scnDrift { from { transform: scale(1.04) translate3d(0,0,0); } to { transform: scale(1.1) translate3d(-1.5%,-1%,0); } }

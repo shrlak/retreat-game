@@ -229,8 +229,8 @@
 .ux-scene-l.in { opacity: 1; }
 .ux-scene-l.out { opacity: 0; transition-duration: 1.4s; }
 .ux-scene-l .img { position: absolute; inset: -4%; background-size: cover; background-position: center; opacity: 0; transition: opacity 1.2s ease; transform: scale(1.04); animation: scnDrift 30s ease-in-out infinite alternate; }
-.ux-scene-l .img.on { opacity: .62; }
-.ux-scene-l .veil { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(7,10,28,.35), rgba(7,10,28,.15) 35%, rgba(7,10,28,.55)); }
+.ux-scene-l .img.on { opacity: .55; }
+.ux-scene-l .veil { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(7,10,28,.45), rgba(7,10,28,.32) 35%, rgba(7,10,28,.62)); }
 .ux-scene-l .deco { position: absolute; inset: 0; }
 .ux-scene-l .deco i { position: absolute; display: block; }
 @keyframes scnDrift { from { transform: scale(1.04) translate3d(0,0,0); } to { transform: scale(1.1) translate3d(-1.5%,-1%,0); } }

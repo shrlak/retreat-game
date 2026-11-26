@@ -25,3 +25,6 @@ Read `CONTRACT.md` first (architecture, API, view shape, role keys, asset list),
 - Never leak roles to clients: all secrets stay in `state.game.roleOf`; clients only get `viewFor()`.
 - Keep role keys fixed; rename only in `web/config.js`.
 - Mobile first, Korean UI, sound off by default.
+
+## Docs to keep current
+Whenever a feature changes, update README.md (Korean, for players and maintainers), HANDOFF.md (state + next steps) and CONTRACT.md (API/view shape) in the same push. Function deploy: after pushing, redeploy `mist-game` with index.ts importing `https://cdn.jsdelivr.net/gh/shrlak/retreat-game@<new SHA>/server/handler.js` (or use the CLI with server/index.ts).
