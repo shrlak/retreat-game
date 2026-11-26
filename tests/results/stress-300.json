@@ -1,0 +1,42 @@
+{
+ "at": "2026-11-26T10:35:39.383Z",
+ "perN": 300,
+ "seconds": 4.986,
+ "byN": {
+  "8": {
+   "n": 8,
+   "games": 300,
+   "setups": 268,
+   "refused": 0,
+   "winners": {
+    "evil": 291,
+    "good": 9
+   },
+   "reasons": {
+    "rejections": 269,
+    "fails": 21,
+    "quests": 5,
+    "assassinFailed": 4,
+    "assassinHit": 1
+   },
+   "cover": {
+    "hammer": 269,
+    "twoFailSaved": 9,
+    "twoFailFailed": 2,
+    "assassinHit": 1,
+    "assassinMiss": 4,
+    "ladyUses": 77,
+    "switches": 47,
+    "lancelotSwitchedGames": 37,
+    "balance": 0,
+    "lancelot1": 68,
+    "lancelot2": 68,
+    "lancelot3": 68,
+    "forcedLancelotRounds": 62,
+    "excalibur": 150
+   },
+   "findings": {},
+   "steps": 5634
+  }
+ }
+}
