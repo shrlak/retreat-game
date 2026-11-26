@@ -255,7 +255,7 @@
   K.confirm = (title, body, o) => new Promise(res => {
     o = o || {}; let done = false;
     const sh = K.sheet('<div class="ux-stack" style="padding:4px 2px 6px"><h2 class="ux-h2 ux-center">' + esc(title) + '</h2>' + (body ? '<p class="ux-p ux-center">' + body + '</p>' : '') +
-      '<div class="ux-row" style="margin-top:8px"><button class="ux-btn ux-btn-ghost" data-close>' + esc(o.cancel || K.L('취소', 'Cancel')) + '</button><button class="ux-btn ' + (o.danger ? 'ux-btn-evil' : 'ux-btn-gold') + '" data-yes>' + esc(o.ok || '확인') + '</button></div></div>',
+      '<div class="ux-row" style="margin-top:8px"><button class="ux-btn ux-btn-ghost" data-close>' + esc(o.cancel || K.L('취소', 'Cancel')) + '</button><button class="ux-btn ' + (o.danger ? 'ux-btn-evil' : 'ux-btn-gold') + '" data-yes>' + esc(o.ok || K.L('확인', 'OK')) + '</button></div></div>',
       { onClose: () => { if (!done) { done = true; res(false); } } });
     sh.querySelector('[data-yes]').addEventListener('click', () => { done = true; res(true); sh.close(); });
   });

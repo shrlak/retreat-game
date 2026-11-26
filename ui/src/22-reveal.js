@@ -14,7 +14,7 @@
         '<div class="ux-card-wrap"><div class="ux-card-glow ' + team + '"></div>' +
         '<div class="ux-card float ' + team + '" data-act="r-flip" role="button" aria-label="' + esc(K.L('카드 뒤집기', 'Flip the card')) + '">' +
         '<div class="ux-card-face ux-card-back">' + K.backImg() + '<div class="uxr-backglow"></div></div>' +
-        '<div class="ux-card-face ux-card-front">' + K.roleImg(role) + '<div class="frame"></div><div class="plate"><div class="rname">' + esc(K.roleName(role)) + '</div><div class="rteam" style="color:' + (team === 'evil' ? '#ff9db5' : 'var(--good)') + '">' + esc(K.teamName(team)) + '</div></div><div class="sheen"></div></div>' +
+        '<div class="ux-card-face ux-card-front">' + K.roleImg(role) + '<div class="frame"></div><div class="plate"><div class="rname">' + K.roleNameStack(role) + '</div><div class="rteam" style="color:' + (team === 'evil' ? '#ff9db5' : 'var(--good)') + '">' + esc(K.teamName(team)) + '</div></div><div class="sheen"></div></div>' +
         '</div></div>' +
         '<p class="ux-tap-hint" data-slot="tap">' + esc(K.L('카드를 눌러 뒤집기', 'Tap the card to flip it')) + '</p>' +
         '<div data-slot="info" class="uxr-info"></div>' +
@@ -35,7 +35,7 @@
           '<div class="ux-panel uxr-in"><p class="ux-p ux-center">' + esc(K.roleDesc(role)) + '</p></div>' +
           (K.lancelotNote && K.lancelotNote(v) ? '<div class="ux-panel uxr-in" style="animation-delay:.08s">' + K.lancelotNote(v) + '</div>' : '') +
           '<div class="ux-panel uxr-in" style="animation-delay:.15s"><div class="ux-ornament" style="margin-bottom:10px">' + esc(K.L('밤 사이 내게 보인 것', 'What I saw in the night')) + '</div>' + K.knowList(v) + K.roleTips(role) + '</div>' +
-          (rig.length ? '<div class="ux-panel plain uxr-in" style="animation-delay:.3s"><h3 class="ux-h3" style="margin-bottom:8px">' + esc(K.L('이번 게임의 역할', 'Roles in this game')) + '</h3><div class="ux-roles-strip">' + rig.map(r => '<span class="ux-role-pill ' + K.teamOf(r) + '"><i>' + K.roleImg(r) + '</i>' + esc(K.roleName(r)) + '</span>').join('') + '</div>' + extras(v) + '</div>' : '') +
+          (rig.length ? '<div class="ux-panel plain uxr-in" style="animation-delay:.3s"><h3 class="ux-h3" style="margin-bottom:8px">' + esc(K.L('이번 게임의 역할', 'Roles in this game')) + '</h3><div class="ux-roles-strip">' + rig.map(K.rolePill).join('') + '</div>' + extras(v) + '</div>' : '') +
           '<p class="ux-muted ux-center">' + esc(K.L('카드를 다시 누르면 가릴 수 있어요', 'Tap the card again to hide it')) + '</p>');
       }
       if (!flipped && K.local.infoShown) { K.local.infoShown = false; K.patch(el.querySelector('[data-slot=info]'), ''); }

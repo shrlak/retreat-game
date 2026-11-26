@@ -736,6 +736,15 @@
   /* Guide items marked module:"lancelot"|"excalibur"|"balance" are shown only when that module is on (outside a room: always). */
   const modOn = m => { const v = K.view, s = v && v.settings; if (!m || !v || !s) return true; return m === 'lancelot' ? !!(v.lancelot || s.lancelot) : m === 'excalibur' ? !!(v.excalibur || s.excalibur) : m === 'balance' ? !!s.balance : true; };
   K.guideModOn = modOn;
+  /* Role name for tight spots: baseName large, subtitle small underneath (only when non-empty). Falls back to K.roleName. */
+  const HAN = /[\uac00-\ud7a3]/;
+  K.roleBase = key => { const r = K.role(key), b = r.baseName; return b && !(K.isEn() && HAN.test(b)) ? b : K.roleName(key); };
+  K.roleSub = key => {
+    const s = K.role(key).subtitle; if (!s || (K.isEn() && HAN.test(s))) return '';
+    return K.roleBase(key) === K.roleName(key) && K.roleName(key).indexOf(s) >= 0 ? '' : s;   // name already carries it
+  };
+  K.roleNameStack = key => esc(K.roleBase(key)) + (K.roleSub(key) ? '<small class="uxc-rsub">' + esc(K.roleSub(key)) + '</small>' : '');
+  K.rolePill = r => '<span class="ux-role-pill ' + K.teamOf(r) + '"><i>' + K.roleImg(r) + '</i><span class="uxc-pn">' + K.roleNameStack(r) + '</span></span>';
   const isLan = r => r === 'lancelotGood' || r === 'lancelotEvil';
   K.isLancelot = isLan;
 
@@ -791,7 +800,7 @@
     const me = v.me, team = me.team || K.teamOf(me.role);
     K.fb('flip');
     K.sheet('<div class="uxc-role">' +
-      '<div class="uxc-mini ' + team + '">' + K.roleImg(me.role) + '<div class="plate"><div class="rname">' + esc(K.roleName(me.role)) + '</div><div class="rteam">' + esc(K.teamName(team)) + '</div></div></div>' +
+      '<div class="uxc-mini ' + team + '">' + K.roleImg(me.role) + '<div class="plate"><div class="rname">' + K.roleNameStack(me.role) + '</div><div class="rteam">' + esc(K.teamName(team)) + '</div></div></div>' +
       '<p class="ux-p ux-center" style="margin:12px 4px">' + esc(K.roleDesc(me.role)) + '</p>' + K.lancelotNote(v) +
       '<div class="ux-ornament">' + esc(K.L('내 눈에 보이는 사람', 'Who I can see')) + '</div><div style="margin-top:10px">' + K.knowList(v) + '</div>' + K.ladyList(v) +
       K.roleTips(me.role) +
@@ -974,6 +983,8 @@
 .uxc-mini.evil { box-shadow: 0 0 0 1.5px var(--evil), 0 0 30px var(--evil-glow); }
 .uxc-mini .plate { position: absolute; left: 0; right: 0; bottom: 0; padding: 26px 6px 8px; text-align: center; background: linear-gradient(180deg, transparent, rgba(7,10,28,.92) 50%); }
 .uxc-mini .rname { font-family: var(--font-display); font-weight: 700; font-size: 17px; color: var(--gold-hi); }
+.uxc-rsub { display: block; font-size: .68em; font-weight: 400; opacity: .8; line-height: 1.2; margin-top: 1px; font-family: inherit; }
+.uxc-pn { display: inline-flex; flex-direction: column; line-height: 1.15; } .uxc-pn .uxc-rsub { font-size: 10px; }
 .uxc-mini .rteam { font-size: 12px; color: var(--text-dim); }
 .uxc-tips { margin-top: 14px; padding: 10px 12px; border-radius: 12px; background: rgba(255,255,255,.04); border: 1px solid var(--line); font-size: 13px; color: var(--text-dim); line-height: 1.55; }
 .uxc-tips summary { color: var(--gold-hi); font-weight: 700; cursor: pointer; }
@@ -1160,7 +1171,7 @@
       const cnt = Math.max(5, Math.min(10, n));
       const evil = (n >= 5 && v.evilCount) || K.EVIL_COUNT[cnt];
       const sizes = (n >= 5 && v.teamSizes) || K.TEAM_SIZES[cnt];
-      const rig = Array.isArray(v.rolesInGame) && v.rolesInGame.length ? '<div class="ux-roles-strip" style="margin-top:10px">' + v.rolesInGame.map(r => '<span class="ux-role-pill ' + K.teamOf(r) + '"><i>' + K.roleImg(r) + '</i>' + esc(K.roleName(r)) + '</span>').join('') + '</div>' : '';
+      const rig = Array.isArray(v.rolesInGame) && v.rolesInGame.length ? '<div class="ux-roles-strip" style="margin-top:10px">' + v.rolesInGame.map(K.rolePill).join('') + '</div>' : '';
       K.patch(el.querySelector('[data-slot=balance]'),
         '<div class="ux-balance"><div class="g"><b>' + (cnt - evil) + '</b>' + esc(K.teamName('good')) + '</div><div class="e"><b>' + evil + '</b>' + esc(K.teamName('evil')) + '</div></div>' +
         '<p class="ux-muted ux-center" style="margin-top:8px">' + esc(K.L((n < 5 ? cnt + '명 기준 · ' : '') + K.term('quest', '사명') + ' 인원 ' + sizes.join(' · ') + (cnt >= 7 ? ' · 4번째는 ' + K.term('fail', '방해') + ' 2장' : ''),
@@ -1191,8 +1202,8 @@
       const lanDesc = lan === 2 ? K.L('두 순례자가 서로 알아보고, ' + K.teamName('evil') + '는 ' + K.roleName('lancelotEvil') + '를 알아요.', 'The two Lancelots see each other, and ' + K.teamName('evil') + ' see the ' + K.roleName('lancelotEvil') + '.')
         : lan === 1 ? K.L('순례자끼리 서로 모르고, ' + K.roleName('lancelotEvil') + '와 ' + K.teamName('evil') + '도 서로 몰라요.', 'The Lancelots don\'t know each other, and the ' + K.roleName('lancelotEvil') + ' and ' + K.teamName('evil') + ' don\'t know each other.')
         : K.L('3번째 ' + K.term('quest', '사명') + '부터 ' + K.term('loyalty', '갈림길 카드') + '에 따라 두 순례자의 편이 바뀔 수 있어요.', 'From the 3rd ' + K.term('quest', 'Mission') + ', a ' + K.term('loyalty', 'Crossroads card') + ' can switch the two Lancelots\' sides.');
-      h += '<div class="ux-setting uxl-mod"><div class="thumb">' + K.roleImg(lan ? 'lancelotEvil' : 'lancelotGood') + '</div><div class="txt"><div class="name">' + esc(K.term('lancelot', K.L('갈림길의 순례자', 'Lancelot'))) + ' ' + modTag + '</div><div class="desc">' + esc(lanDesc) + '</div></div>' +
-        '<div class="uxl-seg" role="group" aria-label="' + esc(K.term('lancelot', K.L('갈림길의 순례자', 'Lancelot'))) + '">' + [0, 1, 2].map(i => '<button class="' + (lan === i ? 'on' : '') + '" data-act="l-lan" data-n="' + i + '"' + (isHost ? '' : ' disabled') + ' aria-pressed="' + (lan === i) + '">' + esc(i ? vshort(i) : K.L('끔', 'Off')) + '</button>').join('') + '</div></div>';
+      h += '<div class="ux-setting uxl-mod"><div class="thumb">' + K.roleImg(lan ? 'lancelotEvil' : 'lancelotGood') + '</div><div class="txt"><div class="name">' + esc(K.term('lancelot', K.L('갈림길의 순례자 (랜슬롯)', 'Lancelot'))) + ' ' + modTag + '</div><div class="desc">' + esc(lanDesc) + '</div></div>' +
+        '<div class="uxl-seg" role="group" aria-label="' + esc(K.term('lancelot', K.L('갈림길의 순례자 (랜슬롯)', 'Lancelot'))) + '">' + [0, 1, 2].map(i => '<button class="' + (lan === i ? 'on' : '') + '" data-act="l-lan" data-n="' + i + '"' + (isHost ? '' : ' disabled') + ' aria-pressed="' + (lan === i) + '">' + esc(i ? vshort(i) : K.L('끔', 'Off')) + '</button>').join('') + '</div></div>';
       h += '<div class="ux-setting"><div class="thumb" style="display:grid;place-items:center">' + K.img(K.asset('excalibur.svg'), 'excalibur', '') + '</div><div class="txt"><div class="name">' + esc(K.term('excalibur', K.L('말씀 두루마리', 'Scroll of the Word'))) + ' ' + modTag + '</div><div class="desc">' +
         esc(K.L(K.term('leader', '조장') + '이 원정대원 한 명에게 주면, 카드를 다 낸 뒤 다른 대원 한 명의 카드를 뒤집을 수 있어요.', 'The ' + K.term('leader', 'Leader') + ' gives it to one team member, who may flip one other member\'s card after all cards are in.')) + '</div></div>' +
         sw('excalibur', K.term('excalibur', K.L('말씀 두루마리', 'Scroll of the Word'))) + '</div>';
@@ -1303,7 +1314,7 @@
         '<div class="ux-card-wrap"><div class="ux-card-glow ' + team + '"></div>' +
         '<div class="ux-card float ' + team + '" data-act="r-flip" role="button" aria-label="' + esc(K.L('카드 뒤집기', 'Flip the card')) + '">' +
         '<div class="ux-card-face ux-card-back">' + K.backImg() + '<div class="uxr-backglow"></div></div>' +
-        '<div class="ux-card-face ux-card-front">' + K.roleImg(role) + '<div class="frame"></div><div class="plate"><div class="rname">' + esc(K.roleName(role)) + '</div><div class="rteam" style="color:' + (team === 'evil' ? '#ff9db5' : 'var(--good)') + '">' + esc(K.teamName(team)) + '</div></div><div class="sheen"></div></div>' +
+        '<div class="ux-card-face ux-card-front">' + K.roleImg(role) + '<div class="frame"></div><div class="plate"><div class="rname">' + K.roleNameStack(role) + '</div><div class="rteam" style="color:' + (team === 'evil' ? '#ff9db5' : 'var(--good)') + '">' + esc(K.teamName(team)) + '</div></div><div class="sheen"></div></div>' +
         '</div></div>' +
         '<p class="ux-tap-hint" data-slot="tap">' + esc(K.L('카드를 눌러 뒤집기', 'Tap the card to flip it')) + '</p>' +
         '<div data-slot="info" class="uxr-info"></div>' +
@@ -1324,7 +1335,7 @@
           '<div class="ux-panel uxr-in"><p class="ux-p ux-center">' + esc(K.roleDesc(role)) + '</p></div>' +
           (K.lancelotNote && K.lancelotNote(v) ? '<div class="ux-panel uxr-in" style="animation-delay:.08s">' + K.lancelotNote(v) + '</div>' : '') +
           '<div class="ux-panel uxr-in" style="animation-delay:.15s"><div class="ux-ornament" style="margin-bottom:10px">' + esc(K.L('밤 사이 내게 보인 것', 'What I saw in the night')) + '</div>' + K.knowList(v) + K.roleTips(role) + '</div>' +
-          (rig.length ? '<div class="ux-panel plain uxr-in" style="animation-delay:.3s"><h3 class="ux-h3" style="margin-bottom:8px">' + esc(K.L('이번 게임의 역할', 'Roles in this game')) + '</h3><div class="ux-roles-strip">' + rig.map(r => '<span class="ux-role-pill ' + K.teamOf(r) + '"><i>' + K.roleImg(r) + '</i>' + esc(K.roleName(r)) + '</span>').join('') + '</div>' + extras(v) + '</div>' : '') +
+          (rig.length ? '<div class="ux-panel plain uxr-in" style="animation-delay:.3s"><h3 class="ux-h3" style="margin-bottom:8px">' + esc(K.L('이번 게임의 역할', 'Roles in this game')) + '</h3><div class="ux-roles-strip">' + rig.map(K.rolePill).join('') + '</div>' + extras(v) + '</div>' : '') +
           '<p class="ux-muted ux-center">' + esc(K.L('카드를 다시 누르면 가릴 수 있어요', 'Tap the card again to hide it')) + '</p>');
       }
       if (!flipped && K.local.infoShown) { K.local.infoShown = false; K.patch(el.querySelector('[data-slot=info]'), ''); }
@@ -3410,7 +3421,7 @@
         const sd = sides(v, p.id), r = sd.role, aRes = /^assassin/.test(v.winReason || ''), hit = aRes && v.assassinTargetId === p.id, ass = aRes && v.assassinId === p.id;
         const moved = sd.lan && sd.start !== sd.fin;
         return '<div class="ux-rv ' + sd.fin + (K.isMe(v, p.id) ? ' me' : '') + '" style="animation-delay:' + (300 + i * 110) + 'ms"><div class="art">' + (r ? K.roleImg(r) : K.backImg()) + (hit ? '<div class="x">🎯</div>' : '') + '</div>' +
-          '<div class="pn">' + esc(p.name) + '</div><div class="rn">' + esc(r ? K.roleName(r) : '?') + esc(ass ? K.L(' · 지목한 사람', ' · made the call') : '') + esc(hit ? K.L(' · 지목됨', ' · was named') : '') + '</div>' +
+          '<div class="pn">' + esc(p.name) + '</div><div class="rn">' + (r ? K.roleNameStack(r) : '?') + esc(ass ? K.L(' · 지목한 사람', ' · made the call') : '') + esc(hit ? K.L(' · 지목됨', ' · was named') : '') + '</div>' +
           (sd.lan ? '<div class="uxe-sw ' + (moved ? 'moved ' : '') + sd.fin + '" title="' + esc(moved ? K.L(K.teamName(sd.start) + ' → ' + K.teamName(sd.fin), K.teamName(sd.start) + ' → ' + K.teamName(sd.fin)) : K.teamName(sd.fin)) + '">🧭 ' +
             (moved ? '<s>' + esc(short(sd.start)) + '</s> → <b>' + esc(short(sd.fin)) + '</b>' : '<b>' + esc(short(sd.fin)) + '</b>') + '</div>' : '') + '</div>';
       }).join(''));

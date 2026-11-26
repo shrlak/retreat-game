@@ -44,6 +44,15 @@
   /* Guide items marked module:"lancelot"|"excalibur"|"balance" are shown only when that module is on (outside a room: always). */
   const modOn = m => { const v = K.view, s = v && v.settings; if (!m || !v || !s) return true; return m === 'lancelot' ? !!(v.lancelot || s.lancelot) : m === 'excalibur' ? !!(v.excalibur || s.excalibur) : m === 'balance' ? !!s.balance : true; };
   K.guideModOn = modOn;
+  /* Role name for tight spots: baseName large, subtitle small underneath (only when non-empty). Falls back to K.roleName. */
+  const HAN = /[\uac00-\ud7a3]/;
+  K.roleBase = key => { const r = K.role(key), b = r.baseName; return b && !(K.isEn() && HAN.test(b)) ? b : K.roleName(key); };
+  K.roleSub = key => {
+    const s = K.role(key).subtitle; if (!s || (K.isEn() && HAN.test(s))) return '';
+    return K.roleBase(key) === K.roleName(key) && K.roleName(key).indexOf(s) >= 0 ? '' : s;   // name already carries it
+  };
+  K.roleNameStack = key => esc(K.roleBase(key)) + (K.roleSub(key) ? '<small class="uxc-rsub">' + esc(K.roleSub(key)) + '</small>' : '');
+  K.rolePill = r => '<span class="ux-role-pill ' + K.teamOf(r) + '"><i>' + K.roleImg(r) + '</i><span class="uxc-pn">' + K.roleNameStack(r) + '</span></span>';
   const isLan = r => r === 'lancelotGood' || r === 'lancelotEvil';
   K.isLancelot = isLan;
 
@@ -99,7 +108,7 @@
     const me = v.me, team = me.team || K.teamOf(me.role);
     K.fb('flip');
     K.sheet('<div class="uxc-role">' +
-      '<div class="uxc-mini ' + team + '">' + K.roleImg(me.role) + '<div class="plate"><div class="rname">' + esc(K.roleName(me.role)) + '</div><div class="rteam">' + esc(K.teamName(team)) + '</div></div></div>' +
+      '<div class="uxc-mini ' + team + '">' + K.roleImg(me.role) + '<div class="plate"><div class="rname">' + K.roleNameStack(me.role) + '</div><div class="rteam">' + esc(K.teamName(team)) + '</div></div></div>' +
       '<p class="ux-p ux-center" style="margin:12px 4px">' + esc(K.roleDesc(me.role)) + '</p>' + K.lancelotNote(v) +
       '<div class="ux-ornament">' + esc(K.L('내 눈에 보이는 사람', 'Who I can see')) + '</div><div style="margin-top:10px">' + K.knowList(v) + '</div>' + K.ladyList(v) +
       K.roleTips(me.role) +
@@ -282,6 +291,8 @@
 .uxc-mini.evil { box-shadow: 0 0 0 1.5px var(--evil), 0 0 30px var(--evil-glow); }
 .uxc-mini .plate { position: absolute; left: 0; right: 0; bottom: 0; padding: 26px 6px 8px; text-align: center; background: linear-gradient(180deg, transparent, rgba(7,10,28,.92) 50%); }
 .uxc-mini .rname { font-family: var(--font-display); font-weight: 700; font-size: 17px; color: var(--gold-hi); }
+.uxc-rsub { display: block; font-size: .68em; font-weight: 400; opacity: .8; line-height: 1.2; margin-top: 1px; font-family: inherit; }
+.uxc-pn { display: inline-flex; flex-direction: column; line-height: 1.15; } .uxc-pn .uxc-rsub { font-size: 10px; }
 .uxc-mini .rteam { font-size: 12px; color: var(--text-dim); }
 .uxc-tips { margin-top: 14px; padding: 10px 12px; border-radius: 12px; background: rgba(255,255,255,.04); border: 1px solid var(--line); font-size: 13px; color: var(--text-dim); line-height: 1.55; }
 .uxc-tips summary { color: var(--gold-hi); font-weight: 700; cursor: pointer; }
