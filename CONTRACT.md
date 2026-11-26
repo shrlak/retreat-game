@@ -163,23 +163,21 @@ Lobby view also has `rolesInGame` (preview of the role set for current count, or
 Settings dependency: turning `merlin` off also turns off `percival` and `assassin`; `merlin` on forces `assassin` on.
 The host counts as ready (`ready:true` always).
 
-## Guide content (`guide/guide.js`, written by the guide helper)
-Classic script, defines one global, plain strings only (no HTML; UI sets textContent; `\n` = new paragraph):
+## Guide content (`guide/guide.js`, built by the guide helper)
+Full spec: [guide/README.md](guide/README.md). Sources: `guide/content.mjs` (Korean) and `guide/content.en.mjs` (English), same keys; the build fails if the two shapes differ.
+Classic script, plain strings only (UI sets textContent; `\n` = new paragraph), loaded after config.js. UI must work if `window.GUIDE` is missing.
 ```js
-window.GUIDE = {
-  rulesSummary: [{ title, body }],                    // short rules pages, in order
-  roles: { merlin: { tip, howToWin }, ... 8 keys },    // shown on my role card back / help
-  phaseHints: { lobby, reveal, propose_leader, propose_other, vote, quest_member, quest_other, lady_holder, lady_other, assassin_assassin, assassin_other, end },
-  tutorial: [{ title, body }],                         // first-time walkthrough, 4–8 steps
-  hostGuide: [{ title, body }],                        // how to run it at a retreat
-  recommendedSetups: { 5: {roles:{...settings.roles}, lady:false, note}, ... 10 }
-};
+window.GUIDE.i18n.ko / .en  // same shape: quick, overview, roles, knowledgeLabels, phaseHints, system,
+                            // alerts, tutorial, hostGuide, presets, glossary, ui, names
+window.GUIDE.lang           // current language; top-level GUIDE.quick, GUIDE.roles, ... mirror it
+GUIDE.setLang("en"|"ko")    // switch the top level
+GUIDE.refresh()             // rebuild both after THEME changes (names come from THEME / THEME.i18n.en)
+GUIDE.build(theme, lang)    // build one language from a theme
 ```
-Loaded after config.js; UI must work if `window.GUIDE` is missing.
-Deployed path: `./guide/guide.js`.
+Every preset passes engine `buildRoles`. Deployed path: `./guide/guide.js`.
 
 ## Languages (Korean / English)
 - One language per phone, chosen on the home screen: `Net.getLang()` → `"ko"|"en"`, `Net.setLang(l)` (stored in localStorage `mist.lang`, default `"ko"`). Switching re-renders everything; layout, art and animation are identical in both.
-- Names and texts: `THEME` holds Korean; `THEME.i18n.en` holds English with the same keys (`title, subtitle, teams.<good|evil>.name/short, roles.<key>.name/short/desc, terms.*, knowledgeText.*, winText.*`). Overlay `THEME.i18n[lang]` on `THEME`. `guide/guide.js` follows the same rule: `window.GUIDE` (Korean) and `window.GUIDE.i18n.en` (English, same shape).
+- Names and texts: `THEME` holds Korean; `THEME.i18n.en` holds English with the same keys (`title, subtitle, teams.<good|evil>.name/short, roles.<key>.name/short/desc, terms.*, knowledgeText.*, winText.*`). Overlay `THEME.i18n[lang]` on `THEME`. `guide/guide.js` follows the same rule: `window.GUIDE.i18n.ko` and `window.GUIDE.i18n.en` (same shape), switched with `GUIDE.setLang`.
 - Server messages: every refusal is `{ok:false, error, errorKey, errorParams, errorEn}`: `error` Korean, `errorEn` English, `errorKey` a stable key from `server/messages.js` (params already filled in both texts). Show `Net.errorText(result)`. Lobby view: `setupError` / `setupErrorEn` / `setupErrorKey` the same way. Client-only failures from Net use keys `offline`, `badResponse`, `noSession`.
 - The server never sends other UI text; phases, roles and tags are keys the UI translates.
