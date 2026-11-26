@@ -193,8 +193,9 @@ def card_back():
                 f'<ellipse cx="50" cy="96" rx="7" ry="3" fill="#6FA56A" transform="rotate(-70 50 96)"/>'
                 f'{rose}<circle cx="58" cy="58" r="5" fill="url(#{p}gd)"/>')
     c = corner()
-    corners = (f'<g>{c}</g><g transform="translate(600,0) scale(-1,1)">{c}</g>'
-               f'<g transform="translate(0,840) scale(1,-1)">{c}</g><g transform="translate(600,840) scale(-1,-1)">{c}</g>')
+    defs += f'<g id="{p}cn">{c}</g>'
+    corners = (f'<use href="#{p}cn"/><use href="#{p}cn" transform="translate(600,0) scale(-1,1)"/>'
+               f'<use href="#{p}cn" transform="translate(0,840) scale(1,-1)"/><use href="#{p}cn" transform="translate(600,840) scale(-1,-1)"/>')
     mids = "".join(f'<path d="M{x},{y - 11} l11,11 l-11,11 l-11,-11z" fill="url(#{p}gd)" stroke="#8A5A1C" stroke-width="2"/>'
                    for x, y in [(300, 20), (300, 820), (20, 420), (580, 420)])
 
@@ -244,7 +245,7 @@ def card_back():
     window = (f'{rose}<circle cx="300" cy="420" r="160" fill="#141B33"/>'
               f'<g clip-path="url(#{p}ec)">{scene}</g>'
               f'<circle cx="300" cy="420" r="150" fill="none" stroke="url(#{p}gd)" stroke-width="5"/>'
-              f'{beads(300, 420, 155.5, 40, 1.8, P["gold_l"], .9)}')
+              f'{beads(300, 420, 155.5, 32, 1.8, P["gold_l"], .9)}')
     g1 = arc_pt(*C, 222, -45); g2 = arc_pt(*C, 222, 135)
     deco = (f'{sparkle_star(300, 124, 17, P["gold_l"], "tw")}'
             f'<path d="M226,124 H270 M330,124 H374" stroke="url(#{p}gd)" stroke-width="2.5" stroke-linecap="round"/>'
@@ -438,7 +439,7 @@ def lady():
         f'<g clip-path="url(#{p}c)">'
         f'{still_stars(11, 14, 30, 30, 170, 100, rmax=1.9)}'
         f'{sparkle_star(52, 56, 6, "#FFF1C9", "tw")}{sparkle_star(150, 46, 5, "#FFF1C9", "tw2")}'
-        + spun(fx, fy - 22, f"{p}spin", rays(0, 0, 14, 16, 90, 4, "#FFE6A8", 0.22))
+        + spun(100, 104, f"{p}spin", rays(0, 0, 16, 18, 86, 4, "#FFE6A8", 0.2))
         + f'<circle cx="{fx}" cy="{fy - 22}" r="70" fill="url(#{p}gw)" class="glow"/>'
         f'<ellipse cx="100" cy="160" rx="80" ry="22" fill="#163645"/>'
         f'{lb}{flame(fx, fy, 0.62)}'

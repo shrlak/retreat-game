@@ -33,6 +33,7 @@ Phone-based online hidden-role game in the style of the classic team-quest deduc
 
 ## Snapshot (2026-11-26 09:05 UTC)
 ```
+.nojekyll
 CLAUDE.md
 CONTRACT.md
 HANDOFF.md
