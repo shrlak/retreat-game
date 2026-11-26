@@ -66,8 +66,8 @@ async function game(n, opts) {
       const r = role[k.id];
       if (me.role === "merlin") check(EVIL.includes(r) && r !== "mordred", "merlin sees " + r);
       if (me.role === "percival") check(r === "merlin" || r === "morgana", "percival sees " + r);
-      if (EVIL.includes(me.role) && k.tag === "evil") check(EVIL.includes(r) && r !== "oberon" && me.role !== "oberon", "evil sees " + r);
-      if (k.tag === "lancelot") check(opts.lancelot === 2 && /lancelot/.test(me.role) && /lancelot/.test(r), "lancelot tag " + me.role + "→" + r);
+      if (EVIL.includes(me.role) && k.tag === "evil") check(EVIL.includes(r) && r !== "oberon" && me.role !== "oberon" && me.role !== "lancelotEvil", "evil sees " + r);
+      if (k.tag === "lancelot") check(opts.lancelot === 3 && /lancelot/.test(me.role) && /lancelot/.test(r), "lancelot tag " + me.role + "→" + r);
     }
   });
   const counts = { 5: 2, 6: 2, 7: 3, 8: 3, 9: 3, 10: 4 };
@@ -92,7 +92,10 @@ async function game(n, opts) {
       for (const id of team) side[id] = (await A(byId[id], "state")).view.me.team;
       const goodFail = team.find((id) => side[id] === "good");
       if (goodFail) { const r = await A(byId[goodFail], "quest", { success: false }); check(!r.ok, "good played fail"); }
-      await Promise.all(team.map((id) => A(byId[id], "quest", { success: !(side[id] === "evil" && Math.random() < 0.6) })));
+      const forced = (id) => opts.lancelot === 2 && /lancelot/.test(role[id]); // v2: Lancelots play for their current side
+      const evilL = team.find((id) => forced(id) && side[id] === "evil");
+      if (evilL) { const r = await A(byId[evilL], "quest", { success: true }); check(!r.ok && r.errorKey === "lancelotMustFail", "v2 evil Lancelot played success"); }
+      await Promise.all(team.map((id) => A(byId[id], "quest", { success: forced(id) ? side[id] === "good" : !(side[id] === "evil" && Math.random() < 0.6) })));
     } else if (v.phase === "excalibur") {
       const hId = v.proposal.excaliburTo;
       const others = v.proposal.team.filter((id) => id !== hId);
@@ -123,6 +126,8 @@ async function game(n, opts) {
   check(v.phase === "end", "game did not end");
   const fin = (await A(bots[1], "state")).view;
   check(fin.revealed && Object.entries(fin.revealed).every(([id, r]) => role[id] === r), "revealed mismatch");
+  if (opts.lancelot === 2) check(Array.isArray(fin.loyaltyPlan) && fin.loyaltyPlan.length === 5, "v2 loyalty plan public");
+  if (opts.lancelot === 3) check(!(fin.loyaltyRevealed || []).length, "v3 has no loyalty cards");
   // the rule: quest 4 needs 2 fails for 7+
   check(fin.quests[3].failsNeeded === (n >= 7 ? 2 : 1), "fails needed q4");
   const re = await A(bots[0], "restart");
@@ -138,7 +143,7 @@ async function game(n, opts) {
   const t0 = Date.now();
   try {
     for (let n = FROM; n <= TO; n++) for (let g = 0; g < PER; g++) {
-      const lancelot = n >= 7 ? 1 + (g % 2) : 0;
+      const lancelot = n >= 7 ? 1 + (g % 3) : 0;
       const opts = { lady: n >= 7 || g % 2 === 1, balance: g % 3 === 2, lancelot, excalibur: g % 2 === 0, roles: { merlin: true, percival: true, morgana: true, mordred: n >= 8 && !lancelot, oberon: n >= 10 } };
       await game(n, opts);
     }
