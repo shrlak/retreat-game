@@ -3407,7 +3407,7 @@
       K.patch(el.querySelector('[data-slot=track]'), '<div class="ux-track">' + (v.quests || []).map((q, i) => '<div class="ux-quest ' + (q.result || '') + '">' +
         (q.result ? K.tokenImg(q.result === 'success' ? 'success' : 'fail', 'tok') : '<span class="sz">' + (q.size || '') + '</span>') + '</div>').join('') + '</div>');
       K.patch(el.querySelector('[data-slot=grid]'), K.players(v).map((p, i) => {
-        const sd = sides(v, p.id), r = sd.role, hit = v.assassinTargetId === p.id, ass = v.assassinId === p.id;
+        const sd = sides(v, p.id), r = sd.role, aRes = /^assassin/.test(v.winReason || ''), hit = aRes && v.assassinTargetId === p.id, ass = aRes && v.assassinId === p.id;
         const moved = sd.lan && sd.start !== sd.fin;
         return '<div class="ux-rv ' + sd.fin + (K.isMe(v, p.id) ? ' me' : '') + '" style="animation-delay:' + (300 + i * 110) + 'ms"><div class="art">' + (r ? K.roleImg(r) : K.backImg()) + (hit ? '<div class="x">🎯</div>' : '') + '</div>' +
           '<div class="pn">' + esc(p.name) + '</div><div class="rn">' + esc(r ? K.roleName(r) : '?') + esc(ass ? K.L(' · 지목한 사람', ' · made the call') : '') + esc(hit ? K.L(' · 지목됨', ' · was named') : '') + '</div>' +
