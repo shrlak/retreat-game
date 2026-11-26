@@ -38,16 +38,16 @@ A guide to help you run a fun game in about 30 minutes at a retreat or small gro
 
 | Players | Roles to turn on | Lamp | Expansions |
 |---|---|---|---|
-| 5 | Prophet, Spy, Pilgrim at the Crossroads, Shadow at the Crossroads | off | Crossroads (quiet) |
-| 6 | Prophet, Spy, Watchman, Pilgrim at the Crossroads, Shadow at the Crossroads | off | Crossroads (quiet) |
-| 7 | Prophet, Spy, Watchman, False Prophet, Pilgrim at the Crossroads, Shadow at the Crossroads | on | Crossroads (quiet), Scroll |
-| 8 | Prophet, Spy, Watchman, False Prophet, Pilgrim at the Crossroads, Shadow at the Crossroads | on | Crossroads (quiet), Scroll |
-| 9 | Prophet, Spy, Watchman, False Prophet, Pilgrim at the Crossroads, Shadow at the Crossroads | on | Crossroads (quiet), Scroll |
-| 10 | Prophet, Spy, Watchman, False Prophet, Wolf in Sheep's Clothing, Pilgrim at the Crossroads, Shadow at the Crossroads | on | Crossroads (quiet), Scroll |
+| 5 | Prophet, Spy, Good Lancelot, Evil Lancelot | off | Crossroads (quiet) |
+| 6 | Prophet, Spy, Watchman, Good Lancelot, Evil Lancelot | off | Crossroads (quiet) |
+| 7 | Prophet, Spy, Watchman, False Prophet, Good Lancelot, Evil Lancelot | on | Crossroads (quiet), Scroll |
+| 8 | Prophet, Spy, Watchman, False Prophet, Good Lancelot, Evil Lancelot | on | Crossroads (quiet), Scroll |
+| 9 | Prophet, Spy, Watchman, False Prophet, Good Lancelot, Evil Lancelot | on | Crossroads (quiet), Scroll |
+| 10 | Prophet, Spy, Watchman, False Prophet, Wolf in Sheep's Clothing, Good Lancelot, Evil Lancelot | on | Crossroads (quiet), Scroll |
 
 ## Expansions to try later
 
-- Pilgrim at the Crossroads and Shadow at the Crossroads: from the 3rd Mission, Crossroads cards are revealed and the two pilgrims may swap sides. For a first try, use 'Quiet Crossroads'.
+- Good Lancelot and Evil Lancelot: from the 3rd Mission, Crossroads cards are revealed and the two Lancelots may swap sides. For a first try, use 'Quiet Crossroads'.
 - Scroll of the Word: the Group Leader hands it to a team member, who may flip one other member's card. Great with 7 or more.
 - Alternate team sizes: changes the team sizes in 5 and 7 player games. Nice when the same group plays several rounds.
 - Add only one expansion at a time. Long explanations are hard on first-time players.
@@ -121,8 +121,8 @@ A guide to help you run a fun game in about 30 minutes at a retreat or small gro
 - **Wolf in Sheep's Clothing**: The hidden leader that even the Prophet cannot see.
 - **Wanderer**: One of the Tempters, but doesn't know the others, and they don't know them.
 - **Tempter**: An ordinary member of the Tempters. Knows their teammates.
-- **Pilgrim at the Crossroads**: (Expansion) Starts with the Workers of Light, but a Crossroads card can switch their side.
-- **Shadow at the Crossroads**: (Expansion) Starts with the Tempters, but a Crossroads card can switch their side.
+- **Good Lancelot**: (Expansion) Starts with the Workers of Light, but a Crossroads card can switch their side.
+- **Evil Lancelot**: (Expansion) Starts with the Tempters, but a Crossroads card can switch their side.
 
 ### Remember
 

@@ -57,19 +57,19 @@ The player who was checked receives the Lamp next. Anyone who has already held i
 
 Everyone sees who checked whom, but only the holder sees the answer. Whether to share it, or to share it truthfully, is up to them.
 
-## Pilgrim at the Crossroads and Shadow at the Crossroads (expansion)
+## Good Lancelot and Evil Lancelot (expansion)
 
-This expansion is used only if the host turns it on. Two pilgrims join the game, and the Shadow at the Crossroads takes one of the Tempters seats.
+This expansion is used only if the host turns it on. The two Lancelots join the game, and the Evil Lancelot takes one of the Tempters seats.
 
 A deck of 5 Crossroads cards (3 Stay, 2 Switch sides) is shuffled. At the start of the 3rd, 4th and 5th Missions, one card is shown to everyone.
 
-When a 'Switch sides' card comes up, the two pilgrims swap sides. If another one comes up, they swap back.
+When a 'Switch sides' card comes up, the two Lancelots swap sides. If another one comes up, they swap back.
 
-Mission cards, the Lamp's answer and the final result all use each pilgrim's current side. A pilgrim currently with the Workers of Light can only play Blessing.
+Mission cards, the Lamp's answer and the final result all use each Lancelot's current side. A Lancelot currently with the Workers of Light can only play Blessing.
 
-- Quiet Crossroads: the Shadow at the Crossroads and the other Tempters don't know each other. The Prophet still sees the Shadow at the Crossroads as one of the Tempters.
-- Known Crossroads: the two pilgrims recognise each other, and the Shadow at the Crossroads and the other Tempters also know each other.
-- The Shadow at the Crossroads never carries out the Prophet Hunt.
+- Quiet Crossroads: the Evil Lancelot and the other Tempters don't know each other. The Prophet still sees the Evil Lancelot as one of the Tempters.
+- Known Crossroads: the two Lancelots recognise each other, and the Evil Lancelot and the other Tempters also know each other.
+- The Evil Lancelot never carries out the Prophet Hunt.
 
 ## The Scroll of the Word (expansion)
 
@@ -261,13 +261,13 @@ _Quietly stirs things up_
 
 **Who can see you**: The Prophet sees you as one of the Tempters.
 
-### Pilgrim at the Crossroads (Workers of Light)
+### Good Lancelot (Workers of Light)
 
-_A pilgrim standing at the crossroads_
+_A Lancelot of the light, standing at a crossroads_
 
 **What you know**
 - Quiet Crossroads: you can't see anyone.
-- Known Crossroads: you can see the Shadow at the Crossroads, and they know you too.
+- Known Crossroads: you can see the Evil Lancelot, and they know you too.
 
 **Your goal**
 - Help your current side win. You start with the Workers of Light.
@@ -278,15 +278,15 @@ _A pilgrim standing at the crossroads_
 - While you're with the Workers of Light, you can only play Blessing. With the Tempters, you can play Hindrance too.
 - Your side may change, so don't sound too certain too early.
 
-**Who can see you**: In Known Crossroads, the Shadow at the Crossroads can see you. Otherwise nobody can.
+**Who can see you**: In Known Crossroads, the Evil Lancelot can see you. Otherwise nobody can.
 
-### Shadow at the Crossroads (Tempters)
+### Evil Lancelot (Tempters)
 
-_A shadow falling over the crossroads_
+_A Lancelot in shadow, standing at a crossroads_
 
 **What you know**
 - Quiet Crossroads: you can't see anyone, and the other Tempters don't know you.
-- Known Crossroads: you can see your fellow Tempters and the Pilgrim at the Crossroads, and they know you too.
+- Known Crossroads: you can see your fellow Tempters and the Good Lancelot, and they know you too.
 
 **Your goal**
 - Help your current side win. You start with the Tempters.
@@ -297,7 +297,7 @@ _A shadow falling over the crossroads_
 - If you end up with the Workers of Light, you can only play Blessing.
 - You never carry out the Prophet Hunt. Just share your opinion with your teammates.
 
-**Who can see you**: The Prophet sees you as one of the Tempters. In Known Crossroads, your fellow Tempters and the Pilgrim at the Crossroads see you too.
+**Who can see you**: The Prophet sees you as one of the Tempters. In Known Crossroads, your fellow Tempters and the Good Lancelot see you too.
 
 ## Glossary
 
@@ -309,5 +309,5 @@ _A shadow falling over the crossroads_
 - **Approve / Reject**: The vote on whether to send the Group Leader's team.
 - **Lamp**: Optional rule. A lamp that secretly reveals one player's side.
 - **Scroll of the Word**: Expansion. Lets one team member flip another member's card.
-- **Crossroads card**: Expansion. Revealed one at a time from the 3rd Mission, and can switch the pilgrims' sides.
+- **Crossroads card**: Expansion. Revealed one at a time from the 3rd Mission, and can switch the Lancelots' sides.
 - **Prophet Hunt**: After 3 wins for the Workers of Light, the Spy's last chance to find and name the Prophet.

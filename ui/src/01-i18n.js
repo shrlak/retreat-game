@@ -8,14 +8,22 @@
   'use strict';
   const K = window.UI._k;
 
-  const saved = K.store.get('lang', null);
-  K.lang = saved === 'en' || saved === 'ko' ? saved : 'ko';
+  /* Stored like the contract says: Net.getLang()/Net.setLang() (localStorage "mist.lang"); plain localStorage without Net. */
+  function readLang() {
+    try { if (window.Net && Net.getLang) return Net.getLang() === 'en' ? 'en' : 'ko'; } catch (e) { }
+    try { return localStorage.getItem('mist.lang') === 'en' ? 'en' : 'ko'; } catch (e) { return 'ko'; }
+  }
+  function saveLang(l) {
+    try { if (window.Net && Net.setLang) Net.setLang(l); else localStorage.setItem('mist.lang', l); } catch (e) { }
+    try { if (window.GUIDE && GUIDE.setLang) GUIDE.setLang(l); } catch (e) { }
+  }
+  K.lang = readLang();
   K.isEn = () => K.lang === 'en';
   K.L = (ko, en) => (K.lang === 'en' && en != null ? en : ko);
   K.onLang = K.onLang || [];
 
   const EN_THEME = {
-    title: 'Expedition of Light',
+    title: 'Light Expedition',
     subtitle: 'A hidden-role mystery game for church retreats',
     teams: { good: { name: 'Workers of Light', short: 'Light' }, evil: { name: 'The Tempters', short: 'Tempters' } },
     roles: {
@@ -63,14 +71,14 @@
   K.themeFor = l => {
     const base = K.baseTheme || window.THEME || {};
     if (l !== 'en') return base;
-    return merge(merge(base, EN_THEME), window.THEME_EN || {});
+    return merge(merge(merge(base, EN_THEME), (base.i18n && base.i18n.en) || {}), window.THEME_EN || {});
   };
   /* Which guide object K.G() builds from. */
   K.guideSrc = () => {
-    if (K.lang !== 'en') return window.GUIDE || null;
-    if (window.GUIDE_EN && window.GUIDE_EN.build) return window.GUIDE_EN;
-    if (window.GUIDE && window.GUIDE.en && window.GUIDE.en.build) return window.GUIDE.en;
-    return null;
+    const G = window.GUIDE;
+    if (!G || !G.build) return null;
+    if (K.lang === 'en' && !(G.raw && G.raw.en) && !(G.langs && G.langs.indexOf('en') >= 0)) return null;   // older guide.js: Korean only
+    return { build: () => G.build(K.baseTheme || window.THEME, K.lang), format: G.format };
   };
   K.fmt = (s, p) => {
     try {
@@ -151,6 +159,7 @@
   ];
   const norm = s => String(s).trim().replace(/[.!]+$/, '');
   K.trMsg = msg => {
+    if (msg && typeof msg === 'object') return K.lang === 'en' ? (msg.errorEn || K.trMsg(msg.error)) : msg.error;
     if (K.lang !== 'en' || typeof msg !== 'string' || !/[가-힣]/.test(msg)) return msg;
     const n = norm(msg);
     if (MSG[n]) return MSG[n];
@@ -168,7 +177,7 @@
   K.setLang = l => {
     l = l === 'en' ? 'en' : 'ko';
     if (l === K.lang) return;
-    K.lang = l; K.store.set('lang', l);
+    K.lang = l; saveLang(l);
     apply();
     K.onLang.forEach(f => { try { f(l); } catch (e) { console.error('[UI] onLang', e); } });
     K.rebuild();

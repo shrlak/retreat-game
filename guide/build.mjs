@@ -141,6 +141,22 @@ ${RUNTIME}
     format: format,
     josa: josa,
   };
+  // GUIDE.i18n.ko / GUIDE.i18n.en: 완성된 설명서 (같은 모양). window.THEME 을 처음 읽을 때 만들고 캐시합니다.
+  var cache = {};
+  G.i18n = {};
+  RAW && Object.keys(RAW).forEach(function (l) {
+    Object.defineProperty(G.i18n, l, { enumerable: true, get: function () {
+      if (!cache[l]) cache[l] = G.build(typeof window !== "undefined" ? window.THEME : null, l);
+      return cache[l];
+    } });
+  });
+  // 최상위에도 지금 언어의 설명서를 펼쳐 둡니다 (GUIDE.quick, GUIDE.roles …). setLang 하면 바뀝니다.
+  var TOP = ["quick", "overview", "roles", "knowledgeLabels", "phaseHints", "system", "alerts", "tutorial", "hostGuide", "presets", "glossary", "ui", "names", "defaultNames"];
+  function spread() { var g = G.i18n[G.lang]; TOP.forEach(function (k) { G[k] = g[k]; }); }
+  var baseSet = G.setLang;
+  G.setLang = function (l) { var r = baseSet(l); spread(); return r; };
+  G.refresh = function () { cache = {}; spread(); };   // THEME 이 바뀌었을 때
+  spread();
   window.GUIDE = G;
 })();
 `;

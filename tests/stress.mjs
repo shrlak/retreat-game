@@ -146,6 +146,12 @@ if (worker) {
     if (!fs.length) console.log("  no rule violations or leaks");
     for (const [k, f] of fs) { bad++; console.log(`  FAIL ${k} ×${f.count}  repro: node tests/stress.mjs --n ${n} --repro ${f.seed}  (${f.tag})`); }
   }
+  try {
+    const { mkdirSync, writeFileSync } = await import("node:fs");
+    const dir = new URL("./results/", import.meta.url);
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(new URL(`stress-${perN}.json`, dir), JSON.stringify({ at: new Date().toISOString(), perN, seconds: (Date.now() - t0) / 1000, byN: merged }, null, 1));
+  } catch (e) { console.error("could not save results:", e.message); }
   console.log(`\ntotal ${total} games in ${((Date.now() - t0) / 1000).toFixed(0)} s, ${bad ? bad + " kinds of failure" : "0 failures"}`);
   process.exitCode = bad ? 1 : 0;
 }

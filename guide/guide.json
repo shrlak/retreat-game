@@ -1183,8 +1183,8 @@
       "mordred": "Wolf in Sheep's Clothing",
       "oberon": "Wanderer",
       "minion": "Tempter",
-      "lancelotGood": "Pilgrim at the Crossroads",
-      "lancelotEvil": "Shadow at the Crossroads",
+      "lancelotGood": "Good Lancelot",
+      "lancelotEvil": "Evil Lancelot",
       "quest": "Mission",
       "leader": "Group Leader",
       "success": "Blessing",
@@ -1373,14 +1373,14 @@
           "module": "lancelot",
           "heading": "{lancelotGood} and {lancelotEvil} (expansion)",
           "body": [
-            "This expansion is used only if the host turns it on. Two pilgrims join the game, and the {lancelotEvil} takes one of the {evil} seats.",
+            "This expansion is used only if the host turns it on. The two Lancelots join the game, and the {lancelotEvil} takes one of the {evil} seats.",
             "A deck of 5 {loyalty}s (3 {loyaltyNone}, 2 {loyaltySwitch}) is shuffled. At the start of the 3rd, 4th and 5th {quest}s, one card is shown to everyone.",
-            "When a '{loyaltySwitch}' card comes up, the two pilgrims swap sides. If another one comes up, they swap back.",
-            "{quest} cards, the {lady}'s answer and the final result all use each pilgrim's current side. A pilgrim currently with the {good} can only play {success}."
+            "When a '{loyaltySwitch}' card comes up, the two Lancelots swap sides. If another one comes up, they swap back.",
+            "{quest} cards, the {lady}'s answer and the final result all use each Lancelot's current side. A Lancelot currently with the {good} can only play {success}."
           ],
           "bullets": [
             "Quiet Crossroads: the {lancelotEvil} and the other {evil} don't know each other. The {merlin} still sees the {lancelotEvil} as one of the {evil}.",
-            "Known Crossroads: the two pilgrims recognise each other, and the {lancelotEvil} and the other {evil} also know each other.",
+            "Known Crossroads: the two Lancelots recognise each other, and the {lancelotEvil} and the other {evil} also know each other.",
             "The {lancelotEvil} never carries out the {assassinate}."
           ]
         },
@@ -1612,7 +1612,7 @@
       "lancelotGood": {
         "team": "good",
         "module": "lancelot",
-        "tagline": "A pilgrim standing at the crossroads",
+        "tagline": "A Lancelot of the light, standing at a crossroads",
         "know": [
           "Quiet Crossroads: you can't see anyone.",
           "Known Crossroads: you can see the {lancelotEvil}, and they know you too."
@@ -1631,7 +1631,7 @@
       "lancelotEvil": {
         "team": "evil",
         "module": "lancelot",
-        "tagline": "A shadow falling over the crossroads",
+        "tagline": "A Lancelot in shadow, standing at a crossroads",
         "know": [
           "Quiet Crossroads: you can't see anyone, and the other {evil} don't know you.",
           "Known Crossroads: you can see your fellow {evil} and the {lancelotGood}, and they know you too."
@@ -1651,7 +1651,7 @@
     "knowledgeLabels": {
       "evil": "{evil}",
       "merlinCandidate": "{merlin} candidate",
-      "lancelot": "The other pilgrim",
+      "lancelot": "The other Lancelot",
       "emptyGood": "You can't see anyone. Use conversation and votes to work it out.",
       "emptyOberon": "You can't see any teammates. You can do this on your own."
     },
@@ -1737,8 +1737,8 @@
         "result": "{targetName}'s original card was {card}. It has now been flipped."
       },
       "loyalty": {
-        "none": "A {loyalty} was revealed: {loyaltyNone}. The pilgrims keep their sides.",
-        "switch": "A {loyalty} was revealed: {loyaltySwitch}! The two pilgrims have swapped sides.",
+        "none": "A {loyalty} was revealed: {loyaltyNone}. The Lancelots keep their sides.",
+        "switch": "A {loyalty} was revealed: {loyaltySwitch}! The two Lancelots have swapped sides.",
         "left": "{loyalty}s left: {count}",
         "mySwitchSecret": "Your side has changed. You are now with the {team}."
       },
@@ -1823,7 +1823,7 @@
       {
         "id": "loyaltyRevealed",
         "when": "lancelot && round >= 2 && proposalNo == 1 && phase == 'propose'",
-        "text": "A {loyalty} was revealed as this {quest} began. Think again about the pilgrims' sides."
+        "text": "A {loyalty} was revealed as this {quest} began. Think again about the Lancelots' sides."
       },
       {
         "id": "loyaltySoon",
@@ -1949,7 +1949,7 @@
         {
           "heading": "Expansions to try later",
           "bullets": [
-            "{lancelotGood} and {lancelotEvil}: from the 3rd {quest}, {loyalty}s are revealed and the two pilgrims may swap sides. For a first try, use 'Quiet Crossroads'.",
+            "{lancelotGood} and {lancelotEvil}: from the 3rd {quest}, {loyalty}s are revealed and the two Lancelots may swap sides. For a first try, use 'Quiet Crossroads'.",
             "{excalibur}: the {leader} hands it to a team member, who may flip one other member's card. Great with 7 or more.",
             "Alternate team sizes: changes the team sizes in 5 and 7 player games. Nice when the same group plays several rounds.",
             "Add only one expansion at a time. Long explanations are hard on first-time players."
@@ -2312,7 +2312,7 @@
       },
       {
         "term": "{loyalty}",
-        "text": "Expansion. Revealed one at a time from the 3rd {quest}, and can switch the pilgrims' sides."
+        "text": "Expansion. Revealed one at a time from the 3rd {quest}, and can switch the Lancelots' sides."
       },
       {
         "term": "{assassinate}",

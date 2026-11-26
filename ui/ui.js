@@ -274,7 +274,7 @@
     try {
       const r = await api[name](...args);
       if (r && r.offline) { netDown = Date.now(); connCheck(); }
-      if (r && r.ok === false) { if (r.error) UI.toast(r.error); }
+      if (r && r.ok === false) { if (r.error && !r.toasted) UI.toast(r.errorEn || r.errorKey ? r : r.error); }
       else if (r) { netDown = 0; connCheck(); }
       else if (r && r.view) UI.render(r.view);
       return r || { ok: true };
@@ -342,8 +342,8 @@
       clockS.push(serverNow - Date.now()); if (clockS.length > 10) clockS.shift();
       K.clock.offset = Math.max.apply(null, clockS);   // the least-delayed sample is closest to the truth
     },
-    now() { return Date.now() + (K.clock.offset || 0); },
-    has() { return K.clock.offset !== null; },
+    now() { try { if (window.Net && typeof Net.serverTime === 'function') { const t = Net.serverTime(); if (isFinite(t)) return t; } } catch (e) { } return Date.now() + (K.clock.offset || 0); },
+    has() { return K.clock.offset !== null || !!(window.Net && typeof Net.serverTime === 'function'); },
     reset() { clockS.length = 0; K.clock.offset = null; }
   };
   K.SYNC_LEAD = 900;     // ms after the server moment that every phone starts together
@@ -365,14 +365,30 @@
   const seenKey = code => 'seen-' + code;
   function loadSeen(v) {
     const s = K.store.sget(seenKey(v.code), null);
-    seen = s && s.code === v.code ? s : { code: v.code, vote: v.lastVote ? v.lastVote.seq : null, quest: v.lastQuest ? v.lastQuest.seq : null, lady: v.lastLady ? v.lastLady.seq : null, phase: v.phase, round: v.round };
+    seen = s && s.code === v.code ? s : { code: v.code, vote: v.lastVote ? v.lastVote.seq : null, quest: v.lastQuest ? v.lastQuest.seq : null, lady: v.lastLady ? v.lastLady.seq : null, loyalty: (v.loyaltyRevealed || []).length, phase: v.phase, round: v.round };
   }
   function detect(v) {
     const ev = [];
-    if (v.phase === 'lobby') { seen.vote = seen.quest = seen.lady = null; }
+    if (v.phase === 'lobby') { seen.vote = seen.quest = seen.lady = null; seen.loyalty = 0; }
     if (seen.phase === 'lobby' && v.phase === 'reveal') ev.push({ type: 'deal' });
     if (v.lastVote && v.lastVote.seq !== seen.vote) { seen.vote = v.lastVote.seq; ev.push({ type: 'vote', d: v.lastVote }); }
-    if (v.lastQuest && v.lastQuest.seq !== seen.quest) { seen.quest = v.lastQuest.seq; ev.push({ type: 'quest', d: v.lastQuest }); }
+    if (v.lastQuest && v.lastQuest.seq !== seen.quest) {
+      seen.quest = v.lastQuest.seq;
+      /* Scroll of the Word: public use (lastQuest.excalibur) plays just before the mission result; the holder also gets
+         their private result (me.excaliburResults entry for that round). */
+      const xc = v.lastQuest.excalibur;
+      if (xc && xc.holderId) {
+        const mine = v.me && xc.holderId === v.me.id, rd = v.lastQuest.round;
+        const res = mine && xc.targetId ? ((v.me.excaliburResults || []).filter(r => r.round === rd && r.targetId === xc.targetId).pop() || null) : null;
+        ev.push({ type: 'excalibur', d: Object.assign({ round: rd }, xc), result: res });
+      }
+      ev.push({ type: 'quest', d: v.lastQuest });
+    }
+    /* Crossroads card (Lancelot module): a new entry in view.loyaltyRevealed = one card turned face up. */
+    const lr = v.loyaltyRevealed || [];
+    if (typeof seen.loyalty !== 'number') seen.loyalty = lr.length;
+    if (lr.length > seen.loyalty) { for (let i = seen.loyalty; i < lr.length; i++) ev.push({ type: 'loyalty', d: lr[i], n: i + 1, all: lr.slice(0, i + 1) }); }
+    seen.loyalty = lr.length;
     if (v.lastLady && v.lastLady.seq !== seen.lady) {
       seen.lady = v.lastLady.seq;
       const mine = v.me && v.lastLady.holderId === v.me.id;
@@ -386,7 +402,7 @@
     seen.phase = v.phase; seen.round = v.round;
     // when several results land in one view (slow phone, reconnect), play them in the order they happened
     const R = v.round || 0, rank = e => e.type === 'deal' ? -100 : e.type === 'begin' ? -50 : e.type === 'vote' ? (e.d.round || 0) * 10 + 3
-      : e.type === 'quest' ? (e.d.round || 0) * 10 + 5 : e.type === 'lady' ? R * 10 + .5 : e.type === 'journey' ? e.to * 10 + 1 : e.type === 'assassin' ? 1000 : 1001;
+      : e.type === 'quest' ? (e.d.round || 0) * 10 + 5 : e.type === 'excalibur' ? (e.d.round || 0) * 10 + 4.5 : e.type === 'loyalty' ? (e.d.round != null ? e.d.round : R) * 10 + 2 : e.type === 'lady' ? R * 10 + .5 : e.type === 'journey' ? e.to * 10 + 1 : e.type === 'assassin' ? 1000 : 1001;
     return ev.map((e, i) => [rank(e), i, e]).sort((a, b) => a[0] - b[0] || a[1] - b[1]).map(x => x[2]).filter(e => K.cine[e.type]);
   }
   function makeCtx() {
@@ -492,14 +508,22 @@
   'use strict';
   const K = window.UI._k;
 
-  const saved = K.store.get('lang', null);
-  K.lang = saved === 'en' || saved === 'ko' ? saved : 'ko';
+  /* Stored like the contract says: Net.getLang()/Net.setLang() (localStorage "mist.lang"); plain localStorage without Net. */
+  function readLang() {
+    try { if (window.Net && Net.getLang) return Net.getLang() === 'en' ? 'en' : 'ko'; } catch (e) { }
+    try { return localStorage.getItem('mist.lang') === 'en' ? 'en' : 'ko'; } catch (e) { return 'ko'; }
+  }
+  function saveLang(l) {
+    try { if (window.Net && Net.setLang) Net.setLang(l); else localStorage.setItem('mist.lang', l); } catch (e) { }
+    try { if (window.GUIDE && GUIDE.setLang) GUIDE.setLang(l); } catch (e) { }
+  }
+  K.lang = readLang();
   K.isEn = () => K.lang === 'en';
   K.L = (ko, en) => (K.lang === 'en' && en != null ? en : ko);
   K.onLang = K.onLang || [];
 
   const EN_THEME = {
-    title: 'Expedition of Light',
+    title: 'Light Expedition',
     subtitle: 'A hidden-role mystery game for church retreats',
     teams: { good: { name: 'Workers of Light', short: 'Light' }, evil: { name: 'The Tempters', short: 'Tempters' } },
     roles: {
@@ -547,14 +571,14 @@
   K.themeFor = l => {
     const base = K.baseTheme || window.THEME || {};
     if (l !== 'en') return base;
-    return merge(merge(base, EN_THEME), window.THEME_EN || {});
+    return merge(merge(merge(base, EN_THEME), (base.i18n && base.i18n.en) || {}), window.THEME_EN || {});
   };
   /* Which guide object K.G() builds from. */
   K.guideSrc = () => {
-    if (K.lang !== 'en') return window.GUIDE || null;
-    if (window.GUIDE_EN && window.GUIDE_EN.build) return window.GUIDE_EN;
-    if (window.GUIDE && window.GUIDE.en && window.GUIDE.en.build) return window.GUIDE.en;
-    return null;
+    const G = window.GUIDE;
+    if (!G || !G.build) return null;
+    if (K.lang === 'en' && !(G.raw && G.raw.en) && !(G.langs && G.langs.indexOf('en') >= 0)) return null;   // older guide.js: Korean only
+    return { build: () => G.build(K.baseTheme || window.THEME, K.lang), format: G.format };
   };
   K.fmt = (s, p) => {
     try {
@@ -635,6 +659,7 @@
   ];
   const norm = s => String(s).trim().replace(/[.!]+$/, '');
   K.trMsg = msg => {
+    if (msg && typeof msg === 'object') return K.lang === 'en' ? (msg.errorEn || K.trMsg(msg.error)) : msg.error;
     if (K.lang !== 'en' || typeof msg !== 'string' || !/[가-힣]/.test(msg)) return msg;
     const n = norm(msg);
     if (MSG[n]) return MSG[n];
@@ -652,7 +677,7 @@
   K.setLang = l => {
     l = l === 'en' ? 'en' : 'ko';
     if (l === K.lang) return;
-    K.lang = l; K.store.set('lang', l);
+    K.lang = l; saveLang(l);
     apply();
     K.onLang.forEach(f => { try { f(l); } catch (e) { console.error('[UI] onLang', e); } });
     K.rebuild();
@@ -867,9 +892,9 @@
       let li = 0;
       const step = K.isEn() ? 45 : 70;
       const letters = title.split(' ').map(w => '<span class="w">' + Array.from(w).map(ch => '<span style="animation-delay:' + (220 + (li++) * step) + 'ms">' + esc(ch) + '</span>').join('') + '</span>').join(' ');
-      const lang = K.lang;
+      const lang = K.lang, G = K.G(), gui = (G && G.ui) || {};
       const el = K.el('<section class="uxh">' +
-        '<div class="uxh-lang uxh-fade" role="group" aria-label="Language / 언어" style="animation-delay:.2s">' +
+        '<div class="uxh-lang uxh-fade" role="group" aria-label="' + esc(gui.language || K.L('언어', 'Language')) + '" style="animation-delay:.2s">' +
         '<button data-act="lang" data-lang="ko" class="' + (lang === 'ko' ? 'on' : '') + '" aria-pressed="' + (lang === 'ko') + '">한국어</button>' +
         '<button data-act="lang" data-lang="en" class="' + (lang === 'en' ? 'on' : '') + '" aria-pressed="' + (lang === 'en') + '">English</button></div>' +
         '<div class="uxh-rays" aria-hidden="true"></div>' +
@@ -884,7 +909,7 @@
         '<div class="ux-row" style="align-items:stretch"><input class="ux-input ux-code-input" id="uxh-code" maxlength="6" inputmode="text" autocapitalize="characters" autocomplete="off" placeholder="' + K.L('코드', 'Code') + '" value="' + esc(code) + '" style="flex:1.3">' +
         '<button class="ux-btn ux-btn-ghost" data-act="h-join" style="flex:1">' + K.L('참가하기', 'Join') + '</button></div>' +
         '</div></div>' +
-        '<button class="uxh-guide uxh-fade" data-act="cm-guide" style="animation-delay:.8s"><span class="bk">📖</span><span><b>' + K.L('1분 설명서', '1-minute guide') + '</b><small>' + K.L('처음이라면 여기부터', 'New here? Start here') + '</small></span><span class="ar">›</span></button>' +
+        '<button class="uxh-guide uxh-fade" data-act="cm-guide" style="animation-delay:.8s"><span class="bk">📖</span><span><b>' + esc(gui.quickButton || K.L('1분 설명서', '1-Minute Guide')) + '</b><small>' + K.L('처음이라면 여기부터', 'New here? Start here') + '</small></span><span class="ar">›</span></button>' +
         '</section>');
       const nameIn = el.querySelector('#uxh-name'), codeIn = el.querySelector('#uxh-code');
       nameIn.addEventListener('input', () => K.store.set('name', nameIn.value.trim()));
@@ -1860,6 +1885,41 @@
 .cn-win .ux-verse { animation: cnRise .7s 1.5s both; }
 .cn-win .ux-banner { font-size: min(34px, 8.4vw); }
 
+/* loyalty (Crossroads card) */
+.cn-lo .cn-tcard .f { background: var(--bg2); }
+.cn-lo .cn-tcard.none .f { box-shadow: 0 0 0 2px var(--good), 0 0 30px var(--good-glow); }
+.cn-lo .cn-tcard.switch .f { box-shadow: 0 0 0 2px #b48ce0, 0 0 26px rgba(180,140,224,.7), 0 0 44px rgba(244,201,107,.35); }
+.cn-lo .cn-tcard.cn-swap .cn-beat { animation: cnSwap 1.1s var(--ease-out) both; }
+@keyframes cnSwap { 0% { transform: rotate(0); } 30% { transform: rotate(-9deg) scale(1.05); } 60% { transform: rotate(7deg) scale(1.05); } 100% { transform: none; } }
+.cn-lohist { display: flex; gap: 8px; justify-content: center; align-items: center; }
+.cn-lohist i { width: 24px; height: 34px; border-radius: 4px; overflow: hidden; opacity: .55; box-shadow: 0 2px 6px rgba(0,0,0,.45); }
+.cn-lohist i.cur { opacity: 1; box-shadow: 0 0 0 1.5px var(--gold-hi), 0 2px 8px rgba(0,0,0,.5); }
+.cn-lohist img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ux-banner.cn-sw { color: #eadcff; text-shadow: 0 0 24px rgba(180,140,224,.85), 0 0 50px rgba(244,201,107,.35); }
+
+/* excalibur (Scroll of the Word) */
+.cn-xc .cn-emblem { width: 92px; height: 92px; }
+.cn-xpair { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; }
+.cn-xpair .ux-team-chip { animation: cnRise .6s both; max-width: 40%; }
+.cn-xpair .ux-team-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cn-xarrow { font-size: 22px; color: var(--gold-hi); animation: cnRise .6s .25s both; }
+.cn-xcard { position: relative; width: 64px; height: 90px; flex: none; perspective: 700px; }
+.cn-xcard .c { position: absolute; inset: 0; transform-style: preserve-3d; transition: transform .9s var(--ease-spring); }
+.cn-xcard.flip .c { transform: rotateY(180deg); }
+.cn-xcard .b, .cn-xcard .f { position: absolute; inset: 0; border-radius: 8px; overflow: hidden; backface-visibility: hidden; -webkit-backface-visibility: hidden; box-shadow: 0 8px 18px rgba(0,0,0,.55), 0 0 0 1.5px rgba(255,227,163,.45); }
+.cn-xcard .f { transform: rotateY(180deg); }
+.cn-xcard img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cn-xcard.kept .c { animation: cnFloat 2.6s ease-in-out infinite; }
+
+/* English is longer: size tweaks only */
+.ux-en .cn-res .ux-banner { font-size: min(28px, 7.2vw); }
+.ux-en .ux-banner.cn-long { font-size: min(23px, 6.2vw); }
+.ux-en .cn-win .ux-banner { font-size: min(30px, 7.6vw); }
+.ux-en .cn-scroll .sh { font-size: 15px; }
+.ux-en .cn-t2 { font-size: 20px; }
+.ux-en .cn-ask { font-size: 19px; }
+.ux-en .cn-tap { letter-spacing: .08em; }
+
 @media (max-height: 700px) {
   .cn-wrap { gap: 9px; }
   .cn-wrap > .ux-ornament, .cn-vote .cn-res .ux-verse, .cn-quest .cn-res .ux-verse { display: none; }
@@ -1899,14 +1959,35 @@
   const EP = (w, t) => K.esc(P(w, t));
 
   // ---------- shared bits ----------
+  /* Every user-visible string goes through L(ko, en) at render time (never at file load), so a language switch
+     shows the other language on the next cinematic. Korean particles (P/EP) only inside Korean branches. */
+  const L = (ko, en) => K.L(ko, en);
+  const EN = () => !!(K.isEn && K.isEn());
   const term = (k, d) => K.term(k, d);
-  const Q = () => term('quest', '사명');
-  const LEADER = () => term('leader', '조장');
-  const TEAMW = () => term('questTeam', term('team', '원정대'));
+  const Q = () => term('quest', L('사명', 'Mission'));
+  const LEADER = () => term('leader', L('조장', 'Leader'));
+  const TEAMW = () => term('questTeam', term('team', L('원정대', 'Expedition')));
+  const XC = () => term('excalibur', L('말씀 두루마리', 'Scroll of the Word'));
+  const LOY = () => term('loyalty', L('갈림길 카드', 'Crossroads card'));
+  const LANC = () => term('lancelot', L('갈림길의 순례자', 'Lancelot'));
+  const ROLE = (key, ko, en) => K.roleName(key) || L(ko, en);
+  const SPY = () => ROLE('assassin', '정탐꾼', 'Spy');
+  const PROPHET = () => ROLE('merlin', '선지자', 'Prophet');
+  const TEAMN = t => K.teamName(t) || (t === 'evil' ? L('유혹의 무리', 'The Tempters') : L('빛의 일꾼들', 'Workers of Light'));
+  /* English: "the Workers of Light" / "the Tempters" mid-sentence, "The …" at the start */
+  const theTeam = t => { const n = TEAMN(t); return /^the\s/i.test(n) ? 'the' + n.slice(3) : 'the ' + n; };
+  const cap = s => String(s).charAt(0).toUpperCase() + String(s).slice(1);
+  const pl1 = (n, one, many) => (n === 1 ? one : many);
   const nm = (v, id) => E(K.pname(v, id));
-  const who = (v, id) => nm(v, id) + (K.isMe(v, id) ? ' <span class="cn-me">(나)</span>' : '');
-  const TAP = '<div class="cn-tap" aria-hidden="true">탭하여 계속</div>';
+  const ME = () => L('(나)', '(you)');
+  const who = (v, id) => nm(v, id) + (K.isMe(v, id) ? ' <span class="cn-me">' + ME() + '</span>' : '');
+  /* English subject / object for a player: "You" / "you" for me, the name otherwise (escaped) */
+  const enSubj = (v, id) => (K.isMe(v, id) ? 'You' : nm(v, id));
+  const enObj = (v, id) => (K.isMe(v, id) ? 'you' : nm(v, id));
+  const TAP = () => '<div class="cn-tap" aria-hidden="true">' + L('탭하여 계속', 'Tap to continue') + '</div>';
   const verse = (t, c, pre) => '<div class="ux-verse' + (pre ? ' cn-pre' : '') + '">' + E(t) + (c ? '<cite>' + E(c) + '</cite>' : '') + '</div>';
+  /* bilingual verse: Korean phrase + short ref, English = World English Bible wording */
+  const V = (ko, kc, en, ec, pre) => (EN() ? verse(en, ec, pre) : verse(ko, kc, pre));
   const scroll = html => '<div class="cn-scroll"><i class="rl"></i><div class="sh"><span>' + html + '</span></div><i class="rr"></i></div>';
   const pl = (v, id) => K.player(v, id) || { id: id, name: '?' };
   function chips(v, ids) {
@@ -1998,10 +2079,10 @@
     const n = ps.length; const meIdx = Math.max(0, ps.findIndex(p => K.isMe(v, p.id)));
     ctx.set('<div class="cn-wrap cn-deal">' +
       '<div class="ux-ornament">✦</div>' +
-      '<div class="ux-cine-title">역할 카드를 나눠드려요</div>' +
+      '<div class="ux-cine-title">' + L('역할 카드를 나눠드려요', 'Dealing the role cards') + '</div>' +
       '<div class="cn-table"></div>' +
-      '<div class="ux-cine-sub">아무도 보지 않게 화면을 가리고 확인하세요</div>' +
-      verse('각 사람에게 나누어 주시는 은사', '고전 12:11', true) + TAP + '</div>');
+      '<div class="ux-cine-sub">' + L('아무도 보지 않게 화면을 가리고 확인하세요', 'Cover your screen so no one else can see it') + '</div>' +
+      V('각 사람에게 나누어 주시는 은사', '고전 12:11', 'Distributing to each one separately as he desires', '1 Corinthians 12:11', true) + TAP() + '</div>');
     const tb = S.q('.cn-table');
     const W = Math.max(250, Math.min(330, ctx.inner.clientWidth)), H = Math.round(W * 0.9);
     tb.style.width = W + 'px'; tb.style.height = H + 'px';
@@ -2050,7 +2131,7 @@
       '<div class="ux-banner good">' + E(Q()) + ' ' + r + '</div>' +
       scroll('첫 ' + E(LEADER()) + ' · <b>' + nm(v, v.leaderId) + '</b>' + (K.isMe(v, v.leaderId) ? ' (나)' : '')) +
       '<div class="ux-cine-sub cn-pre">' + EP(LEADER(), '이') + ' ' + E(TEAMW()) + ' ' + size + '명을 제안해요</div>' +
-      verse('너희는 세상의 빛이라', '마 5:14', true) + TAP + '</div>');
+      verse('너희는 세상의 빛이라', '마 5:14', true) + TAP() + '</div>');
     S.scene('light', S.y(S.q('.ux-banner')), { rays: true });
     S.fb('chime');
     S.burst(S.q('.cn-emblem'), { n: 36, speed: 190 });
@@ -2089,7 +2170,7 @@
       chips(v, team) +
       '<div class="cn-vgw"><div class="cn-vg' + (n >= 9 ? ' sm' : '') + '" style="--cols:' + cols + '">' + cards + '</div><div class="cn-count" aria-hidden="true"></div></div>' +
       '<div class="ux-tally cn-pre"><div class="y"><b>0</b>' + E(A) + '</div><div class="x"><b>0</b>' + E(X) + '</div></div>' +
-      '<div class="cn-res"></div>' + TAP + '</div>');
+      '<div class="cn-res"></div>' + TAP() + '</div>');
     const grid = S.q('.cn-vg');
     S.scene('candle', S.y(grid));
     S.sfx('whoosh');
@@ -2161,7 +2242,7 @@
       chips(v, team) +
       '<div class="ux-pile cn-qp">' + cards + '</div>' +
       '<div class="cn-qt cn-pre"><span class="ux-chip s">' + E(SU) + ' <b>0</b></span><span class="ux-chip x">' + E(FA) + ' <b>0</b></span></div>' +
-      '<div class="cn-res"></div>' + TAP + '</div>');
+      '<div class="cn-res"></div>' + TAP() + '</div>');
     const pile = S.q('.cn-qp'), qc = S.qa('.ux-qcard');
     S.scene('candle', S.y(pile));
     S.fb('whoosh');
@@ -2221,7 +2302,7 @@
         '<div class="cn-ask">' + nm(v, tid) + '님을 비춰보니<span class="ux-dots"><i></i><i></i><i></i></span></div>' +
         '<div class="cn-res cn-lres"></div>' +
         '<div class="cn-secret cn-pre">이 결과는 나만 알아요. 비밀로 간직하거나 지혜롭게 사용하세요.</div>' +
-        verse('주의 말씀은 내 발에 등이요 내 길에 빛이니이다', '시 119:105', true) + TAP + '</div>');
+        verse('주의 말씀은 내 발에 등이요 내 길에 빛이니이다', '시 119:105', true) + TAP() + '</div>');
       const lamp = S.q('.ux-lamp-big');
       S.scene('candle', S.y(lamp));
       S.fb('whoosh');
@@ -2247,7 +2328,7 @@
       '<div class="ux-lamp-big sm">' + K.tokenImg('lady') + '</div>' +
       '<div class="ux-cine-title cn-t2">' + (K.isMe(v, hid) ? '내가' : nm(v, hid) + '님이') + ' ' + EP(L, '으로') + '<br>' + (K.isMe(v, tid) ? '나를' : nm(v, tid) + '님을') + ' 비춰보았어요</div>' +
       '<div class="ux-cine-sub">결과는 ' + (K.isMe(v, hid) ? '나만' : nm(v, hid) + '님만') + ' 알 수 있어요 · ' + EP(L, '은') + ' 이제 ' + (K.isMe(v, tid) ? '나에게' : nm(v, tid) + '님에게') + ' 넘어가요</div>' +
-      TAP + '</div>');
+      TAP() + '</div>');
     S.scene('candle', S.y(S.q('.ux-lamp-big')));
     S.fb('chime');
     await ctx.sleep(S.M(800));
@@ -2266,7 +2347,7 @@
         '<div class="cn-toks">' + [0, 1, 2].map(i => '<div class="cn-tok" style="animation-delay:' + (0.15 + i * 0.24).toFixed(2) + 's">' + K.tokenImg('success') + '</div>').join('') + '</div>' +
         '<div class="ux-banner good cn-long">' + EP(K.teamName('good'), '이') + '<br>' + EP(Q(), '을') + ' 완수했어요</div>' +
       '</div>' +
-      '<div class="cn-turn"></div>' + TAP + '</div>');
+      '<div class="cn-turn"></div>' + TAP() + '</div>');
     const first = S.q('.cn-first');
     S.scene('light', S.y(S.q('.cn-toks')));
     S.fb('good');
@@ -2359,7 +2440,7 @@
       (why ? scroll(why) : '') +
       (won === null ? '' : '<div class="cn-mine ' + (won ? 'w' : 'l') + '">' + (won ? '우리 팀 승리!' : '아쉽게도 패배') + '</div>') +
       (win === 'evil' ? verse('일곱 번 넘어질지라도 다시 일어나리라', '잠 24:16') : verse('빛이 어둠에 비치되 어둠이 이기지 못하더라', '요 1:5')) +
-      TAP + '</div>');
+      TAP() + '</div>');
     const crest = S.q('.cn-crest');
     S.scene(win === 'evil' ? 'dusk' : 'light', S.y(crest), { rays: true });
     S.flash(win);
@@ -2450,12 +2531,13 @@
 
   // ---------- screen wipe + phase banner (on render) ----------
   const BANNER = {
-    propose: v => ({ ic: '🕯️', t: K.term('questTeam', '원정대') + ' 제안', s: (K.term('quest', '사명')) + ' ' + ((v.round || 0) + 1) + ' · ' + (v.proposalNo || 1) + '번째 제안' }),
-    vote: () => ({ ic: '🗳️', t: K.term('approve', '찬성') + ' 또는 ' + K.term('reject', '반대'), s: '모두가 한 표씩 던져요' }),
-    quest: () => ({ ic: '⛰️', t: K.term('quest', '사명') + ' 수행', s: '떠난 사람들이 카드를 내요' }),
-    excalibur: () => ({ ic: '📜', t: '말씀 두루마리', s: '두루마리를 받은 사람이 고르는 중' }),
-    lady: () => ({ ic: '🪔', t: K.term('lady', '등불') + ' 비추기', s: '한 사람의 마음을 비춰 봐요' }),
-    assassin: () => ({ ic: '🎯', t: K.term('assassinate', '선지자 지목'), s: '마지막 기회가 남았어요' })
+    propose: v => ({ ic: '🕯️', t: K.L(K.term('questTeam', '원정대') + ' 제안', 'Choose the ' + K.term('questTeam', 'Expedition')),
+      s: K.term('quest', K.L('사명', 'Mission')) + ' ' + ((v.round || 0) + 1) + ' · ' + K.L((v.proposalNo || 1) + '번째 제안', 'Proposal ' + (v.proposalNo || 1)) }),
+    vote: () => ({ ic: '🗳️', t: K.term('approve', K.L('찬성', 'Approve')) + K.L(' 또는 ', ' or ') + K.term('reject', K.L('반대', 'Reject')), s: K.L('모두가 한 표씩 던져요', 'Everyone casts one vote') }),
+    quest: () => ({ ic: '⛰️', t: K.L(K.term('quest', '사명') + ' 수행', 'On the ' + K.term('quest', 'Mission')), s: K.L('떠난 사람들이 카드를 내요', 'The team plays their cards') }),
+    excalibur: () => ({ ic: '📜', t: K.term('excalibur', K.L('말씀 두루마리', 'Scroll of the Word')), s: K.L('두루마리를 받은 사람이 고르는 중', 'The Scroll holder is deciding') }),
+    lady: () => ({ ic: '🪔', t: K.L(K.term('lady', '등불') + ' 비추기', K.term('ladyAction', 'Shine the Lamp')), s: K.L('한 사람의 마음을 비춰 봐요', 'Shine on one person\'s heart') }),
+    assassin: () => ({ ic: '🎯', t: K.term('assassinate', K.L('선지자 지목', 'Name the Prophet')), s: K.L('마지막 기회가 남았어요', 'One last chance') })
   };
   let lastName = null, lastPhaseKey = null, wipeTok = 0, lastJourney = 0;
   function wipe() {
@@ -2481,7 +2563,10 @@
 
   // ---------- animated waiting states ----------
   /* Any .ux-waiting that appears (from any screen) gets a halo, an orbiting light and a gentle rotating line. */
-  const WAIT_LINES = ['잠시 숨을 고르며 기다려요', '서두르지 않아도 괜찮아요', '옆 사람의 표정도 살짝 살펴보세요', '빛은 어둠 속에서 더 밝게 빛나요', '모두의 선택을 기다리는 중이에요', '조용히 마음을 모아 봐요'];
+  const WAIT_KO = ['잠시 숨을 고르며 기다려요', '서두르지 않아도 괜찮아요', '옆 사람의 표정도 살짝 살펴보세요', '빛은 어둠 속에서 더 밝게 빛나요', '모두의 선택을 기다리는 중이에요', '조용히 마음을 모아 봐요'];
+  const WAIT_EN = ['Take a breath while you wait', 'No need to hurry', 'Take a quiet look at the faces around you', 'Light shines brighter in the dark', 'Waiting for everyone to choose', 'Quiet your heart for a moment'];
+  const WAIT_LINES = { get length() { return WAIT_KO.length; } };
+  [0, 1, 2, 3, 4, 5].forEach(i => Object.defineProperty(WAIT_LINES, i, { get: () => (K.isEn() ? WAIT_EN : WAIT_KO)[i] }));
   let wl = 0;
   function decorate(node) {
     const list = node.matches && node.matches('.ux-waiting') ? [node] : (node.querySelectorAll ? Array.from(node.querySelectorAll('.ux-waiting')) : []);
@@ -2505,7 +2590,10 @@
   /* Art: assets/map/journey.svg (600×1300) with route data from assets/manifest.json (map.data). Point 0 = the
      start camp, 1..5 = the five 사명 stops. The route is sampled here (no getPointAtLength needed). */
   const ROUTE = 'M300,1222 C300,1121.9 185,1140.1 185,1040 C185,932.8 420,952.2 420,845 C420,732.2 195,752.8 195,640 C195,525.6 415,546.4 415,432 C415,324.2 300,343.8 300,236';
-  const PLACES = ['우물가', '목자의 들', '강 건너기', '빛의 산', '거룩한 성문'];
+  const PLACES_KO = ['우물가', '목자의 들', '강 건너기', '빛의 산', '거룩한 성문'];
+  const PLACES_EN = ['The Well', 'Shepherds\' Field', 'River Crossing', 'Mountain of Light', 'Holy Gate'];
+  const PLACES = { get length() { return 5; } };
+  [0, 1, 2, 3, 4].forEach(i => Object.defineProperty(PLACES, i, { get: () => (K.isEn() ? PLACES_EN : PLACES_KO)[i] }));
   const MW = 600, MH = 1300, MARK = 90, BADGE = 84, CUR = 140;
   const SAMP = [], IDX = [0];
   (function build() {
@@ -2544,7 +2632,7 @@
         (r ? img(r === 'success' ? 'stop-done-good.svg' : 'stop-done-evil.svg', x, y, BADGE, 'jr-seal') : '<text x="' + x + '" y="' + (y + 14) + '" class="jr-n">' + (i + 1) + '</text>') +
         (i === to ? img('stop-current.svg', x, y, CUR, 'jr-cur') : '') +
         '<text x="' + x + '" y="' + (y - 58) + '" class="jr-name">' + esc(PLACES[i]) + '</text>' +
-        (q.size ? '<text x="' + x + '" y="' + (y + 76) + '" class="jr-sz">' + q.size + '명' + ((q.failsNeeded || 1) >= 2 ? ' · 방해 2' : '') + '</text>' : '') +
+        (q.size ? '<text x="' + x + '" y="' + (y + 76) + '" class="jr-sz">' + esc(K.L(q.size + '명', q.size + ' players') + ((q.failsNeeded || 1) >= 2 ? K.L(' · 방해 2', ' · 2 ' + K.term('fail', 'Hindrance')) : '')) + '</text>' : '') +
         '</g>';
     }
     s += '<g class="jr-tok" transform="' + mk(start[0], start[1]) + '"><circle cx="45" cy="70" r="52" class="jr-tglow"/>' +
@@ -2561,12 +2649,13 @@
     const quick = (ctx.late || 0) > 2500 || K.reduced();
     ctx.el.classList.add('jr-ov');
     ctx.set('<div class="jr-wrap">' +
-      '<div class="ux-ornament jr-kicker">' + esc(K.term('quest', '사명')) + ' ' + (to + 1) + '</div>' +
-      '<div class="ux-cine-title">' + esc((K.josa ? K.josa(PLACES[to], '으로') : PLACES[to] + '(으)로') + (to === 0 && from < 0 ? ' 떠나요' : ' 이동해요')) + '</div>' +
+      '<div class="ux-ornament jr-kicker">' + esc(K.term('quest', K.L('사명', 'Mission'))) + ' ' + (to + 1) + '</div>' +
+      '<div class="ux-cine-title">' + esc(K.isEn() ? (to === 0 && from < 0 ? 'Setting out for ' : 'On to ') + PLACES[to]
+        : (K.josa ? K.josa(PLACES[to], '으로') : PLACES[to] + '(으)로') + (to === 0 && from < 0 ? ' 떠나요' : ' 이동해요')) + '</div>' +
       '<div class="jr-view"><div class="jr-pan"><div class="jr-map"></div>' + mapSVG(v, from, to) + '</div></div>' +
-      '<div class="jr-info ux-cine-sub">' + (q.size ? esc(q.size + '명의 ' + K.term('questTeam', '원정대')) : '') +
-      ((q.failsNeeded || 1) >= 2 ? ' · <b>' + esc(K.term('fail', '방해')) + ' 2장</b>이 나와야 실패' : '') +
-      (leader ? '<br>' + esc(K.term('leader', '조장')) + ': ' + esc(leader.name) : '') + '</div></div>');
+      '<div class="jr-info ux-cine-sub">' + (q.size ? esc(K.L(q.size + '명의 ' + K.term('questTeam', '원정대'), K.term('questTeam', 'Expedition') + ' of ' + q.size)) : '') +
+      ((q.failsNeeded || 1) >= 2 ? (K.isEn() ? ' · fails only with <b>2 ' + esc(K.term('fail', 'Hindrance')) + ' cards</b>' : ' · <b>' + esc(K.term('fail', '방해')) + ' 2장</b>이 나와야 실패') : '') +
+      (leader ? '<br>' + esc(K.term('leader', K.L('조장', 'Leader'))) + ': ' + esc(leader.name) : '') + '</div></div>');
     const view = ctx.inner.querySelector('.jr-view'), pan = ctx.inner.querySelector('.jr-pan'), svg = ctx.inner.querySelector('.jr-svg');
     const map = ctx.inner.querySelector('.jr-map'), mi = new Image();
     mi.onload = () => { map.style.backgroundImage = 'url("' + mi.src + '")'; view.classList.add('has-art'); }; mi.src = K.asset('map/journey.svg');
@@ -2708,6 +2797,7 @@
 .jr-n, .jr-name, .jr-sz { text-anchor: middle; font-family: var(--font-display); paint-order: stroke; stroke: rgba(10,10,30,.75); stroke-width: 6px; stroke-linejoin: round; }
 .jr-n { fill: var(--gold-hi); font-size: 40px; font-weight: 700; }
 .jr-name { fill: #fff6dc; font-size: 30px; font-weight: 700; }
+.ux-en .jr-name { font-size: 26px; }
 .jr-sz { fill: rgba(255,246,220,.8); font-size: 24px; }
 .jr-cur { transform-box: fill-box; transform-origin: center; animation: breathe 1.8s ease-in-out infinite; }
 .jr-seal { transform-box: fill-box; transform-origin: center; }

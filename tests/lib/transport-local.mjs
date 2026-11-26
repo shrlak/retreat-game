@@ -38,5 +38,7 @@ export function localTransport({ seed = 1, engine = REAL } = {}) {
     if (r.error) return { ok: false, error: r.error };
     return { ok: true, view: E.viewFor(st, playerId, now()) };
   }
-  return { call, rooms, rng, crashes, kind: "local" };
+  // test clock: jump forward (phones going quiet, host away)
+  const advance = (ms) => { clock += ms; };
+  return { call, rooms, rng, crashes, advance, kind: "local" };
 }

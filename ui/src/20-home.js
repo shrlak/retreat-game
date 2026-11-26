@@ -17,9 +17,9 @@
       let li = 0;
       const step = K.isEn() ? 45 : 70;
       const letters = title.split(' ').map(w => '<span class="w">' + Array.from(w).map(ch => '<span style="animation-delay:' + (220 + (li++) * step) + 'ms">' + esc(ch) + '</span>').join('') + '</span>').join(' ');
-      const lang = K.lang;
+      const lang = K.lang, G = K.G(), gui = (G && G.ui) || {};
       const el = K.el('<section class="uxh">' +
-        '<div class="uxh-lang uxh-fade" role="group" aria-label="Language / 언어" style="animation-delay:.2s">' +
+        '<div class="uxh-lang uxh-fade" role="group" aria-label="' + esc(gui.language || K.L('언어', 'Language')) + '" style="animation-delay:.2s">' +
         '<button data-act="lang" data-lang="ko" class="' + (lang === 'ko' ? 'on' : '') + '" aria-pressed="' + (lang === 'ko') + '">한국어</button>' +
         '<button data-act="lang" data-lang="en" class="' + (lang === 'en' ? 'on' : '') + '" aria-pressed="' + (lang === 'en') + '">English</button></div>' +
         '<div class="uxh-rays" aria-hidden="true"></div>' +
@@ -34,7 +34,7 @@
         '<div class="ux-row" style="align-items:stretch"><input class="ux-input ux-code-input" id="uxh-code" maxlength="6" inputmode="text" autocapitalize="characters" autocomplete="off" placeholder="' + K.L('코드', 'Code') + '" value="' + esc(code) + '" style="flex:1.3">' +
         '<button class="ux-btn ux-btn-ghost" data-act="h-join" style="flex:1">' + K.L('참가하기', 'Join') + '</button></div>' +
         '</div></div>' +
-        '<button class="uxh-guide uxh-fade" data-act="cm-guide" style="animation-delay:.8s"><span class="bk">📖</span><span><b>' + K.L('1분 설명서', '1-minute guide') + '</b><small>' + K.L('처음이라면 여기부터', 'New here? Start here') + '</small></span><span class="ar">›</span></button>' +
+        '<button class="uxh-guide uxh-fade" data-act="cm-guide" style="animation-delay:.8s"><span class="bk">📖</span><span><b>' + esc(gui.quickButton || K.L('1분 설명서', '1-Minute Guide')) + '</b><small>' + K.L('처음이라면 여기부터', 'New here? Start here') + '</small></span><span class="ar">›</span></button>' +
         '</section>');
       const nameIn = el.querySelector('#uxh-name'), codeIn = el.querySelector('#uxh-code');
       nameIn.addEventListener('input', () => K.store.set('name', nameIn.value.trim()));

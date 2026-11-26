@@ -13,8 +13,8 @@
     "mordred": "Wolf in Sheep's Clothing",
     "oberon": "Wanderer",
     "minion": "Tempter",
-    "lancelotGood": "Pilgrim at the Crossroads",
-    "lancelotEvil": "Shadow at the Crossroads",
+    "lancelotGood": "Good Lancelot",
+    "lancelotEvil": "Evil Lancelot",
     "quest": "Mission",
     "leader": "Group Leader",
     "success": "Blessing",
@@ -201,17 +201,17 @@
       {
         "id": "lancelot",
         "module": "lancelot",
-        "heading": "Pilgrim at the Crossroads and Shadow at the Crossroads (expansion)",
+        "heading": "Good Lancelot and Evil Lancelot (expansion)",
         "body": [
-          "This expansion is used only if the host turns it on. Two pilgrims join the game, and the Shadow at the Crossroads takes one of the Tempters seats.",
+          "This expansion is used only if the host turns it on. The two Lancelots join the game, and the Evil Lancelot takes one of the Tempters seats.",
           "A deck of 5 Crossroads cards (3 Stay, 2 Switch sides) is shuffled. At the start of the 3rd, 4th and 5th Missions, one card is shown to everyone.",
-          "When a 'Switch sides' card comes up, the two pilgrims swap sides. If another one comes up, they swap back.",
-          "Mission cards, the Lamp's answer and the final result all use each pilgrim's current side. A pilgrim currently with the Workers of Light can only play Blessing."
+          "When a 'Switch sides' card comes up, the two Lancelots swap sides. If another one comes up, they swap back.",
+          "Mission cards, the Lamp's answer and the final result all use each Lancelot's current side. A Lancelot currently with the Workers of Light can only play Blessing."
         ],
         "bullets": [
-          "Quiet Crossroads: the Shadow at the Crossroads and the other Tempters don't know each other. The Prophet still sees the Shadow at the Crossroads as one of the Tempters.",
-          "Known Crossroads: the two pilgrims recognise each other, and the Shadow at the Crossroads and the other Tempters also know each other.",
-          "The Shadow at the Crossroads never carries out the Prophet Hunt."
+          "Quiet Crossroads: the Evil Lancelot and the other Tempters don't know each other. The Prophet still sees the Evil Lancelot as one of the Tempters.",
+          "Known Crossroads: the two Lancelots recognise each other, and the Evil Lancelot and the other Tempters also know each other.",
+          "The Evil Lancelot never carries out the Prophet Hunt."
         ]
       },
       {
@@ -442,10 +442,10 @@
     "lancelotGood": {
       "team": "good",
       "module": "lancelot",
-      "tagline": "A pilgrim standing at the crossroads",
+      "tagline": "A Lancelot of the light, standing at a crossroads",
       "know": [
         "Quiet Crossroads: you can't see anyone.",
-        "Known Crossroads: you can see the Shadow at the Crossroads, and they know you too."
+        "Known Crossroads: you can see the Evil Lancelot, and they know you too."
       ],
       "goal": [
         "Help your current side win. You start with the Workers of Light.",
@@ -456,15 +456,15 @@
         "While you're with the Workers of Light, you can only play Blessing. With the Tempters, you can play Hindrance too.",
         "Your side may change, so don't sound too certain too early."
       ],
-      "seenBy": "In Known Crossroads, the Shadow at the Crossroads can see you. Otherwise nobody can."
+      "seenBy": "In Known Crossroads, the Evil Lancelot can see you. Otherwise nobody can."
     },
     "lancelotEvil": {
       "team": "evil",
       "module": "lancelot",
-      "tagline": "A shadow falling over the crossroads",
+      "tagline": "A Lancelot in shadow, standing at a crossroads",
       "know": [
         "Quiet Crossroads: you can't see anyone, and the other Tempters don't know you.",
-        "Known Crossroads: you can see your fellow Tempters and the Pilgrim at the Crossroads, and they know you too."
+        "Known Crossroads: you can see your fellow Tempters and the Good Lancelot, and they know you too."
       ],
       "goal": [
         "Help your current side win. You start with the Tempters.",
@@ -475,13 +475,13 @@
         "If you end up with the Workers of Light, you can only play Blessing.",
         "You never carry out the Prophet Hunt. Just share your opinion with your teammates."
       ],
-      "seenBy": "The Prophet sees you as one of the Tempters. In Known Crossroads, your fellow Tempters and the Pilgrim at the Crossroads see you too."
+      "seenBy": "The Prophet sees you as one of the Tempters. In Known Crossroads, your fellow Tempters and the Good Lancelot see you too."
     }
   },
   "knowledgeLabels": {
     "evil": "Tempters",
     "merlinCandidate": "Prophet candidate",
-    "lancelot": "The other pilgrim",
+    "lancelot": "The other Lancelot",
     "emptyGood": "You can't see anyone. Use conversation and votes to work it out.",
     "emptyOberon": "You can't see any teammates. You can do this on your own."
   },
@@ -567,8 +567,8 @@
       "result": "{targetName}'s original card was {card}. It has now been flipped."
     },
     "loyalty": {
-      "none": "A Crossroads card was revealed: Stay. The pilgrims keep their sides.",
-      "switch": "A Crossroads card was revealed: Switch sides! The two pilgrims have swapped sides.",
+      "none": "A Crossroads card was revealed: Stay. The Lancelots keep their sides.",
+      "switch": "A Crossroads card was revealed: Switch sides! The two Lancelots have swapped sides.",
       "left": "Crossroads cards left: {count}",
       "mySwitchSecret": "Your side has changed. You are now with the {team}."
     },
@@ -653,7 +653,7 @@
     {
       "id": "loyaltyRevealed",
       "when": "lancelot && round >= 2 && proposalNo == 1 && phase == 'propose'",
-      "text": "A Crossroads card was revealed as this Mission began. Think again about the pilgrims' sides."
+      "text": "A Crossroads card was revealed as this Mission began. Think again about the Lancelots' sides."
     },
     {
       "id": "loyaltySoon",
@@ -779,7 +779,7 @@
       {
         "heading": "Expansions to try later",
         "bullets": [
-          "Pilgrim at the Crossroads and Shadow at the Crossroads: from the 3rd Mission, Crossroads cards are revealed and the two pilgrims may swap sides. For a first try, use 'Quiet Crossroads'.",
+          "Good Lancelot and Evil Lancelot: from the 3rd Mission, Crossroads cards are revealed and the two Lancelots may swap sides. For a first try, use 'Quiet Crossroads'.",
           "Scroll of the Word: the Group Leader hands it to a team member, who may flip one other member's card. Great with 7 or more.",
           "Alternate team sizes: changes the team sizes in 5 and 7 player games. Nice when the same group plays several rounds.",
           "Add only one expansion at a time. Long explanations are hard on first-time players."
@@ -1018,7 +1018,7 @@
     },
     "expansion": {
       "label": "Try the expansions",
-      "desc": "Adds the Pilgrim at the Crossroads (Quiet Crossroads) and the Scroll of the Word",
+      "desc": "Adds the Good Lancelot (Quiet Crossroads) and the Scroll of the Word",
       "byCount": {
         "5": {
           "roles": {
@@ -1142,7 +1142,7 @@
     },
     {
       "term": "Crossroads card",
-      "text": "Expansion. Revealed one at a time from the 3rd Mission, and can switch the pilgrims' sides."
+      "text": "Expansion. Revealed one at a time from the 3rd Mission, and can switch the Lancelots' sides."
     },
     {
       "term": "Prophet Hunt",

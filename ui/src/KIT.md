@@ -35,3 +35,16 @@ All classes live in `ui/ui.css` (prefix `ux-`). Useful existing ones: panels `ux
 
 ## Privacy rules (a phone is seen by neighbours)
 Never tint the whole screen or show my role/team on persistent chrome during play. Knowledge marks on other players respect `K.store.get('showMarks', false)` (eye toggle). After I play a quest card, show only "제출 완료", never which card.
+
+## Languages (01-i18n.js)
+- `K.lang` ('ko'|'en'), `K.isEn()`, `K.L(ko, en)`. Stored via `Net.getLang/setLang` (localStorage `mist.lang`); home screen pill switches it.
+- `K.setLang(l)` swaps the theme (Korean THEME → overlay `THEME.i18n.en`, with UI fallback `K.EN_THEME`), clears the guide cache
+  (`GUIDE.build(theme, lang)`), toggles `html.ux-en`, runs `K.onLang` hooks and rebuilds the current screen (`K.rebuild()`).
+- Never compute translated text at load time; call K.L at render time. Korean particles (`K.josa`) only in Korean branches.
+- Toasts: `UI.toast` passes text through `K.trMsg` (server result objects use `errorEn`; known Korean server strings are mapped).
+- Size tweaks for longer English go under `.ux-en …` only; design and animation stay identical.
+
+## Expansion events (00-core detect)
+- `{type:'loyalty', d:{round, card}, n, all}` when `view.loyaltyRevealed` grows (ranked after the journey to that round).
+- `{type:'excalibur', d:{round, holderId, targetId|null}, result}` when a new `lastQuest` carries `excalibur` (just before the quest result);
+  `result` is the holder's own `me.excaliburResults` entry (only on the holder's phone).

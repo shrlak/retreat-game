@@ -271,7 +271,7 @@
     try {
       const r = await api[name](...args);
       if (r && r.offline) { netDown = Date.now(); connCheck(); }
-      if (r && r.ok === false) { if (r.error) UI.toast(r.error); }
+      if (r && r.ok === false) { if (r.error && !r.toasted) UI.toast(r.errorEn || r.errorKey ? r : r.error); }
       else if (r) { netDown = 0; connCheck(); }
       else if (r && r.view) UI.render(r.view);
       return r || { ok: true };
@@ -339,8 +339,8 @@
       clockS.push(serverNow - Date.now()); if (clockS.length > 10) clockS.shift();
       K.clock.offset = Math.max.apply(null, clockS);   // the least-delayed sample is closest to the truth
     },
-    now() { return Date.now() + (K.clock.offset || 0); },
-    has() { return K.clock.offset !== null; },
+    now() { try { if (window.Net && typeof Net.serverTime === 'function') { const t = Net.serverTime(); if (isFinite(t)) return t; } } catch (e) { } return Date.now() + (K.clock.offset || 0); },
+    has() { return K.clock.offset !== null || !!(window.Net && typeof Net.serverTime === 'function'); },
     reset() { clockS.length = 0; K.clock.offset = null; }
   };
   K.SYNC_LEAD = 900;     // ms after the server moment that every phone starts together
@@ -362,14 +362,30 @@
   const seenKey = code => 'seen-' + code;
   function loadSeen(v) {
     const s = K.store.sget(seenKey(v.code), null);
-    seen = s && s.code === v.code ? s : { code: v.code, vote: v.lastVote ? v.lastVote.seq : null, quest: v.lastQuest ? v.lastQuest.seq : null, lady: v.lastLady ? v.lastLady.seq : null, phase: v.phase, round: v.round };
+    seen = s && s.code === v.code ? s : { code: v.code, vote: v.lastVote ? v.lastVote.seq : null, quest: v.lastQuest ? v.lastQuest.seq : null, lady: v.lastLady ? v.lastLady.seq : null, loyalty: (v.loyaltyRevealed || []).length, phase: v.phase, round: v.round };
   }
   function detect(v) {
     const ev = [];
-    if (v.phase === 'lobby') { seen.vote = seen.quest = seen.lady = null; }
+    if (v.phase === 'lobby') { seen.vote = seen.quest = seen.lady = null; seen.loyalty = 0; }
     if (seen.phase === 'lobby' && v.phase === 'reveal') ev.push({ type: 'deal' });
     if (v.lastVote && v.lastVote.seq !== seen.vote) { seen.vote = v.lastVote.seq; ev.push({ type: 'vote', d: v.lastVote }); }
-    if (v.lastQuest && v.lastQuest.seq !== seen.quest) { seen.quest = v.lastQuest.seq; ev.push({ type: 'quest', d: v.lastQuest }); }
+    if (v.lastQuest && v.lastQuest.seq !== seen.quest) {
+      seen.quest = v.lastQuest.seq;
+      /* Scroll of the Word: public use (lastQuest.excalibur) plays just before the mission result; the holder also gets
+         their private result (me.excaliburResults entry for that round). */
+      const xc = v.lastQuest.excalibur;
+      if (xc && xc.holderId) {
+        const mine = v.me && xc.holderId === v.me.id, rd = v.lastQuest.round;
+        const res = mine && xc.targetId ? ((v.me.excaliburResults || []).filter(r => r.round === rd && r.targetId === xc.targetId).pop() || null) : null;
+        ev.push({ type: 'excalibur', d: Object.assign({ round: rd }, xc), result: res });
+      }
+      ev.push({ type: 'quest', d: v.lastQuest });
+    }
+    /* Crossroads card (Lancelot module): a new entry in view.loyaltyRevealed = one card turned face up. */
+    const lr = v.loyaltyRevealed || [];
+    if (typeof seen.loyalty !== 'number') seen.loyalty = lr.length;
+    if (lr.length > seen.loyalty) { for (let i = seen.loyalty; i < lr.length; i++) ev.push({ type: 'loyalty', d: lr[i], n: i + 1, all: lr.slice(0, i + 1) }); }
+    seen.loyalty = lr.length;
     if (v.lastLady && v.lastLady.seq !== seen.lady) {
       seen.lady = v.lastLady.seq;
       const mine = v.me && v.lastLady.holderId === v.me.id;
@@ -383,7 +399,7 @@
     seen.phase = v.phase; seen.round = v.round;
     // when several results land in one view (slow phone, reconnect), play them in the order they happened
     const R = v.round || 0, rank = e => e.type === 'deal' ? -100 : e.type === 'begin' ? -50 : e.type === 'vote' ? (e.d.round || 0) * 10 + 3
-      : e.type === 'quest' ? (e.d.round || 0) * 10 + 5 : e.type === 'lady' ? R * 10 + .5 : e.type === 'journey' ? e.to * 10 + 1 : e.type === 'assassin' ? 1000 : 1001;
+      : e.type === 'quest' ? (e.d.round || 0) * 10 + 5 : e.type === 'excalibur' ? (e.d.round || 0) * 10 + 4.5 : e.type === 'loyalty' ? (e.d.round != null ? e.d.round : R) * 10 + 2 : e.type === 'lady' ? R * 10 + .5 : e.type === 'journey' ? e.to * 10 + 1 : e.type === 'assassin' ? 1000 : 1001;
     return ev.map((e, i) => [rank(e), i, e]).sort((a, b) => a[0] - b[0] || a[1] - b[1]).map(x => x[2]).filter(e => K.cine[e.type]);
   }
   function makeCtx() {

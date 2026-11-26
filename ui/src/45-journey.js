@@ -70,12 +70,13 @@
 
   // ---------- screen wipe + phase banner (on render) ----------
   const BANNER = {
-    propose: v => ({ ic: '🕯️', t: K.term('questTeam', '원정대') + ' 제안', s: (K.term('quest', '사명')) + ' ' + ((v.round || 0) + 1) + ' · ' + (v.proposalNo || 1) + '번째 제안' }),
-    vote: () => ({ ic: '🗳️', t: K.term('approve', '찬성') + ' 또는 ' + K.term('reject', '반대'), s: '모두가 한 표씩 던져요' }),
-    quest: () => ({ ic: '⛰️', t: K.term('quest', '사명') + ' 수행', s: '떠난 사람들이 카드를 내요' }),
-    excalibur: () => ({ ic: '📜', t: '말씀 두루마리', s: '두루마리를 받은 사람이 고르는 중' }),
-    lady: () => ({ ic: '🪔', t: K.term('lady', '등불') + ' 비추기', s: '한 사람의 마음을 비춰 봐요' }),
-    assassin: () => ({ ic: '🎯', t: K.term('assassinate', '선지자 지목'), s: '마지막 기회가 남았어요' })
+    propose: v => ({ ic: '🕯️', t: K.L(K.term('questTeam', '원정대') + ' 제안', 'Choose the ' + K.term('questTeam', 'Expedition')),
+      s: K.term('quest', K.L('사명', 'Mission')) + ' ' + ((v.round || 0) + 1) + ' · ' + K.L((v.proposalNo || 1) + '번째 제안', 'Proposal ' + (v.proposalNo || 1)) }),
+    vote: () => ({ ic: '🗳️', t: K.term('approve', K.L('찬성', 'Approve')) + K.L(' 또는 ', ' or ') + K.term('reject', K.L('반대', 'Reject')), s: K.L('모두가 한 표씩 던져요', 'Everyone casts one vote') }),
+    quest: () => ({ ic: '⛰️', t: K.L(K.term('quest', '사명') + ' 수행', 'On the ' + K.term('quest', 'Mission')), s: K.L('떠난 사람들이 카드를 내요', 'The team plays their cards') }),
+    excalibur: () => ({ ic: '📜', t: K.term('excalibur', K.L('말씀 두루마리', 'Scroll of the Word')), s: K.L('두루마리를 받은 사람이 고르는 중', 'The Scroll holder is deciding') }),
+    lady: () => ({ ic: '🪔', t: K.L(K.term('lady', '등불') + ' 비추기', K.term('ladyAction', 'Shine the Lamp')), s: K.L('한 사람의 마음을 비춰 봐요', 'Shine on one person\'s heart') }),
+    assassin: () => ({ ic: '🎯', t: K.term('assassinate', K.L('선지자 지목', 'Name the Prophet')), s: K.L('마지막 기회가 남았어요', 'One last chance') })
   };
   let lastName = null, lastPhaseKey = null, wipeTok = 0, lastJourney = 0;
   function wipe() {
@@ -101,7 +102,10 @@
 
   // ---------- animated waiting states ----------
   /* Any .ux-waiting that appears (from any screen) gets a halo, an orbiting light and a gentle rotating line. */
-  const WAIT_LINES = ['잠시 숨을 고르며 기다려요', '서두르지 않아도 괜찮아요', '옆 사람의 표정도 살짝 살펴보세요', '빛은 어둠 속에서 더 밝게 빛나요', '모두의 선택을 기다리는 중이에요', '조용히 마음을 모아 봐요'];
+  const WAIT_KO = ['잠시 숨을 고르며 기다려요', '서두르지 않아도 괜찮아요', '옆 사람의 표정도 살짝 살펴보세요', '빛은 어둠 속에서 더 밝게 빛나요', '모두의 선택을 기다리는 중이에요', '조용히 마음을 모아 봐요'];
+  const WAIT_EN = ['Take a breath while you wait', 'No need to hurry', 'Take a quiet look at the faces around you', 'Light shines brighter in the dark', 'Waiting for everyone to choose', 'Quiet your heart for a moment'];
+  const WAIT_LINES = { get length() { return WAIT_KO.length; } };
+  [0, 1, 2, 3, 4, 5].forEach(i => Object.defineProperty(WAIT_LINES, i, { get: () => (K.isEn() ? WAIT_EN : WAIT_KO)[i] }));
   let wl = 0;
   function decorate(node) {
     const list = node.matches && node.matches('.ux-waiting') ? [node] : (node.querySelectorAll ? Array.from(node.querySelectorAll('.ux-waiting')) : []);
@@ -125,7 +129,10 @@
   /* Art: assets/map/journey.svg (600×1300) with route data from assets/manifest.json (map.data). Point 0 = the
      start camp, 1..5 = the five 사명 stops. The route is sampled here (no getPointAtLength needed). */
   const ROUTE = 'M300,1222 C300,1121.9 185,1140.1 185,1040 C185,932.8 420,952.2 420,845 C420,732.2 195,752.8 195,640 C195,525.6 415,546.4 415,432 C415,324.2 300,343.8 300,236';
-  const PLACES = ['우물가', '목자의 들', '강 건너기', '빛의 산', '거룩한 성문'];
+  const PLACES_KO = ['우물가', '목자의 들', '강 건너기', '빛의 산', '거룩한 성문'];
+  const PLACES_EN = ['The Well', 'Shepherds\' Field', 'River Crossing', 'Mountain of Light', 'Holy Gate'];
+  const PLACES = { get length() { return 5; } };
+  [0, 1, 2, 3, 4].forEach(i => Object.defineProperty(PLACES, i, { get: () => (K.isEn() ? PLACES_EN : PLACES_KO)[i] }));
   const MW = 600, MH = 1300, MARK = 90, BADGE = 84, CUR = 140;
   const SAMP = [], IDX = [0];
   (function build() {
@@ -164,7 +171,7 @@
         (r ? img(r === 'success' ? 'stop-done-good.svg' : 'stop-done-evil.svg', x, y, BADGE, 'jr-seal') : '<text x="' + x + '" y="' + (y + 14) + '" class="jr-n">' + (i + 1) + '</text>') +
         (i === to ? img('stop-current.svg', x, y, CUR, 'jr-cur') : '') +
         '<text x="' + x + '" y="' + (y - 58) + '" class="jr-name">' + esc(PLACES[i]) + '</text>' +
-        (q.size ? '<text x="' + x + '" y="' + (y + 76) + '" class="jr-sz">' + q.size + '명' + ((q.failsNeeded || 1) >= 2 ? ' · 방해 2' : '') + '</text>' : '') +
+        (q.size ? '<text x="' + x + '" y="' + (y + 76) + '" class="jr-sz">' + esc(K.L(q.size + '명', q.size + ' players') + ((q.failsNeeded || 1) >= 2 ? K.L(' · 방해 2', ' · 2 ' + K.term('fail', 'Hindrance')) : '')) + '</text>' : '') +
         '</g>';
     }
     s += '<g class="jr-tok" transform="' + mk(start[0], start[1]) + '"><circle cx="45" cy="70" r="52" class="jr-tglow"/>' +
@@ -181,12 +188,13 @@
     const quick = (ctx.late || 0) > 2500 || K.reduced();
     ctx.el.classList.add('jr-ov');
     ctx.set('<div class="jr-wrap">' +
-      '<div class="ux-ornament jr-kicker">' + esc(K.term('quest', '사명')) + ' ' + (to + 1) + '</div>' +
-      '<div class="ux-cine-title">' + esc((K.josa ? K.josa(PLACES[to], '으로') : PLACES[to] + '(으)로') + (to === 0 && from < 0 ? ' 떠나요' : ' 이동해요')) + '</div>' +
+      '<div class="ux-ornament jr-kicker">' + esc(K.term('quest', K.L('사명', 'Mission'))) + ' ' + (to + 1) + '</div>' +
+      '<div class="ux-cine-title">' + esc(K.isEn() ? (to === 0 && from < 0 ? 'Setting out for ' : 'On to ') + PLACES[to]
+        : (K.josa ? K.josa(PLACES[to], '으로') : PLACES[to] + '(으)로') + (to === 0 && from < 0 ? ' 떠나요' : ' 이동해요')) + '</div>' +
       '<div class="jr-view"><div class="jr-pan"><div class="jr-map"></div>' + mapSVG(v, from, to) + '</div></div>' +
-      '<div class="jr-info ux-cine-sub">' + (q.size ? esc(q.size + '명의 ' + K.term('questTeam', '원정대')) : '') +
-      ((q.failsNeeded || 1) >= 2 ? ' · <b>' + esc(K.term('fail', '방해')) + ' 2장</b>이 나와야 실패' : '') +
-      (leader ? '<br>' + esc(K.term('leader', '조장')) + ': ' + esc(leader.name) : '') + '</div></div>');
+      '<div class="jr-info ux-cine-sub">' + (q.size ? esc(K.L(q.size + '명의 ' + K.term('questTeam', '원정대'), K.term('questTeam', 'Expedition') + ' of ' + q.size)) : '') +
+      ((q.failsNeeded || 1) >= 2 ? (K.isEn() ? ' · fails only with <b>2 ' + esc(K.term('fail', 'Hindrance')) + ' cards</b>' : ' · <b>' + esc(K.term('fail', '방해')) + ' 2장</b>이 나와야 실패') : '') +
+      (leader ? '<br>' + esc(K.term('leader', K.L('조장', 'Leader'))) + ': ' + esc(leader.name) : '') + '</div></div>');
     const view = ctx.inner.querySelector('.jr-view'), pan = ctx.inner.querySelector('.jr-pan'), svg = ctx.inner.querySelector('.jr-svg');
     const map = ctx.inner.querySelector('.jr-map'), mi = new Image();
     mi.onload = () => { map.style.backgroundImage = 'url("' + mi.src + '")'; view.classList.add('has-art'); }; mi.src = K.asset('map/journey.svg');
@@ -328,6 +336,7 @@
 .jr-n, .jr-name, .jr-sz { text-anchor: middle; font-family: var(--font-display); paint-order: stroke; stroke: rgba(10,10,30,.75); stroke-width: 6px; stroke-linejoin: round; }
 .jr-n { fill: var(--gold-hi); font-size: 40px; font-weight: 700; }
 .jr-name { fill: #fff6dc; font-size: 30px; font-weight: 700; }
+.ux-en .jr-name { font-size: 26px; }
 .jr-sz { fill: rgba(255,246,220,.8); font-size: 24px; }
 .jr-cur { transform-box: fill-box; transform-origin: center; animation: breathe 1.8s ease-in-out infinite; }
 .jr-seal { transform-box: fill-box; transform-origin: center; }

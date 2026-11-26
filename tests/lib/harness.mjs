@@ -44,7 +44,7 @@ export async function playGame(transport, opts = {}) {
     if (!j.ok) { bad("API", `join ${i} failed`, j.error); return { findings, log, tag }; }
     bots.push({ name: `봇${i}`, id: j.playerId, token: j.token, views: [j.view] });
   }
-  const host = bots[0];
+  let host = bots[0];
   const act = async (b, action, params = {}) => {
     const r = await call({ action, code, playerId: b.id, token: b.token, ...params });
     if (r.ok && r.view) b.views.push(r.view);
@@ -74,6 +74,56 @@ export async function playGame(transport, opts = {}) {
     bots[1].token = hijack.token;
   }
 
+  // ---- rejoin / host hand-over probes (H2/H3/H5), needs a controllable clock
+  let rejoinProbed = false;
+  async function rejoinProbe(v) {
+    const others = bots.filter((b) => b !== host);
+    const X = pick(rng, others);
+    const roleX = X.views.at(-1).me.role;
+    // H2 same device (token) comes back: same seat, same role
+    const back = await call({ action: "join", code, name: X.name, token: X.token });
+    if (!back.ok || back.playerId !== X.id || back.view.me.role !== roleX) bad("H2", "rejoin with own token did not restore the seat and role", back.error);
+    if (back.ok) X.views.push(back.view);
+    // H3 a new phone with only the name is refused
+    const steal = await call({ action: "join", code, name: X.name });
+    if (steal.ok) bad("H3", "joined an in-game seat by name without the host opening it");
+    // H3 host can't open the seat of someone who is online
+    const early = await act(host, "allowRejoin", { targetId: X.id });
+    if (early.ok) bad("H3", "host opened the seat of a player who is online");
+    // phones go quiet for 16 s, host opens X's seat, X's new phone joins by name
+    transport.advance(16_000);
+    const nonHost = others.find((b) => b !== X) || X;
+    const notHost = await act(nonHost, "allowRejoin", { targetId: X.id });
+    if (notHost.ok) bad("H3", "a non-host opened someone's seat");
+    const open = await act(host, "allowRejoin", { targetId: X.id });
+    if (!open.ok) bad("H3", "host could not open an offline player's seat", open.error);
+    else {
+      const wrong = others.find((b) => b !== X);
+      if (wrong) { const w = await call({ action: "join", code, name: wrong.name }); if (w.ok) bad("H3", "opening one seat let another seat be taken by name"); }
+      const nw = await call({ action: "join", code, name: X.name });
+      if (!nw.ok || nw.playerId !== X.id || nw.view.me.role !== roleX) bad("H3", "new phone did not get the opened seat with the same role", nw.error);
+      else {
+        const oldTok = X.token;
+        X.token = nw.token; X.views.push(nw.view);
+        const old = await call({ action: "state", code, playerId: X.id, token: oldTok });
+        if (old.ok) bad("H3", "old phone still works after the seat moved to a new phone");
+        const again = await call({ action: "join", code, name: X.name });
+        if (again.ok) bad("H3", "an opened seat could be taken twice");
+      }
+    }
+    // H5 host hand-over: refused while the host is around, allowed after 60 s away
+    const Y = pick(rng, others);
+    const tooSoon = await act(Y, "claimHost");
+    if (tooSoon.ok) bad("H5", "took over as host while the host was online");
+    transport.advance(61_000);
+    const took = await act(Y, "claimHost");
+    if (!took.ok) bad("H5", "could not take over from an away host", took.error);
+    else {
+      if (!(took.view.me && took.view.me.isHost) && !(took.view.players || []).some((p) => p.id === Y.id && p.isHost)) bad("H5", "claimHost ok but Y is not shown as host");
+      host = Y;
+    }
+  }
+
   // ---- play
   const truth = { leaderSeq: [], cardsPlayed: {}, ladyEvents: [], played: {}, excal: [] };
   let steps = 0;
@@ -95,6 +145,11 @@ export async function playGame(transport, opts = {}) {
 
     if (v.phase === "reveal") {
       for (const b of bots) await act(b, "ack");
+      continue;
+    }
+    if (v.phase === "propose" && !rejoinProbed && chaos > 0 && transport.advance && rng() < 0.5) {
+      rejoinProbed = true;
+      await rejoinProbe(v);
       continue;
     }
     if (v.phase === "propose") {
