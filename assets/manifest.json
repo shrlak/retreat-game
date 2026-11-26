@@ -1,0 +1,318 @@
+{
+  "title": "빛의 원정대",
+  "version": 1,
+  "base": "./assets/",
+  "notes": "All paths are relative to the deployed site root (web/), where assets/ sits next to index.html. No text is baked into any art except the logo lettering.",
+  "palette": {
+    "gold": "#E9B949",
+    "goldLight": "#F8DC8B",
+    "cream": "#FFF6E5",
+    "parchment": "#F6E7C8",
+    "ink": "#4A3426",
+    "amber": "#F4A259",
+    "sky": "#8EC5E8",
+    "pine": "#2F5D50",
+    "navy": "#1E2A4A",
+    "navyDark": "#141B33",
+    "navyLight": "#2C3E6B",
+    "plum": "#5B3A7A",
+    "plumDark": "#3A2550",
+    "plumLight": "#7E57A6",
+    "lilac": "#B48CE0",
+    "lavender": "#E4D6F5",
+    "approve": "#3F9D6B",
+    "reject": "#C8553D",
+    "good": "#E9B949",
+    "evil": "#7E57A6"
+  },
+  "card": {
+    "viewBox": "0 0 600 840",
+    "artWindow": {
+      "x": 30,
+      "y": 30,
+      "w": 540,
+      "h": 650
+    },
+    "namePlate": {
+      "x": 46,
+      "y": 700,
+      "w": 508,
+      "h": 104,
+      "pct": {
+        "left": 7.67,
+        "top": 83.33,
+        "width": 84.67,
+        "height": 12.38
+      },
+      "textColor": {
+        "good": "#4A3426",
+        "evil": "#3A2550"
+      }
+    }
+  },
+  "roles": {
+    "merlin": {
+      "card": "./assets/roles/merlin.svg",
+      "team": "good"
+    },
+    "percival": {
+      "card": "./assets/roles/percival.svg",
+      "team": "good"
+    },
+    "servant": {
+      "card": "./assets/roles/servant.svg",
+      "team": "good"
+    },
+    "assassin": {
+      "card": "./assets/roles/assassin.svg",
+      "team": "evil"
+    },
+    "morgana": {
+      "card": "./assets/roles/morgana.svg",
+      "team": "evil"
+    },
+    "mordred": {
+      "card": "./assets/roles/mordred.svg",
+      "team": "evil"
+    },
+    "oberon": {
+      "card": "./assets/roles/oberon.svg",
+      "team": "evil"
+    },
+    "minion": {
+      "card": "./assets/roles/minion.svg",
+      "team": "evil"
+    }
+  },
+  "cardBack": "./assets/card-back.svg",
+  "tokens": {
+    "success": "./assets/token-success.svg",
+    "fail": "./assets/token-fail.svg",
+    "approve": "./assets/vote-approve.svg",
+    "reject": "./assets/vote-reject.svg",
+    "leader": "./assets/leader.svg",
+    "lady": "./assets/lady.svg"
+  },
+  "teams": {
+    "good": "./assets/team-good.svg",
+    "evil": "./assets/team-evil.svg"
+  },
+  "knowledge": {
+    "evil": "./assets/knowledge/evil.svg",
+    "merlinCandidate": "./assets/knowledge/merlin-candidate.svg",
+    "unknown": "./assets/knowledge/unknown.svg",
+    "target": "./assets/knowledge/target.svg"
+  },
+  "track": {
+    "questBoard": {
+      "src": "./assets/track/quest-board.svg",
+      "viewBox": "0 0 1000 240",
+      "slots": [
+        {
+          "x": 120,
+          "y": 125,
+          "r": 70
+        },
+        {
+          "x": 310,
+          "y": 125,
+          "r": 70
+        },
+        {
+          "x": 500,
+          "y": 125,
+          "r": 70
+        },
+        {
+          "x": 690,
+          "y": 125,
+          "r": 70
+        },
+        {
+          "x": 880,
+          "y": 125,
+          "r": 70
+        }
+      ]
+    },
+    "voteTrack": {
+      "src": "./assets/track/vote-track.svg",
+      "viewBox": "0 0 1000 160",
+      "slots": [
+        {
+          "x": 140,
+          "y": 80,
+          "r": 46
+        },
+        {
+          "x": 320,
+          "y": 80,
+          "r": 46
+        },
+        {
+          "x": 500,
+          "y": 80,
+          "r": 46
+        },
+        {
+          "x": 680,
+          "y": 80,
+          "r": 46
+        },
+        {
+          "x": 860,
+          "y": 80,
+          "r": 46
+        }
+      ]
+    },
+    "voteMarker": "./assets/track/vote-marker.svg",
+    "questSlot": "./assets/track/quest-slot.svg",
+    "twoFails": "./assets/track/two-fails.svg"
+  },
+  "backgrounds": {
+    "home": "./assets/backgrounds/home.svg",
+    "game": "./assets/backgrounds/game.svg",
+    "reveal": "./assets/backgrounds/reveal.svg",
+    "victoryGood": "./assets/backgrounds/victory-good.svg",
+    "victoryEvil": "./assets/backgrounds/victory-evil.svg",
+    "propose": "./assets/backgrounds/phase-propose.svg",
+    "vote": "./assets/backgrounds/phase-vote.svg",
+    "mission": "./assets/backgrounds/phase-mission.svg",
+    "lady": "./assets/backgrounds/phase-lady.svg",
+    "assassin": "./assets/backgrounds/phase-assassin.svg",
+    "wait": "./assets/backgrounds/phase-wait.svg",
+    "pattern": "./assets/bg-pattern.svg",
+    "patternOverlay": "./assets/bg-pattern-overlay.svg",
+    "css": "background-size: cover; background-position: center"
+  },
+  "phaseBackground": {
+    "lobby": "home",
+    "reveal": "reveal",
+    "propose": "propose",
+    "vote": "vote",
+    "quest": "mission",
+    "lady": "lady",
+    "assassin": "assassin",
+    "end": {
+      "good": "victoryGood",
+      "evil": "victoryEvil"
+    },
+    "waiting": "wait",
+    "fallback": "game"
+  },
+  "map": {
+    "journey": "./assets/map/journey.svg",
+    "route": "./assets/map/route.json",
+    "marker": "./assets/map/marker.svg",
+    "stopDoneGood": "./assets/map/stop-done-good.svg",
+    "stopDoneEvil": "./assets/map/stop-done-evil.svg",
+    "stopCurrent": "./assets/map/stop-current.svg",
+    "readme": "./assets/map/README.md",
+    "data": {
+      "viewBox": "0 0 600 1300",
+      "route": "M300,1222 C300,1121.9 185,1140.1 185,1040 C185,932.8 420,952.2 420,845 C420,732.2 195,752.8 195,640 C195,525.6 415,546.4 415,432 C415,324.2 300,343.8 300,236",
+      "routeLength": 1438.8,
+      "start": {
+        "x": 300,
+        "y": 1222
+      },
+      "stops": [
+        {
+          "x": 185,
+          "y": 1040,
+          "r": 46,
+          "t": 0.1573
+        },
+        {
+          "x": 420,
+          "y": 845,
+          "r": 46,
+          "t": 0.384
+        },
+        {
+          "x": 195,
+          "y": 640,
+          "r": 46,
+          "t": 0.6099
+        },
+        {
+          "x": 415,
+          "y": 432,
+          "r": 46,
+          "t": 0.8345
+        },
+        {
+          "x": 300,
+          "y": 236,
+          "r": 46,
+          "t": 1.0
+        }
+      ],
+      "markerSize": 90,
+      "markerAnchor": {
+        "x": 0.5,
+        "y": 0.92
+      },
+      "badgeSize": 84,
+      "currentSize": 140
+    }
+  },
+  "logo": {
+    "full": "./assets/logo.svg",
+    "light": "./assets/logo-light.svg",
+    "mark": "./assets/logo-mark.svg"
+  },
+  "avatars": [
+    "./assets/avatars/avatar-1.svg",
+    "./assets/avatars/avatar-2.svg",
+    "./assets/avatars/avatar-3.svg",
+    "./assets/avatars/avatar-4.svg",
+    "./assets/avatars/avatar-5.svg",
+    "./assets/avatars/avatar-6.svg",
+    "./assets/avatars/avatar-7.svg",
+    "./assets/avatars/avatar-8.svg",
+    "./assets/avatars/avatar-9.svg",
+    "./assets/avatars/avatar-10.svg"
+  ],
+  "icons": {
+    "check": "./assets/icons/check.svg",
+    "clock": "./assets/icons/clock.svg",
+    "copy": "./assets/icons/copy.svg",
+    "dove": "./assets/icons/dove.svg",
+    "exit": "./assets/icons/exit.svg",
+    "eye-off": "./assets/icons/eye-off.svg",
+    "eye": "./assets/icons/eye.svg",
+    "flag": "./assets/icons/flag.svg",
+    "help": "./assets/icons/help.svg",
+    "home": "./assets/icons/home.svg",
+    "info": "./assets/icons/info.svg",
+    "lamp": "./assets/icons/lamp.svg",
+    "olive-branch": "./assets/icons/olive-branch.svg",
+    "play": "./assets/icons/play.svg",
+    "refresh": "./assets/icons/refresh.svg",
+    "scroll": "./assets/icons/scroll.svg",
+    "settings": "./assets/icons/settings.svg",
+    "share": "./assets/icons/share.svg",
+    "sheep": "./assets/icons/sheep.svg",
+    "shield": "./assets/icons/shield.svg",
+    "star": "./assets/icons/star.svg",
+    "user-minus": "./assets/icons/user-minus.svg",
+    "user-plus": "./assets/icons/user-plus.svg",
+    "users": "./assets/icons/users.svg",
+    "volume-off": "./assets/icons/volume-off.svg",
+    "volume-on": "./assets/icons/volume-on.svg",
+    "wifi-off": "./assets/icons/wifi-off.svg",
+    "x": "./assets/icons/x.svg"
+  },
+  "favicon": {
+    "svg": "./assets/icons/favicon.svg",
+    "png16": "./assets/icons/favicon-16.png",
+    "png32": "./assets/icons/favicon-32.png",
+    "appleTouch": "./assets/icons/apple-touch-icon.png",
+    "pwa192": "./assets/icons/icon-192.png",
+    "pwa512": "./assets/icons/icon-512.png",
+    "maskable512": "./assets/icons/icon-maskable-512.png",
+    "html": "<link rel=\"icon\" href=\"./assets/icons/favicon.svg\" type=\"image/svg+xml\"><link rel=\"icon\" href=\"./assets/icons/favicon-32.png\" sizes=\"32x32\" type=\"image/png\"><link rel=\"apple-touch-icon\" href=\"./assets/icons/apple-touch-icon.png\">"
+  }
+}

@@ -13,22 +13,23 @@ function sample(rng, arr, k) {
   return a.slice(0, k);
 }
 
-const FORBIDDEN_KEYS = new Set(["roleOf", "questCards", "token", "votes_pending", "acked_map"]);
+const FORBIDDEN_KEYS = new Set(["roleOf", "questCards", "token", "votes_pending", "acked_map", "allegiance", "loyaltyDeck", "excaliburResults_all"]);
 
 export async function playGame(transport, opts = {}) {
   const {
     n = 5, roles: roles0 = { merlin: true, percival: true, morgana: true, assassin: true, mordred: false, oberon: false },
-    lady = false, seed = 1, approveProb = 0.6, evilFailProb = 0.7, chaos = 0.15, maxSteps = 4000,
+    lady = false, lancelot = 0, excalibur = false, seed = 1, approveProb = 0.6, evilFailProb = 0.7, chaos = 0.15, maxSteps = 4000,
   } = opts;
   let roles = { ...roles0 };
   const rng = mkRng(seed);
   const findings = [];
   const log = [];
-  const tag = `n=${n} seed=${seed} lady=${lady} roles=${Object.keys(roles).filter((k) => roles[k]).join("+") || "none"}`;
+  const tag = `n=${n} seed=${seed} lady=${lady}${lancelot ? " lancelot=" + lancelot : ""}${excalibur ? " excalibur" : ""} roles=${Object.keys(roles).filter((k) => roles[k]).join("+") || "none"}`;
   const bad = (id, msg, extra) => findings.push({ id, msg, tag, extra, step: log.length });
   const call = async (body) => {
     const r = await transport.call(body);
     log.push({ body: { ...body, token: body.token ? "…" : undefined }, ok: r.ok, error: r.error });
+    if (transport.crashes && transport.crashes.length) bad("CRASH", `server error on ${body.action}`, transport.crashes.splice(0)[0]);
     return r;
   };
 
@@ -53,7 +54,7 @@ export async function playGame(transport, opts = {}) {
   const dup = await call({ action: "join", code, name: "봇2" });
   if (dup.ok && dup.playerId === bots[1].id) bad("H3", "lobby: joining with an existing name returned that player's seat");
 
-  let r = await act(host, "settings", { settings: { roles, lady, maxPlayers: 10 } });
+  let r = await act(host, "settings", { settings: { roles, lady, maxPlayers: 10, ...(lancelot ? { lancelot } : {}), ...(excalibur ? { excalibur } : {}) } });
   if (!r.ok) { bad("API", "settings refused", r.error); return { findings, log, tag }; }
   const eff = r.view.settings.roles;
   for (const k of Object.keys(roles)) if (!!eff[k] !== !!roles[k]) { roles = { ...roles, ...eff }; break; }
@@ -74,7 +75,7 @@ export async function playGame(transport, opts = {}) {
   }
 
   // ---- play
-  const truth = { leaderSeq: [], cardsPlayed: {}, ladyEvents: [] };
+  const truth = { leaderSeq: [], cardsPlayed: {}, ladyEvents: [], played: {}, excal: [] };
   let steps = 0;
   let lastVoteSeq = 0, lastQuestSeq = 0, lastLadySeq = 0;
   let firstLeaderId = null, firstLadyHolder = null;
@@ -112,10 +113,17 @@ export async function playGame(transport, opts = {}) {
         const x = await act(leader, "propose", { team: sample(rng, v.players.map((p) => p.id), size + 1) });
         if (x.ok) bad("C2", "wrong team size accepted");
       }
+      if (v.excalibur && rng() < chaos) {
+        const x = await act(leader, "propose", { team: [leader.id, ...v.players.map((p) => p.id).filter((id) => id !== leader.id).slice(0, size - 1)], excaliburTo: leader.id });
+        if (x.ok) bad("X1", "leader could give Excalibur to themselves");
+        if (x.ok) continue;
+      }
       let team;
       if (lv.me.team === "evil") team = [leader.id, ...sample(rng, v.players.map((p) => p.id).filter((id) => id !== leader.id), size - 1)];
       else team = sample(rng, v.players.map((p) => p.id), size);
-      const x = await act(leader, "propose", { team });
+      const extra = v.excalibur ? { excaliburTo: pick(rng, team.filter((id) => id !== leader.id)) } : {};
+      if (v.excalibur && !extra.excaliburTo) { const swap = v.players.map((p) => p.id).find((id) => !team.includes(id)); team = [leader.id, ...team.filter((id) => id !== leader.id)].slice(0, size - 1).concat(swap ? [] : []); }
+      const x = await act(leader, "propose", { team, ...extra });
       if (!x.ok) bad("C2", "legal proposal refused", x.error);
       continue;
     }
@@ -155,11 +163,34 @@ export async function playGame(transport, opts = {}) {
         }
         const success = bv.me.team === "good" ? true : !(rng() < evilFailProb);
         const x = await act(b, "quest", { success });
+        if (x.ok) (truth.played[v.round] ||= {})[id] = success;
         if (!x.ok) bad("D1", "legal quest card refused", x.error);
         else if (!success) truth.cardsPlayed[`${v.round}`] = (truth.cardsPlayed[`${v.round}`] || 0) + 1;
         if (x.ok && rng() < chaos) {
           const y = await act(b, "quest", { success: true });
           if (y.ok) bad("D1", "same player played two quest cards");
+        }
+      }
+      continue;
+    }
+    if (v.phase === "excalibur") {
+      const holderId = v.proposal && v.proposal.excaliburTo;
+      const holder = bots.find((b) => b.id === holderId);
+      if (!holder) { bad("X2", "excalibur phase without a holder"); break; }
+      const others = v.proposal.team.filter((id) => id !== holderId);
+      const outsider = bots.find((b) => b.id !== holderId);
+      const y = await act(outsider, "excalibur", { targetId: others[0] });
+      if (y.ok) { bad("X2", "someone other than the holder used Excalibur"); continue; }
+      if (rng() < chaos) { const z = await act(holder, "excalibur", { targetId: holderId }); if (z.ok) { bad("X2", "holder used Excalibur on themselves"); continue; } }
+      const targetId = rng() < 0.6 ? pick(rng, others) : null;
+      const x = await act(holder, "excalibur", { targetId });
+      if (!x.ok) bad("X2", "legal Excalibur use refused", x.error);
+      else {
+        truth.excal.push({ round: v.round, holderId, targetId });
+        if (targetId && truth.played[v.round] && targetId in truth.played[v.round]) {
+          const before = truth.played[v.round][targetId];
+          truth.played[v.round][targetId] = !before;
+          truth.cardsPlayed[`${v.round}`] = (truth.cardsPlayed[`${v.round}`] || 0) + (before ? 1 : -1);
         }
       }
       continue;

@@ -9,7 +9,11 @@ export function localTransport({ seed = 1, engine = REAL } = {}) {
   const rooms = new Map();
   let clock = 1_700_000_000_000;
   const now = () => (clock += 50);
+  const crashes = [];
   async function call(body) {
+    try { return await call0(body); } catch (e) { crashes.push(String(e.stack || e).split("\n").slice(0, 2).join(" ")); return { ok: false, error: "서버 오류" }; }
+  }
+  async function call0(body) {
     const { action, code, playerId, token } = body;
     if (action === "create") {
       let c;
@@ -34,5 +38,5 @@ export function localTransport({ seed = 1, engine = REAL } = {}) {
     if (r.error) return { ok: false, error: r.error };
     return { ok: true, view: E.viewFor(st, playerId, now()) };
   }
-  return { call, rooms, rng, kind: "local" };
+  return { call, rooms, rng, crashes, kind: "local" };
 }

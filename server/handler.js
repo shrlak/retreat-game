@@ -62,7 +62,9 @@ export function makeHandler({ url, key, table = "mist_rooms" }) {
     }
     const code = normCode(body.code);
     if (!code) return { ok: false, error: "방 코드를 입력해 주세요" };
-    for (let attempt = 0; attempt < 8; attempt++) {
+    for (let attempt = 0; attempt < 14; attempt++) {
+      // optimistic concurrency: when another phone saved first, wait a little (jittered, growing) and redo
+      if (attempt) await new Promise((r) => setTimeout(r, Math.random() * Math.min(600, 40 * 2 ** attempt) + 15));
       const row = await load(code);
       if (!row) return { ok: false, error: "그런 방이 없어요. 코드를 확인해 주세요" };
       const state = row.state;

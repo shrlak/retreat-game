@@ -31,21 +31,22 @@ Phone-based online hidden-role game in the style of the classic team-quest deduc
 - Role names: church-retreat names in `web/config.js` (Spencer asked for church-themed names; current set is a first pick).
 - Hosting: Supabase (free, in existing project "health-dashboard") + GitHub Pages. Cloudflare not possible from the cloud session (connector can't deploy Workers).
 
-## Snapshot (2026-11-26 09:12 UTC, auto-generated every push)
+## Snapshot (2026-11-26 09:19 UTC, auto-generated every push)
 
 ### Engine tests
 ```
 tests did not run
 ```
 ### Helper folders (files, newest change)
-- `ui/`: 16 files, newest 2026-11-26 09:14 UTC
-- `assets/`: 89 files, newest 2026-11-26 09:10 UTC
+- `ui/`: 17 files, newest 2026-11-26 09:20 UTC
+- `assets/`: 107 files, newest 2026-11-26 09:19 UTC
 - `guide/`: 8 files, newest 2026-11-26 09:01 UTC
-- `tests/`: 17 files, newest 2026-11-26 09:14 UTC
+- `tests/`: 17 files, newest 2026-11-26 09:20 UTC
 - `web/`: 4 files, newest 2026-11-26 09:03 UTC
-- `server/`: 3 files, newest 2026-11-26 09:13 UTC
+- `server/`: 3 files, newest 2026-11-26 09:20 UTC
 ### Recent commits
 ```
+43ce8c2 Auto-sync work in progress (09:12 UTC)
 e30af1c Handoff snapshot: tests, helper status, commits
 5c44ef9 Add .nojekyll
 2024bc9 Add live end-to-end bot test page
@@ -61,6 +62,8 @@ CONTRACT.md
 HANDOFF.md
 assets/STYLE.md
 assets/_src/build_manifest.py
+assets/_src/build_map.py
+assets/_src/build_phases.py
 assets/_src/build_roles_evil.py
 assets/_src/build_roles_good.py
 assets/_src/build_scenes.py
@@ -79,6 +82,12 @@ assets/avatars/avatar-8.svg
 assets/avatars/avatar-9.svg
 assets/backgrounds/game.svg
 assets/backgrounds/home.svg
+assets/backgrounds/phase-assassin.svg
+assets/backgrounds/phase-lady.svg
+assets/backgrounds/phase-mission.svg
+assets/backgrounds/phase-propose.svg
+assets/backgrounds/phase-vote.svg
+assets/backgrounds/phase-wait.svg
 assets/backgrounds/reveal.svg
 assets/backgrounds/victory-evil.svg
 assets/backgrounds/victory-good.svg
@@ -129,6 +138,15 @@ assets/leader.svg
 assets/logo-light.svg
 assets/logo-mark.svg
 assets/logo.svg
+assets/manifest.json
+assets/map/README.md
+assets/map/journey.svg
+assets/map/marker.svg
+assets/map/route.json
+assets/map/stop-current.svg
+assets/map/stop-done-evil.svg
+assets/map/stop-done-good.svg
+assets/preview.html
 assets/roles/assassin.svg
 assets/roles/merlin.svg
 assets/roles/minion.svg
@@ -167,8 +185,10 @@ tests/RULES_CHECKLIST.md
 tests/concurrency.test.mjs
 tests/e2e.html
 tests/engine.rules.test.mjs
+tests/handler.test.mjs
 tests/lib/harness.mjs
 tests/lib/oracle.mjs
+tests/lib/transport-handler.mjs
 tests/lib/transport-http.mjs
 tests/lib/transport-local.mjs
 tests/lib/transport-occ.mjs
@@ -188,6 +208,7 @@ ui/src/21-lobby.js
 ui/src/22-reveal.js
 ui/src/30-board.js
 ui/src/40-cine.js
+ui/src/45-journey.js
 ui/src/50-end.js
 ui/src/KIT.md
 ui/ui.css

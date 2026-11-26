@@ -14,7 +14,7 @@
   "use strict";
 
   // =====================================================================
-  // Engine port, generated from server/engine.js (md5 a40890edd45f…): `export` dropped,
+  // Engine port, generated from server/engine.js (md5 b96d35b1bf56…): `export` dropped,
   // `||=` rewritten for ES2020. Don't edit rules here: change server/engine.js and re-port,
   // so the mock never drifts from the server.
   // =====================================================================
@@ -38,9 +38,11 @@
     if (settings && settings.balance && BALANCE_SIZES[n]) return BALANCE_SIZES[n];
     return TEAM_SIZES[n] ?? null;
   }
-  const GOOD_ROLES = ["merlin", "percival", "servant"];
-  const EVIL_ROLES = ["assassin", "morgana", "mordred", "oberon", "minion"];
+  const GOOD_ROLES = ["merlin", "percival", "servant", "lancelotGood"];
+  const EVIL_ROLES = ["assassin", "morgana", "mordred", "oberon", "minion", "lancelotEvil"];
+  const LOYALTY_DECK = ["none", "none", "none", "switch", "switch"];
   const ONLINE_MS = 15000;
+  const TRANSITION_MS = 1800; // how long every phone plays a scene transition, started at phaseStartedAt
 
   function teamOf(role) {
     return EVIL_ROLES.includes(role) ? "evil" : "good";
@@ -53,6 +55,8 @@
     roles: { merlin: true, percival: true, morgana: true, assassin: true, mordred: false, oberon: false },
     lady: false,
     balance: false,
+    lancelot: 0, // 0 off, 1 = quiet variant, 2 = known variant
+    excalibur: false,
     maxPlayers: 10,
   };
 
@@ -104,6 +108,10 @@
     if (r.morgana) evil.push("morgana");
     if (r.mordred) evil.push("mordred");
     if (r.oberon) evil.push("oberon");
+    if (settings.lancelot) {
+      good.push("lancelotGood");
+      evil.push("lancelotEvil");
+    }
     if (evil.length > evilN) return err(`${n}명일 때 유혹의 무리는 ${evilN}명이라 특수 역할을 줄여야 해요`);
     if (good.length > n - evilN) return err("빛의 일꾼 특수 역할이 너무 많아요");
     while (good.length < n - evilN) good.push("servant");
@@ -127,6 +135,9 @@
       players: [p],
       game: null,
       seqs: { vote: 0, quest: 0, lady: 0 },
+      phaseSeq: 1,
+      phaseStartedAt: now,
+      prevPhase: null,
     };
     return { state, player: p };
   }
@@ -184,6 +195,11 @@
       }
       if ("lady" in patch) out.lady = !!patch.lady;
       if ("balance" in patch) out.balance = !!patch.balance;
+      if ("excalibur" in patch) out.excalibur = !!patch.excalibur;
+      if ("lancelot" in patch) {
+        const l = Number(patch.lancelot === true ? 1 : patch.lancelot);
+        out.lancelot = l === 1 || l === 2 ? l : 0;
+      }
       if ("maxPlayers" in patch) {
         const m = Math.round(Number(patch.maxPlayers));
         if (m >= MIN_PLAYERS && m <= MAX_PLAYERS) out.maxPlayers = m;
@@ -219,6 +235,8 @@
         assassinId = evils[Math.floor(rng() * evils.length)].id;
       }
     }
+    const allegiance = {};
+    for (const p of state.players) allegiance[p.id] = teamOf(roleOf[p.id]);
     const lady = !!state.settings.lady;
     const ladyHolder = lady ? state.players[(leaderSeat - 1 + n) % n].id : null;
     state.game = {
@@ -242,6 +260,13 @@
       ladyResults: {}, // holderId -> [{targetId, team}]
       assassinId,
       assassinTargetId: null,
+      allegiance,
+      lancelot: state.settings.lancelot || 0,
+      loyaltyDeck: state.settings.lancelot ? shuffle(LOYALTY_DECK, rng) : [],
+      loyaltyRevealed: [], // [{round, card}]
+      excalibur: !!state.settings.excalibur,
+      excaliburResults: {}, // holderId -> [{round, targetId, original:bool}]
+      lastExcalibur: null,
       winner: null,
       winReason: null,
     };
@@ -280,6 +305,16 @@
     g.proposalNo = 1;
     g.proposal = null;
     nextLeader(state);
+    if (g.lancelot && g.round >= 2 && g.loyaltyDeck.length) {
+      const card = g.loyaltyDeck.shift();
+      g.loyaltyRevealed.push({ round: g.round, card });
+      if (card === "switch") {
+        for (const id of Object.keys(g.roleOf)) {
+          if (g.roleOf[id] === "lancelotGood" || g.roleOf[id] === "lancelotEvil")
+            g.allegiance[id] = g.allegiance[id] === "good" ? "evil" : "good";
+        }
+      }
+    }
     // lady after quests 2,3,4 (round index 1,2,3 just finished => now round 2,3,4)
     if (g.lady && g.round >= 2 && g.round <= 4) {
       const candidates = state.players.filter((p) => !g.ladyUsedBy.includes(p.id));
@@ -304,6 +339,8 @@
     const isHost = state.hostId === me.id;
     const g = state.game;
     const a = msg.action;
+    const before = state.phase + ":" + (state.game ? state.game.round + "/" + state.game.proposalNo : "");
+    const beforePhase = state.phase;
     const res = (() => {
       switch (a) {
         case "ready": {
@@ -365,7 +402,13 @@
           const size = g.quests[g.round].size;
           if (team.length !== size) return err(`이번 사명에는 ${size}명을 골라야 해요`);
           if (!team.every((id) => P(state, id))) return err("없는 참가자가 있어요");
-          g.proposal = { team };
+          let excaliburTo = null;
+          if (g.excalibur) {
+            excaliburTo = msg.excaliburTo;
+            if (!team.includes(excaliburTo) || excaliburTo === me.id)
+              return err("말씀 두루마리는 조장이 아닌 원정대원 한 명에게 줘야 해요");
+          }
+          g.proposal = { team, excaliburTo };
           g.votes = {};
           state.phase = "vote";
           return {};
@@ -410,9 +453,33 @@
           if (!g.proposal.team.includes(me.id)) return err("원정대원만 카드를 낼 수 있어요");
           if (me.id in g.questCards) return err("이미 카드를 냈어요");
           let success = msg.success !== false;
-          if (teamOf(g.roleOf[me.id]) === "good" && !success) return err("빛의 일꾼은 축복 카드만 낼 수 있어요");
+          if (g.allegiance[me.id] === "good" && !success) return err("빛의 일꾼은 축복 카드만 낼 수 있어요");
           g.questCards[me.id] = success;
           if (Object.keys(g.questCards).length === g.proposal.team.length) {
+            if (g.excalibur && g.proposal.excaliburTo) {
+              state.phase = "excalibur";
+              return {};
+            }
+            resolveQuest(state);
+          }
+          return {};
+        }
+        case "excalibur": {
+          if (state.phase !== "excalibur") return err("지금은 말씀 두루마리를 쓸 때가 아니에요");
+          if (g.proposal.excaliburTo !== me.id) return err("두루마리를 받은 사람만 쓸 수 있어요");
+          let targetId = msg.targetId || null;
+          if (targetId) {
+            if (targetId === me.id || !g.proposal.team.includes(targetId)) return err("다른 원정대원을 골라 주세요");
+            const original = g.questCards[targetId];
+            g.questCards[targetId] = !original;
+            (g.excaliburResults[me.id] = g.excaliburResults[me.id] || []).push({ round: g.round, targetId, original });
+          }
+          g.lastExcalibur = { round: g.round, holderId: me.id, targetId };
+          resolveQuest(state);
+          return {};
+        }
+        case "questResolvePlaceholder": {
+          {
             const fails = Object.values(g.questCards).filter((x) => !x).length;
             const q = g.quests[g.round];
             q.team = g.proposal.team.slice();
@@ -471,7 +538,15 @@
           return err("알 수 없는 동작이에요");
       }
     })();
-    if (!res.error && !res.noChange) state.v += 1;
+    if (!res.error && !res.noChange) {
+      state.v += 1;
+      const after = state.phase + ":" + (state.game ? state.game.round + "/" + state.game.proposalNo : "");
+      if (after !== before) {
+        state.phaseSeq = (state.phaseSeq || 0) + 1;
+        state.phaseStartedAt = now;
+        state.prevPhase = beforePhase;
+      }
+    }
     return res;
   }
 
@@ -500,6 +575,12 @@
       teamSizes: teamSizes(n, state.settings),
       failsNeeded: n >= MIN_PLAYERS ? failsNeeded(n) : null,
       players,
+      // synced scene transitions: every phone starts the transition at phaseStartedAt (server ms clock)
+      phaseSeq: state.phaseSeq || 1,
+      phaseStartedAt: state.phaseStartedAt || state.createdAt,
+      prevPhase: state.prevPhase || null,
+      transitionMs: TRANSITION_MS,
+      serverNow: now,
     };
     const me = {
       id: meP.id,

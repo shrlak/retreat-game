@@ -320,8 +320,28 @@
     const won = v && v.phase === 'end' && v.winner;
     appEl.classList.toggle('is-evil-tint', won === 'evil');
     FX.setMood(won === 'evil' ? 'evil' : 'good');
+    (K.onRender || []).forEach(f => { try { f(v, name, screenEl); } catch (err) { console.error('[UI] onRender', err); } });
   }
   K.screenEl = () => screenEl;
+
+  // ---------- server clock (for starting animations at the same moment on every phone) ----------
+  /* The server sends serverNow (ms, when the view was built) and phaseStartedAt (ms, when the phase, round or
+     proposal last changed — every vote/quest/lamp result changes one of them in the same action). Every phone
+     starts the cinematics and scene transitions at phaseStartedAt + SYNC_LEAD on the server clock. Without the
+     fields everything plays on arrival. */
+  K.SYNC_LEAD = 900;     // ms after the server moment that every phone starts together
+  K.evAt = (e, v) => {
+    const d = e && e.d; if (d && typeof d.at === 'number') return d.at;
+    if (v && typeof v.phaseStartedAt === 'number') return v.phaseStartedAt;
+    return null;
+  };
+  /* Waits until the shared start moment. Returns how late we are (ms, 0 if on time or unsynced). */
+  K.syncWait = async (at) => {
+    if (at == null || !K.clock.has()) return 0;
+    const start = at + K.SYNC_LEAD, wait = start - K.clock.now();
+    if (wait > 0) { await K.sleep(Math.min(wait, 2500)); return 0; }
+    return -wait;
+  };
 
   // ---------- event detection + cinematic queue ----------
   let seen = null, cineBusy = false;
@@ -342,7 +362,8 @@
       const res = mine ? ((v.me.ladyResults || []).filter(r => r.targetId === v.lastLady.targetId).pop() || null) : null;
       ev.push({ type: 'lady', d: v.lastLady, result: res });
     }
-    if (v.phase === 'propose' && seen.phase === 'reveal') ev.push({ type: 'begin' });
+    if (v.phase === 'propose' && seen.phase === 'reveal') { ev.push({ type: 'begin' }); ev.push({ type: 'journey', from: -1, to: v.round || 0 }); }
+    else if (typeof v.round === 'number' && typeof seen.round === 'number' && v.round !== seen.round && /^(propose|vote|quest|lady)$/.test(v.phase) && /^(propose|vote|quest|lady)$/.test(seen.phase || '')) ev.push({ type: 'journey', from: seen.round, to: v.round });
     if (v.phase === 'assassin' && seen.phase && seen.phase !== 'assassin') ev.push({ type: 'assassin' });
     if (v.phase === 'end' && seen.phase && seen.phase !== 'end') ev.push({ type: 'end' });
     seen.phase = v.phase; seen.round = v.round;
@@ -364,8 +385,10 @@
     return ctx;
   }
   async function playAll(evs) {
+    let first = true;
     for (const e of evs) {
-      const ctx = makeCtx();
+      if (first) { first = false; e.late = await K.syncWait(K.evAt(e, K.view)); } else e.late = 0;
+      const ctx = makeCtx(); ctx.late = e.late;
       try { await K.cine[e.type](ctx, e, K.view, K); } catch (err) { console.error('[UI] cinematic failed', e.type, err); }
       ctx.el.classList.add('out'); await K.sleep(ctx.skipped ? 120 : 380); ctx.el.remove();
     }
@@ -414,7 +437,7 @@
     rootEl.innerHTML = '';
     appEl = K.el('<div class="ux-app"><div class="ux-pattern"></div><canvas class="ux-fx" aria-hidden="true"></canvas><div class="ux-stage"></div></div>');
     rootEl.appendChild(appEl);
-    stageEl = appEl.querySelector('.ux-stage');
+    stageEl = appEl.querySelector('.ux-stage'); K.appEl = appEl;
     const pat = appEl.querySelector('.ux-pattern'); const pimg = new Image();
     pimg.onload = () => { pat.style.backgroundImage = 'url("' + K.asset('bg-pattern.svg') + '")'; }; pimg.src = K.asset('bg-pattern.svg');
     toastsEl = K.el('<div class="ux-toasts" aria-live="assertive"></div>'); document.body.appendChild(toastsEl);
@@ -430,6 +453,7 @@
     if (!v && homeOpts) K.homeOpts = homeOpts;
     if (v && K.view && v.code === K.view.code && typeof v.v === 'number' && typeof K.view.v === 'number' && v.v < K.view.v) { lastViewAt = Date.now(); connCheck(); return; }
     if (!v) { seen = null; }
+    if (v && typeof v.serverNow === 'number') K.clock.sample(v.serverNow);
     K.view = v || null; lastViewAt = v ? Date.now() : 0; connCheck();
     if (cineBusy) return;   // the queue picks up the newest view when it ends
     pump();
@@ -1456,10 +1480,10 @@
 .cn-note.evil { color: #d9c2ff; }
 .cn-note b { color: var(--text); }
 .cn-res { width: 100%; min-height: 118px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 4px; }
-.cn-res .ux-banner { font-size: 32px; padding: 2px 12px; line-height: 1.25; }
+.cn-res .ux-banner { font-size: min(32px, 8vw); padding: 2px 12px; line-height: 1.25; }
 .cn-res .cn-note, .cn-res .ux-verse, .cn-res .cn-pips { animation: cnRise .7s .35s var(--ease-out) both; }
 .cn-res .ux-verse { animation-delay: .7s; margin-top: 4px; }
-.ux-banner.cn-long { font-size: 25px; line-height: 1.32; padding: 2px 6px; }
+.ux-banner.cn-long { font-size: min(25px, 6.6vw); line-height: 1.32; padding: 2px 6px; }
 .ux-banner.evil.cn-dusky { color: #e4d6f5; text-shadow: 0 0 26px rgba(142,108,200,.75), 0 0 54px rgba(224,72,110,.35); }
 @keyframes cnFade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes cnRise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
@@ -1617,7 +1641,7 @@
 .cn-mine.w { color: #2a1a02; background: linear-gradient(180deg, #fff0c4, #f4c96b 60%, #c98d2e); box-shadow: 0 6px 22px rgba(244,201,107,.45); }
 .cn-mine.l { color: var(--text-dim); background: rgba(255,255,255,.06); border: 1px solid var(--line); }
 .cn-win .ux-verse { animation: cnRise .7s 1.5s both; }
-.cn-win .ux-banner { font-size: 34px; }
+.cn-win .ux-banner { font-size: min(34px, 8.4vw); }
 
 @media (max-height: 700px) {
   .cn-wrap { gap: 9px; }
@@ -2133,6 +2157,373 @@
 
   // exposed for tests/other parts (harmless)
   K.josa = P;
+})();
+
+
+/* ---- src/45-journey.js ---- */
+/* Scenes and journey: a background for every phase (cross-faded), a screen-change light wipe, a phase banner,
+   animated waiting states, and the pilgrim-map cinematic that travels to the next 사명 whenever the round changes.
+   Everything that marks a shared moment starts on the server clock (K.syncWait), so all phones move together. */
+(function () {
+  'use strict';
+  const K = window.UI._k, esc = K.esc;
+
+  // ---------- phase scenes ----------
+  /* img: files tried in order under assets/backgrounds/ (the first that loads wins); cls: CSS look + decorations. */
+  const SCENES = {
+    home: { img: ['home'], cls: 'dawn' },
+    lobby: { img: ['lobby', 'home'], cls: 'camp' },
+    reveal: { img: ['reveal'], cls: 'night' },
+    propose: { img: ['propose', 'game'], cls: 'road' },
+    vote: { img: ['vote', 'game'], cls: 'chapel' },
+    quest: { img: ['quest', 'game'], cls: 'wild' },
+    excalibur: { img: ['excalibur', 'quest', 'game'], cls: 'wild' },
+    lady: { img: ['lady', 'game'], cls: 'lamp' },
+    assassin: { img: ['assassin', 'victory-evil'], cls: 'storm' },
+    'end-good': { img: ['victory-good'], cls: 'glory' },
+    'end-evil': { img: ['victory-evil'], cls: 'dusk' }
+  };
+  const DECO = {
+    dawn: '<i class="rays"></i><i class="sun"></i>',
+    camp: '<i class="fire"></i><i class="fly f1"></i><i class="fly f2"></i><i class="fly f3"></i><i class="fly f4"></i>',
+    night: '<i class="stars s1"></i><i class="stars s2"></i><i class="moon"></i>',
+    road: '<i class="cloud c1"></i><i class="cloud c2"></i><i class="sun low"></i>',
+    chapel: '<i class="shaft a"></i><i class="shaft b"></i><i class="shaft c"></i>',
+    wild: '<i class="wind w1"></i><i class="wind w2"></i><i class="wind w3"></i><i class="haze"></i>',
+    lamp: '<i class="glow"></i><i class="fly f1"></i><i class="fly f3"></i>',
+    storm: '<i class="cloud dark c1"></i><i class="cloud dark c2"></i><i class="bolt"></i>',
+    glory: '<i class="rays gold"></i><i class="sun"></i>',
+    dusk: '<i class="cloud dark c1"></i><i class="haze evil"></i>'
+  };
+  const resolved = {};   // scene key -> url | false
+  function findImg(key, list, cb) {
+    if (key in resolved) return cb(resolved[key]);
+    const tryAt = i => {
+      if (i >= list.length) { resolved[key] = false; return cb(false); }
+      const url = K.asset('backgrounds/' + list[i] + '.svg'), im = new Image();
+      im.onload = () => { resolved[key] = url; cb(url); };
+      im.onerror = () => tryAt(i + 1);
+      im.src = url;
+    };
+    tryAt(0);
+  }
+  K.sceneKey = v => !v ? 'home' : v.phase === 'end' ? 'end-' + (v.winner === 'evil' ? 'evil' : 'good') : (SCENES[v.phase] ? v.phase : 'propose');
+
+  let sceneBox = null, sceneCur = null, sceneEl = null;
+  function setScene(key) {
+    if (!K.appEl) return;
+    if (!sceneBox) { sceneBox = K.el('<div class="ux-scene" aria-hidden="true"></div>'); K.appEl.insertBefore(sceneBox, K.appEl.firstChild); }
+    if (key === sceneCur) return;
+    sceneCur = key;
+    const S = SCENES[key] || SCENES.propose;
+    const layer = K.el('<div class="ux-scene-l s-' + S.cls + '"><div class="img"></div><div class="deco">' + (DECO[S.cls] || '') + '</div><div class="veil"></div></div>');
+    sceneBox.appendChild(layer);
+    findImg(key, S.img, url => { if (url) { const im = layer.querySelector('.img'); im.style.backgroundImage = 'url("' + url + '")'; im.classList.add('on'); } });
+    requestAnimationFrame(() => requestAnimationFrame(() => layer.classList.add('in')));
+    const old = sceneEl; sceneEl = layer;
+    if (old) { old.classList.add('out'); setTimeout(() => old.remove(), 1600); }
+  }
+  K.setScene = setScene;
+
+  // ---------- screen wipe + phase banner (on render) ----------
+  const BANNER = {
+    propose: v => ({ ic: '🕯️', t: K.term('questTeam', '원정대') + ' 제안', s: (K.term('quest', '사명')) + ' ' + ((v.round || 0) + 1) + ' · ' + (v.proposalNo || 1) + '번째 제안' }),
+    vote: () => ({ ic: '🗳️', t: K.term('approve', '찬성') + ' 또는 ' + K.term('reject', '반대'), s: '모두가 한 표씩 던져요' }),
+    quest: () => ({ ic: '⛰️', t: K.term('quest', '사명') + ' 수행', s: '떠난 사람들이 카드를 내요' }),
+    excalibur: () => ({ ic: '📜', t: '말씀 두루마리', s: '두루마리를 받은 사람이 고르는 중' }),
+    lady: () => ({ ic: '🪔', t: K.term('lady', '등불') + ' 비추기', s: '한 사람의 마음을 비춰 봐요' }),
+    assassin: () => ({ ic: '🎯', t: K.term('assassinate', '선지자 지목'), s: '마지막 기회가 남았어요' })
+  };
+  let lastName = null, lastPhaseKey = null, wipeTok = 0, lastJourney = 0;
+  function wipe() {
+    if (K.reduced()) return;
+    const w = K.el('<div class="ux-wipe" aria-hidden="true"><i class="iris"></i><i class="ring"></i></div>');
+    document.body.appendChild(w); setTimeout(() => w.remove(), 1300);
+  }
+  async function banner(v, tok) {
+    const f = BANNER[v.phase]; if (!f) return;
+    await K.syncWait(K.evAt(null, v));
+    if (tok !== wipeTok || !K.view || K.view.phase !== v.phase || K.cineBusy()) return;
+    const b = f(v);
+    const el = K.el('<div class="ux-sweep" aria-hidden="true"><div class="bar"><span class="ic">' + b.ic + '</span><span class="tx"><b>' + esc(b.t) + '</b><small>' + esc(b.s) + '</small></span></div></div>');
+    document.body.appendChild(el); setTimeout(() => el.remove(), 2300);
+  }
+  (K.onRender = K.onRender || []).push((v, name) => {
+    setScene(K.sceneKey(v));
+    if (lastName && name !== lastName) wipe();
+    const pk = v ? v.phase + ':' + v.round + ':' + v.proposalNo : 'home';
+    if (v && lastPhaseKey && pk !== lastPhaseKey && name === 'board' && lastName === 'board' && Date.now() - lastJourney > 2500) banner(v, ++wipeTok);
+    lastName = name; lastPhaseKey = pk;
+  });
+
+  // ---------- animated waiting states ----------
+  /* Any .ux-waiting that appears (from any screen) gets a halo, an orbiting light and a gentle rotating line. */
+  const WAIT_LINES = ['잠시 숨을 고르며 기다려요', '서두르지 않아도 괜찮아요', '옆 사람의 표정도 살짝 살펴보세요', '빛은 어둠 속에서 더 밝게 빛나요', '모두의 선택을 기다리는 중이에요', '조용히 마음을 모아 봐요'];
+  let wl = 0;
+  function decorate(node) {
+    const list = node.matches && node.matches('.ux-waiting') ? [node] : (node.querySelectorAll ? Array.from(node.querySelectorAll('.ux-waiting')) : []);
+    list.forEach(w => {
+      if (w.querySelector(':scope > .ux-wfx')) return;
+      w.classList.add('ux-wait-live');
+      w.insertBefore(K.el('<div class="ux-wfx" aria-hidden="true"><i class="halo"></i><i class="ring"></i><i class="orb"><b></b></i><i class="orb o2"><b></b></i></div>'), w.firstChild);
+      if (!w.querySelector('.ux-wline')) w.appendChild(K.el('<p class="ux-wline">' + esc(WAIT_LINES[wl % WAIT_LINES.length]) + '</p>'));
+    });
+  }
+  (K.onInit = K.onInit || []).push(() => {
+    const stage = K.appEl && K.appEl.querySelector('.ux-stage'); if (!stage || !window.MutationObserver) return;
+    new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => n.nodeType === 1 && decorate(n)))).observe(stage, { childList: true, subtree: true });
+    setInterval(() => {
+      const ls = document.querySelectorAll('.ux-wline'); if (!ls.length) return;
+      wl++; ls.forEach(p => { p.classList.add('swap'); setTimeout(() => { p.textContent = WAIT_LINES[wl % WAIT_LINES.length]; p.classList.remove('swap'); }, 380); });
+    }, 4800);
+  });
+
+  // ---------- journey map cinematic ----------
+  /* Points: 0 = 출발 (the retreat's start), 1..5 = the five 사명. viewBox 0 0 360 660. */
+  const PTS = [[180, 622], [86, 520], [276, 418], [96, 304], [262, 190], [180, 70]];
+  const PLACES = ['갈릴리 호숫가', '광야의 길', '요단강 나루', '감람산 언덕', '예루살렘 성문'];
+  const SEG = 28;
+  // Catmull-Rom through PTS, sampled; idx[i] = sample index of point i
+  const SAMP = [], IDX = [0];
+  (function build() {
+    const P = i => PTS[Math.max(0, Math.min(PTS.length - 1, i))];
+    for (let i = 0; i < PTS.length - 1; i++) {
+      const p0 = P(i - 1), p1 = P(i), p2 = P(i + 1), p3 = P(i + 2);
+      for (let s = i === 0 ? 0 : 1; s <= SEG; s++) {
+        const t = s / SEG, t2 = t * t, t3 = t2 * t;
+        const f = (a, b, c, d) => .5 * ((2 * b) + (-a + c) * t + (2 * a - 5 * b + 4 * c - d) * t2 + (-a + 3 * b - 3 * c + d) * t3);
+        SAMP.push([f(p0[0], p1[0], p2[0], p3[0]), f(p0[1], p1[1], p2[1], p3[1])]);
+      }
+      IDX.push(SAMP.length - 1);
+    }
+  })();
+  const LEN = [0]; for (let i = 1; i < SAMP.length; i++) LEN.push(LEN[i - 1] + Math.hypot(SAMP[i][0] - SAMP[i - 1][0], SAMP[i][1] - SAMP[i - 1][1]));
+  const TOTAL = LEN[LEN.length - 1];
+  const pathD = (a, b) => 'M' + SAMP.slice(a, b + 1).map(p => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join('L');
+  function atLen(l) {
+    let i = 1; while (i < LEN.length - 1 && LEN[i] < l) i++;
+    const k = (l - LEN[i - 1]) / Math.max(1e-6, LEN[i] - LEN[i - 1]), a = SAMP[i - 1], b = SAMP[i];
+    return [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k];
+  }
+  const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+  function landmark(i) {
+    const [x, y] = PTS[i + 1];
+    const g = ['<path d="M' + (x - 34) + ' ' + (y + 12) + 'q17 -8 34 0t34 0" class="jr-water"/><path d="M' + (x - 26) + ' ' + (y + 20) + 'q13 -6 26 0t26 0" class="jr-water"/>',
+      '<path d="M' + (x - 38) + ' ' + (y + 16) + 'l14 -18 10 10 12 -20 18 28z" class="jr-hill"/>',
+      '<path d="M' + (x - 40) + ' ' + (y + 14) + 'q20 -10 40 0t40 0" class="jr-water"/><path d="M' + (x - 40) + ' ' + (y + 22) + 'q20 -10 40 0t40 0" class="jr-water"/>',
+      '<path d="M' + (x - 42) + ' ' + (y + 18) + 'q22 -40 44 -4q12 -16 26 4z" class="jr-hill"/><circle cx="' + (x + 20) + '" cy="' + (y + 4) + '" r="3" class="jr-tree"/><circle cx="' + (x + 28) + '" cy="' + (y + 8) + '" r="3" class="jr-tree"/>',
+      '<path d="M' + (x - 36) + ' ' + (y + 18) + 'v-18h10v-8h10v8h12v-14h8v14h12v-8h10v8h10v18z" class="jr-city"/>'][i] || '';
+    return g;
+  }
+  function mapSVG(v, from, to) {
+    const qs = v.quests || [], cur = Math.max(0, to);
+    let s = '<svg class="jr-svg" viewBox="0 0 360 660" xmlns="http://www.w3.org/2000/svg">' +
+      '<defs><radialGradient id="jrG" cx="50%" cy="40%" r="75%"><stop offset="0" stop-color="#2a2a5c"/><stop offset="1" stop-color="#0b0e26"/></radialGradient>' +
+      '<radialGradient id="jrL" r="50%"><stop offset="0" stop-color="#fff3c8"/><stop offset=".5" stop-color="#f4c96b" stop-opacity=".7"/><stop offset="1" stop-color="#f4c96b" stop-opacity="0"/></radialGradient></defs>' +
+      '<rect width="360" height="660" rx="22" fill="url(#jrG)"/>' +
+      '<rect x="8" y="8" width="344" height="644" rx="16" class="jr-frame"/>';
+    for (let i = 0; i < 26; i++) { const x = (i * 137) % 340 + 10, y = (i * 251) % 640 + 10; s += '<circle cx="' + x + '" cy="' + y + '" r="' + (i % 3 ? 1 : 1.6) + '" class="jr-star" style="animation-delay:' + (i % 7) * .4 + 's"/>'; }
+    for (let i = 0; i < 5; i++) s += '<g class="jr-lm">' + landmark(i) + '</g>';
+    s += '<path d="' + pathD(0, IDX[5]) + '" class="jr-road"/>';
+    const doneTo = IDX[Math.max(0, from + 1)];
+    if (doneTo > 0) s += '<path d="' + pathD(0, doneTo) + '" class="jr-done"/>';
+    const a = IDX[Math.max(0, from + 1)], b = IDX[cur + 1];
+    s += '<path d="' + pathD(a, b) + '" class="jr-go" data-len="' + (LEN[b] - LEN[a]).toFixed(1) + '"/>';
+    s += '<g class="jr-start"><circle cx="' + PTS[0][0] + '" cy="' + PTS[0][1] + '" r="9"/><text x="' + PTS[0][0] + '" y="' + (PTS[0][1] + 28) + '">출발</text></g>';
+    for (let i = 0; i < 5; i++) {
+      const [x, y] = PTS[i + 1], q = qs[i] || {}, r = q.result, here = i === cur;
+      s += '<g class="jr-st' + (r ? ' ' + r : '') + (here ? ' here' : '') + '" data-st="' + i + '">' +
+        (here ? '<circle cx="' + x + '" cy="' + y + '" r="34" class="jr-aura"/>' : '') +
+        '<circle cx="' + x + '" cy="' + y + '" r="17" class="jr-dot"/>' +
+        '<text x="' + x + '" y="' + (y + 6) + '" class="jr-n">' + (r === 'success' ? '✓' : r === 'fail' ? '✕' : (i + 1)) + '</text>' +
+        '<text x="' + x + '" y="' + (y - 26) + '" class="jr-name">' + esc(PLACES[i]) + '</text>' +
+        (q.size ? '<text x="' + x + '" y="' + (y + 36) + '" class="jr-sz">' + q.size + '명' + ((q.failsNeeded || 1) >= 2 ? ' · 방해 2' : '') + '</text>' : '') +
+        '</g>';
+    }
+    s += '<g class="jr-tok" transform="translate(' + PTS[Math.max(0, from + 1)].join(' ') + ')"><circle r="26" fill="url(#jrL)" class="jr-tglow"/><circle r="11" class="jr-tbody"/><text y="5" class="jr-ticon">🕯️</text></g>';
+    return s + '</svg>';
+  }
+
+  K.cine.journey = async (ctx, ev, v, K_) => {
+    v = K.view || v; if (!v || !(v.quests || []).length) return;
+    const to = Math.max(0, Math.min(4, typeof ev.to === 'number' ? ev.to : (v.round || 0)));
+    const from = Math.max(-1, Math.min(to - 1, typeof ev.from === 'number' ? ev.from : to - 1));
+    lastJourney = Date.now();
+    const q = (v.quests || [])[to] || {}, leader = K.player ? K.player(v, v.leaderId) : (v.players || []).find(p => p.id === v.leaderId);
+    const late = ctx.late || 0, quick = late > 2500 || K.reduced();
+    ctx.el.classList.add('jr-ov');
+    ctx.set('<div class="jr-wrap">' +
+      '<div class="ux-ornament jr-kicker">' + esc(K.term('quest', '사명')) + ' ' + (to + 1) + '</div>' +
+      '<div class="ux-cine-title">' + esc((K.josa ? K.josa(PLACES[to], '으로') : PLACES[to] + '(으)로') + (to === 0 && from < 0 ? ' 떠나요' : ' 이동해요')) + '</div>' +
+      '<div class="jr-view"><div class="jr-pan">' + mapSVG(v, from, to) + '</div></div>' +
+      '<div class="jr-info ux-cine-sub">' + (q.size ? esc(q.size + '명의 ' + K.term('questTeam', '원정대')) : '') +
+      ((q.failsNeeded || 1) >= 2 ? ' · <b>' + esc(K.term('fail', '방해')) + ' 2장</b>이 나와야 실패' : '') +
+      (leader ? '<br>' + esc(K.term('leader', '조장')) + ': ' + esc(leader.name) : '') + '</div></div>');
+    const view = ctx.inner.querySelector('.jr-view'), pan = ctx.inner.querySelector('.jr-pan'), svg = ctx.inner.querySelector('.jr-svg');
+    const tok = svg.querySelector('.jr-tok'), go = svg.querySelector('.jr-go');
+    const vw = view.clientWidth || 320, vh = view.clientHeight || 360, sc = vw / 360, mh = 660 * sc;
+    const panTo = y => { const ty = Math.max(vh - mh, Math.min(0, vh / 2 - y * sc)); pan.style.transform = 'translate3d(0,' + ty.toFixed(1) + 'px,0)'; };
+    const a = LEN[IDX[Math.max(0, from + 1)]], b = LEN[IDX[to + 1]], segLen = b - a;
+    go.style.strokeDasharray = segLen.toFixed(1); go.style.strokeDashoffset = segLen.toFixed(1);
+    const place = l => { const p = atLen(l); tok.setAttribute('transform', 'translate(' + p[0].toFixed(1) + ' ' + p[1].toFixed(1) + ')'); return p; };
+    panTo(atLen(a)[1]);
+    K.fb('tap');
+    if (!quick) {
+      await ctx.sleep(700);
+      if (!ctx.skipped) {
+        const D = 2100;
+        await new Promise(res => {
+          const t0 = performance.now();
+          const step = now => {
+            const t = ctx.skipped ? 1 : Math.min(1, (now - t0) / D), e = ease(t), l = a + segLen * e;
+            const p = place(l); panTo(p[1]); go.style.strokeDashoffset = (segLen * (1 - e)).toFixed(1);
+            if (t < 1) requestAnimationFrame(step); else res();
+          };
+          requestAnimationFrame(step);
+        });
+      }
+    }
+    const p = place(b); panTo(p[1]); go.style.strokeDashoffset = '0';
+    const st = svg.querySelector('[data-st="' + to + '"]'); if (st) st.classList.add('arrived');
+    K.fb('chime');
+    if (!ctx.skipped) K.fx.burstAt(tok, { n: 46, speed: 260 });
+    ctx.inner.querySelector('.jr-info').classList.add('on');
+    await ctx.tapOrWait(quick ? 1400 : 1900);
+  };
+
+  // ---------- styles ----------
+  const css = `
+.ux-scene { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.ux-scene-l { position: absolute; inset: 0; opacity: 0; transition: opacity 1.4s ease; }
+.ux-scene-l.in { opacity: 1; }
+.ux-scene-l.out { opacity: 0; transition-duration: 1.4s; }
+.ux-scene-l .img { position: absolute; inset: -4%; background-size: cover; background-position: center; opacity: 0; transition: opacity 1.2s ease; transform: scale(1.04); animation: scnDrift 30s ease-in-out infinite alternate; }
+.ux-scene-l .img.on { opacity: .62; }
+.ux-scene-l .veil { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(7,10,28,.35), rgba(7,10,28,.15) 35%, rgba(7,10,28,.55)); }
+.ux-scene-l .deco { position: absolute; inset: 0; }
+.ux-scene-l .deco i { position: absolute; display: block; }
+@keyframes scnDrift { from { transform: scale(1.04) translate3d(0,0,0); } to { transform: scale(1.1) translate3d(-1.5%,-1%,0); } }
+/* palettes (shown even before or without the picture) */
+.s-dawn { background: radial-gradient(120% 60% at 50% 0%, rgba(255,190,110,.35), transparent 60%), linear-gradient(180deg, #2b1d48, #0b0d24); }
+.s-camp { background: radial-gradient(90% 50% at 50% 100%, rgba(255,140,60,.28), transparent 65%), linear-gradient(180deg, #121a3e, #0a0b1d); }
+.s-night { background: radial-gradient(80% 50% at 70% 10%, rgba(160,170,255,.22), transparent 60%), linear-gradient(180deg, #060a22, #03040f); }
+.s-road { background: radial-gradient(120% 60% at 50% 90%, rgba(255,205,120,.25), transparent 60%), linear-gradient(180deg, #1d2a5a, #0c1230); }
+.s-chapel { background: radial-gradient(70% 60% at 50% 0%, rgba(255,230,170,.3), transparent 60%), linear-gradient(180deg, #1c1640, #0a0a1e); }
+.s-wild { background: radial-gradient(100% 50% at 50% 100%, rgba(230,140,80,.28), transparent 65%), linear-gradient(180deg, #2a1c3c, #0e0a1a); }
+.s-lamp { background: radial-gradient(70% 45% at 50% 70%, rgba(255,200,110,.32), transparent 65%), linear-gradient(180deg, #161230, #08081a); }
+.s-storm { background: radial-gradient(90% 50% at 50% 0%, rgba(200,60,110,.22), transparent 60%), linear-gradient(180deg, #1e0f2c, #07040e); }
+.s-glory { background: radial-gradient(120% 70% at 50% 10%, rgba(255,220,140,.45), transparent 60%), linear-gradient(180deg, #3a2a50, #120f28); }
+.s-dusk { background: radial-gradient(120% 70% at 50% 10%, rgba(224,72,110,.3), transparent 60%), linear-gradient(180deg, #2a1236, #0a0512); }
+/* decorations: transform/opacity only */
+.deco .rays { left: 50%; top: -60vh; width: 160vh; height: 160vh; margin-left: -80vh; border-radius: 50%; opacity: .35;
+  background: repeating-conic-gradient(from 0deg, rgba(255,226,160,.22) 0 6deg, transparent 6deg 18deg);
+  -webkit-mask-image: radial-gradient(circle, #000 20%, transparent 62%); mask-image: radial-gradient(circle, #000 20%, transparent 62%); animation: scnSpin 90s linear infinite; }
+.deco .rays.gold { opacity: .55; }
+.deco .sun { left: 50%; top: 6vh; width: 220px; height: 220px; margin-left: -110px; border-radius: 50%; background: radial-gradient(circle, rgba(255,236,190,.55), rgba(255,200,120,.12) 45%, transparent 70%); animation: breathe 5s ease-in-out infinite; }
+.deco .sun.low { top: auto; bottom: 14vh; opacity: .7; }
+.deco .fire { left: 50%; bottom: -60px; width: 360px; height: 220px; margin-left: -180px; border-radius: 50%; background: radial-gradient(ellipse at 50% 70%, rgba(255,150,70,.45), transparent 65%); animation: scnFlicker 2.2s ease-in-out infinite; }
+.deco .fly { width: 5px; height: 5px; border-radius: 50%; background: #ffe7a8; box-shadow: 0 0 10px 3px rgba(255,210,120,.6); opacity: 0; animation: scnFly 9s ease-in-out infinite; }
+.deco .f1 { left: 18%; bottom: 22%; } .deco .f2 { left: 70%; bottom: 30%; animation-delay: 2.2s; } .deco .f3 { left: 40%; bottom: 12%; animation-delay: 4.4s; } .deco .f4 { left: 84%; bottom: 52%; animation-delay: 6.1s; }
+.deco .stars { inset: 0; background-image: radial-gradient(1.4px 1.4px at 12% 18%, #fff, transparent), radial-gradient(1.2px 1.2px at 32% 8%, #fff, transparent), radial-gradient(1.6px 1.6px at 56% 22%, #fff, transparent), radial-gradient(1.1px 1.1px at 74% 12%, #fff, transparent), radial-gradient(1.5px 1.5px at 88% 30%, #fff, transparent), radial-gradient(1.2px 1.2px at 22% 40%, #fff, transparent), radial-gradient(1.3px 1.3px at 64% 46%, #fff, transparent); animation: scnTw 4s ease-in-out infinite; }
+.deco .stars.s2 { transform: translate(6%, 9%); animation-delay: 2s; }
+.deco .moon { right: 12%; top: 8vh; width: 70px; height: 70px; border-radius: 50%; background: radial-gradient(circle at 38% 38%, #fff8e0, #e9dcb0 60%, transparent 62%); box-shadow: 0 0 60px 20px rgba(220,220,255,.15); animation: breathe 6s ease-in-out infinite; }
+.deco .cloud { width: 70vw; height: 22vh; border-radius: 50%; background: radial-gradient(ellipse, rgba(255,240,220,.14), transparent 65%); animation: scnCloud 38s linear infinite; }
+.deco .cloud.c1 { top: 10vh; left: -70vw; } .deco .cloud.c2 { top: 32vh; left: -70vw; animation-duration: 55s; animation-delay: -20s; }
+.deco .cloud.dark { background: radial-gradient(ellipse, rgba(120,60,140,.3), transparent 65%); }
+.deco .shaft { top: -10vh; width: 26vw; height: 120vh; background: linear-gradient(180deg, rgba(255,236,190,.22), transparent 80%); transform-origin: 50% 0; animation: scnShaft 7s ease-in-out infinite; }
+.deco .shaft.a { left: 12%; transform: rotate(14deg); } .deco .shaft.b { left: 40%; transform: rotate(4deg); animation-delay: 2.3s; } .deco .shaft.c { left: 66%; transform: rotate(-10deg); animation-delay: 4.6s; }
+.deco .wind { left: -40vw; height: 2px; width: 40vw; border-radius: 2px; background: linear-gradient(90deg, transparent, rgba(255,230,190,.25), transparent); animation: scnWind 6s linear infinite; }
+.deco .w1 { top: 30%; } .deco .w2 { top: 52%; animation-delay: 2s; } .deco .w3 { top: 72%; animation-delay: 4s; }
+.deco .haze { left: 0; right: 0; bottom: 0; height: 40vh; background: linear-gradient(0deg, rgba(240,150,90,.18), transparent); animation: breathe 7s ease-in-out infinite; }
+.deco .haze.evil { background: linear-gradient(0deg, rgba(224,72,110,.2), transparent); }
+.deco .glow { left: 50%; bottom: 14vh; width: 300px; height: 300px; margin-left: -150px; border-radius: 50%; background: radial-gradient(circle, rgba(255,210,130,.4), transparent 65%); animation: scnFlicker 3s ease-in-out infinite; }
+.deco .bolt { inset: 0; background: radial-gradient(60% 40% at 60% 10%, rgba(230,200,255,.35), transparent 60%); opacity: 0; animation: scnBolt 9s linear infinite; }
+@keyframes scnSpin { to { transform: rotate(360deg); } }
+@keyframes scnFlicker { 0%,100% { opacity: .8; transform: scale(1); } 30% { opacity: 1; transform: scale(1.05); } 60% { opacity: .7; transform: scale(.97); } }
+@keyframes scnFly { 0% { opacity: 0; transform: translate3d(0,0,0); } 20% { opacity: 1; } 60% { opacity: .8; transform: translate3d(30px,-70px,0); } 100% { opacity: 0; transform: translate3d(-20px,-140px,0); } }
+@keyframes scnTw { 0%,100% { opacity: .5; } 50% { opacity: 1; } }
+@keyframes scnCloud { to { transform: translate3d(180vw,0,0); } }
+@keyframes scnShaft { 0%,100% { opacity: .35; } 50% { opacity: .9; } }
+@keyframes scnWind { 0% { transform: translate3d(0,0,0); opacity: 0; } 20% { opacity: 1; } 100% { transform: translate3d(180vw,0,0); opacity: 0; } }
+@keyframes scnBolt { 0%,88%,100% { opacity: 0; } 90% { opacity: 1; } 92% { opacity: .2; } 94% { opacity: .8; } }
+
+/* screen change: a light iris + spinning rose ring, never blocks taps */
+.ux-wipe { position: fixed; inset: 0; z-index: 40; pointer-events: none; display: grid; place-items: center; overflow: hidden; }
+.ux-wipe .iris { width: 60px; height: 60px; border-radius: 50%; background: radial-gradient(circle, rgba(255,246,214,.95), rgba(255,215,122,.55) 40%, rgba(255,215,122,0) 70%); animation: wpIris 1.1s var(--ease-out) both; }
+.ux-wipe .ring { position: absolute; width: 140px; height: 140px; border-radius: 50%; border: 2px dashed rgba(255,231,168,.7); animation: wpRing 1.1s var(--ease-out) both; }
+@keyframes wpIris { 0% { transform: scale(0); opacity: 0; } 30% { opacity: 1; } 100% { transform: scale(22); opacity: 0; } }
+@keyframes wpRing { 0% { transform: scale(.2) rotate(0); opacity: 0; } 30% { opacity: 1; } 100% { transform: scale(5) rotate(180deg); opacity: 0; } }
+
+/* phase banner */
+.ux-sweep { position: fixed; left: 0; right: 0; top: 34%; z-index: 45; pointer-events: none; display: flex; justify-content: center; }
+.ux-sweep .bar { display: flex; align-items: center; gap: 12px; padding: 12px 26px; min-width: 70%; max-width: 440px; justify-content: center;
+  background: linear-gradient(90deg, transparent, rgba(24,30,70,.96) 18%, rgba(24,30,70,.96) 82%, transparent); border-top: 1px solid var(--line-strong); border-bottom: 1px solid var(--line-strong);
+  animation: swIn 2.2s var(--ease-out) both; }
+.ux-sweep .ic { font-size: 30px; animation: bannerIn .8s var(--ease-spring) both; }
+.ux-sweep .tx { display: flex; flex-direction: column; }
+.ux-sweep b { font-family: var(--font-display); font-size: 21px; color: var(--gold-hi); }
+.ux-sweep small { font-size: 12.5px; color: var(--text-dim); }
+@keyframes swIn { 0% { transform: translate3d(-110%,0,0); opacity: 0; } 18% { transform: translate3d(0,0,0); opacity: 1; } 78% { transform: translate3d(0,0,0); opacity: 1; } 100% { transform: translate3d(110%,0,0); opacity: 0; } }
+
+/* waiting */
+.ux-wait-live { position: relative; isolation: isolate; padding-top: 14px; min-height: 96px; }
+.ux-wfx { position: absolute; left: 50%; top: 4px; width: 92px; height: 92px; margin-left: -46px; z-index: -1; pointer-events: none; }
+.ux-wfx i { position: absolute; inset: 0; border-radius: 50%; display: block; }
+.ux-wfx .halo { background: radial-gradient(circle, rgba(255,215,122,.32), transparent 66%); animation: breathe 2.8s ease-in-out infinite; }
+.ux-wfx .ring { inset: 8px; border: 1.5px dashed rgba(255,231,168,.45); animation: scnSpin 14s linear infinite; }
+.ux-wfx .orb { animation: scnSpin 4.2s linear infinite; }
+.ux-wfx .orb.o2 { inset: 14px; animation-duration: 6.5s; animation-direction: reverse; }
+.ux-wfx .orb b { position: absolute; left: 50%; top: -3px; width: 7px; height: 7px; margin-left: -3.5px; border-radius: 50%; background: #fff3c8; box-shadow: 0 0 10px 3px rgba(255,215,122,.7); }
+.ux-wfx .orb.o2 b { background: #d9c9ff; box-shadow: 0 0 10px 3px rgba(143,108,240,.6); }
+.ux-wait-live .bd-wait-ic { animation: uxeBob 3s ease-in-out infinite; }
+.ux-wline { margin: 2px 0 0; font-size: 12.5px; color: var(--text-mute); letter-spacing: .02em; text-align: center; transition: opacity .35s ease, transform .35s ease; }
+.ux-wline.swap { opacity: 0; transform: translateY(4px); }
+
+/* journey */
+.jr-ov { background: radial-gradient(circle at 50% 35%, rgba(26,30,72,.94), rgba(5,7,20,.98)); }
+.jr-wrap { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.jr-kicker { animation: titleIn .6s both; }
+.jr-view { position: relative; width: 100%; max-width: 360px; height: min(52vh, 420px); overflow: hidden; border-radius: 22px; box-shadow: 0 0 0 1px var(--line-strong), 0 20px 60px rgba(0,0,0,.55), 0 0 40px rgba(244,201,107,.15); animation: jrUnroll .8s var(--ease-out) both; transform-origin: 50% 0; }
+.jr-pan { will-change: transform; }
+.jr-svg { display: block; width: 100%; height: auto; }
+@keyframes jrUnroll { from { transform: scaleY(.2); opacity: 0; } to { transform: none; opacity: 1; } }
+.jr-frame { fill: none; stroke: rgba(255,227,163,.35); stroke-width: 1.5; stroke-dasharray: 2 6; }
+.jr-star { fill: #fff; opacity: .5; animation: scnTw 3s ease-in-out infinite; }
+.jr-road { fill: none; stroke: rgba(255,231,168,.22); stroke-width: 5; stroke-linecap: round; stroke-dasharray: 2 10; }
+.jr-done { fill: none; stroke: rgba(244,201,107,.75); stroke-width: 5; stroke-linecap: round; }
+.jr-go { fill: none; stroke: #ffe7a8; stroke-width: 6; stroke-linecap: round; filter: drop-shadow(0 0 6px rgba(255,215,122,.9)); }
+.jr-water { fill: none; stroke: rgba(150,190,255,.45); stroke-width: 2; stroke-linecap: round; }
+.jr-hill { fill: rgba(120,110,190,.32); stroke: rgba(255,227,163,.25); stroke-width: 1; }
+.jr-tree { fill: rgba(140,200,140,.5); }
+.jr-city { fill: rgba(255,215,122,.22); stroke: rgba(255,227,163,.5); stroke-width: 1; }
+.jr-start circle { fill: rgba(255,231,168,.35); stroke: #ffe7a8; stroke-width: 2; }
+.jr-start text, .jr-name, .jr-sz, .jr-n { text-anchor: middle; font-family: var(--font-display); }
+.jr-start text { fill: var(--text-dim); font-size: 12px; }
+.jr-dot { fill: #1a2050; stroke: rgba(255,227,163,.55); stroke-width: 2; }
+.jr-n { fill: var(--gold-hi); font-size: 15px; font-weight: 700; }
+.jr-name { fill: var(--text); font-size: 12.5px; font-weight: 700; }
+.jr-sz { fill: var(--text-mute); font-size: 10.5px; }
+.jr-st.success .jr-dot { fill: rgba(255,215,122,.9); stroke: #fff3c8; } .jr-st.success .jr-n { fill: #3a2a08; }
+.jr-st.fail .jr-dot { fill: rgba(224,72,110,.85); stroke: #ffc0d0; } .jr-st.fail .jr-n { fill: #fff; }
+.jr-st.here .jr-dot { stroke: #ffe7a8; stroke-width: 3; }
+.jr-aura { fill: rgba(255,215,122,.16); transform-box: fill-box; transform-origin: center; animation: breathe 2s ease-in-out infinite; }
+.jr-st.arrived .jr-dot { fill: rgba(255,231,168,.95); }
+.jr-st.arrived .jr-n { fill: #3a2a08; }
+.jr-st.arrived .jr-aura { animation: jrPing 1.2s var(--ease-out) both, breathe 2s 1.2s ease-in-out infinite; }
+@keyframes jrPing { from { transform: scale(.4); opacity: 1; } to { transform: scale(1.4); opacity: .6; } }
+.jr-tbody { fill: #fff3c8; stroke: #c98d2e; stroke-width: 2; }
+.jr-ticon { text-anchor: middle; font-size: 14px; }
+.jr-tglow { transform-box: fill-box; transform-origin: center; animation: breathe 1.4s ease-in-out infinite; }
+.jr-info { opacity: 0; transform: translateY(8px); transition: opacity .5s ease, transform .5s ease; animation: none; line-height: 1.6; }
+.jr-info.on { opacity: 1; transform: none; }
+.jr-info b { color: #ff9db5; font-weight: 700; }
+@media (prefers-reduced-motion: reduce) {
+  .ux-scene-l .img, .ux-scene-l .deco i, .ux-wfx i, .jr-star, .jr-aura, .jr-tglow { animation: none !important; }
+  .ux-wipe, .ux-sweep { display: none; }
+}
+`;
+  const st = document.createElement('style'); st.id = 'uxj-style'; st.textContent = css; document.head.appendChild(st);
 })();
 
 

@@ -31,10 +31,10 @@
 .cn-note.evil { color: #d9c2ff; }
 .cn-note b { color: var(--text); }
 .cn-res { width: 100%; min-height: 118px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 4px; }
-.cn-res .ux-banner { font-size: 32px; padding: 2px 12px; line-height: 1.25; }
+.cn-res .ux-banner { font-size: min(32px, 8vw); padding: 2px 12px; line-height: 1.25; }
 .cn-res .cn-note, .cn-res .ux-verse, .cn-res .cn-pips { animation: cnRise .7s .35s var(--ease-out) both; }
 .cn-res .ux-verse { animation-delay: .7s; margin-top: 4px; }
-.ux-banner.cn-long { font-size: 25px; line-height: 1.32; padding: 2px 6px; }
+.ux-banner.cn-long { font-size: min(25px, 6.6vw); line-height: 1.32; padding: 2px 6px; }
 .ux-banner.evil.cn-dusky { color: #e4d6f5; text-shadow: 0 0 26px rgba(142,108,200,.75), 0 0 54px rgba(224,72,110,.35); }
 @keyframes cnFade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes cnRise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
@@ -192,7 +192,7 @@
 .cn-mine.w { color: #2a1a02; background: linear-gradient(180deg, #fff0c4, #f4c96b 60%, #c98d2e); box-shadow: 0 6px 22px rgba(244,201,107,.45); }
 .cn-mine.l { color: var(--text-dim); background: rgba(255,255,255,.06); border: 1px solid var(--line); }
 .cn-win .ux-verse { animation: cnRise .7s 1.5s both; }
-.cn-win .ux-banner { font-size: 34px; }
+.cn-win .ux-banner { font-size: min(34px, 8.4vw); }
 
 @media (max-height: 700px) {
   .cn-wrap { gap: 9px; }

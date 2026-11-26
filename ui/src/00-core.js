@@ -322,23 +322,14 @@
   K.screenEl = () => screenEl;
 
   // ---------- server clock (for starting animations at the same moment on every phone) ----------
-  /* Optional view fields (asked of the server): serverNow (ms, when the view was built), phaseAt (ms, when the
-     phase last changed), and lastVote/lastQuest/lastLady.at (ms). Without them everything plays on arrival. */
-  const clockS = [];
-  K.clock = {
-    offset: null,
-    sample(serverNow) {
-      if (typeof serverNow !== 'number' || !isFinite(serverNow)) return;
-      clockS.push(serverNow - Date.now()); if (clockS.length > 10) clockS.shift();
-      K.clock.offset = Math.max.apply(null, clockS);   // the least-delayed sample is closest to the truth
-    },
-    now() { return Date.now() + (K.clock.offset || 0); },
-    has() { return K.clock.offset !== null; }
-  };
+  /* The server sends serverNow (ms, when the view was built) and phaseStartedAt (ms, when the phase, round or
+     proposal last changed — every vote/quest/lamp result changes one of them in the same action). Every phone
+     starts the cinematics and scene transitions at phaseStartedAt + SYNC_LEAD on the server clock. Without the
+     fields everything plays on arrival. */
   K.SYNC_LEAD = 900;     // ms after the server moment that every phone starts together
   K.evAt = (e, v) => {
-    const d = e.d; if (d && typeof d.at === 'number') return d.at;
-    if (v && typeof v.phaseAt === 'number' && /^(deal|begin|journey|assassin|end)$/.test(e.type)) return v.phaseAt;
+    const d = e && e.d; if (d && typeof d.at === 'number') return d.at;
+    if (v && typeof v.phaseStartedAt === 'number') return v.phaseStartedAt;
     return null;
   };
   /* Waits until the shared start moment. Returns how late we are (ms, 0 if on time or unsynced). */
