@@ -626,7 +626,7 @@ export const hostGuide = {
       heading: "Recommended setups",
       presetsRef: true,
       bullets: [
-        "First game: turn on only the {merlin} and the {assassin}. The rest are filled with {servant}s and {minion}s automatically.",
+        "First game: turn on only the {merlin} and the {assassin}. Every other seat is filled automatically as a {servant} or a {minion}.",
         "Once you're comfortable: add the {percival} and the {morgana}. They keep each other in check and add a lot of fun.",
         "7 or more players: add the {mordred} and turn on the {lady}.",
         "10 players: add the {oberon} too, so all 4 of the {evil} have special roles.",

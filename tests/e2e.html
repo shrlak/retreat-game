@@ -40,6 +40,7 @@ async function game(n, opts) {
   }
   const dup = await call({ action: "join", code, name: "봇1" });
   check(!dup.ok, "duplicate name allowed");
+  check(dup.errorKey === "nameTaken" && /name/i.test(dup.errorEn || ""), "english error missing " + JSON.stringify(dup));
   const A = (b, action, p = {}) => call({ action, code, playerId: b.playerId, token: b.token, ...p });
   const set = await A(bots[0], "settings", { settings: opts });
   check(set.ok, "settings " + set.error);
@@ -65,7 +66,8 @@ async function game(n, opts) {
       const r = role[k.id];
       if (me.role === "merlin") check(EVIL.includes(r) && r !== "mordred", "merlin sees " + r);
       if (me.role === "percival") check(r === "merlin" || r === "morgana", "percival sees " + r);
-      if (EVIL.includes(me.role)) check(EVIL.includes(r) && r !== "oberon" && me.role !== "oberon", "evil sees " + r);
+      if (EVIL.includes(me.role) && k.tag === "evil") check(EVIL.includes(r) && r !== "oberon" && me.role !== "oberon", "evil sees " + r);
+      if (k.tag === "lancelot") check(opts.lancelot === 2 && /lancelot/.test(me.role) && /lancelot/.test(r), "lancelot tag " + me.role + "→" + r);
     }
   });
   const counts = { 5: 2, 6: 2, 7: 3, 8: 3, 9: 3, 10: 4 };
@@ -79,22 +81,34 @@ async function game(n, opts) {
       const wrong = await A(bots.find((b) => b.playerId !== v.leaderId), "propose", { team: [] });
       check(!wrong.ok, "non-leader propose");
       const team = bots.map((b) => b.playerId).sort(() => Math.random() - 0.5).slice(0, v.quests[v.round].size);
-      const r = await A(L, "propose", { team });
+      const r = await A(L, "propose", v.excalibur ? { team, excaliburTo: team.find((id) => id !== v.leaderId) || (team[0] === v.leaderId ? null : team[0]) } : { team });
+      if (v.excalibur && !team.some((id) => id !== v.leaderId)) { check(!r.ok, "excalibur needs a non-leader"); continue; }
       check(r.ok, "propose " + r.error);
     } else if (v.phase === "vote") {
       await Promise.all(bots.map((b) => A(b, "vote", { approve: Math.random() < 0.65 })));
     } else if (v.phase === "quest") {
       const team = v.proposal.team;
-      const goodFail = team.find((id) => !EVIL.includes(role[id]));
+      const side = {};
+      for (const id of team) side[id] = (await A(byId[id], "state")).view.me.team;
+      const goodFail = team.find((id) => side[id] === "good");
       if (goodFail) { const r = await A(byId[goodFail], "quest", { success: false }); check(!r.ok, "good played fail"); }
-      await Promise.all(team.map((id) => A(byId[id], "quest", { success: !(EVIL.includes(role[id]) && Math.random() < 0.6) })));
+      await Promise.all(team.map((id) => A(byId[id], "quest", { success: !(side[id] === "evil" && Math.random() < 0.6) })));
+    } else if (v.phase === "excalibur") {
+      const hId = v.proposal.excaliburTo;
+      const others = v.proposal.team.filter((id) => id !== hId);
+      const flip = Math.random() < 0.5;
+      const r = await A(byId[hId], "excalibur", flip ? { targetId: rnd(others) } : {});
+      check(r.ok, "excalibur " + r.error);
+      if (flip) check(r.view.me.excaliburResults.length > 0, "excalibur result missing");
+      check(r.view.lastQuest && r.view.lastQuest.excalibur && r.view.lastQuest.excalibur.holderId === hId, "excalibur not public");
     } else if (v.phase === "lady") {
       const h = byId[v.ladyHolderId];
       const t = rnd(bots.filter((b) => !v.ladyUsedBy.includes(b.playerId)));
       const r = await A(h, "lady", { targetId: t.playerId });
       check(r.ok, "lady " + r.error);
       const res = r.view.me.ladyResults.at(-1);
-      check(res && res.team === (EVIL.includes(role[t.playerId]) ? "evil" : "good"), "lady result wrong");
+      const tSide = (await A(t, "state")).view.me.team;
+      check(res && res.team === tSide, "lady result wrong");
       const other = await A(t, "state");
       check(!other.view.me.ladyResults.some((x) => x.targetId === t.playerId), "lady result leaked to target");
     } else if (v.phase === "assassin") {
@@ -118,13 +132,14 @@ async function game(n, opts) {
   broadcasts += got;
   rt.removeChannel(ch);
   games++;
-  log(`n=${n} ${JSON.stringify(opts.roles)} lady=${opts.lady} → ${fin.winner} (${fin.winReason}) quests=${fin.quests.map((q) => q.result ? q.result[0] : "-").join("")} broadcasts=${got}`);
+  log(`n=${n} ${JSON.stringify(opts.roles)} lady=${opts.lady} lancelot=${opts.lancelot} excalibur=${opts.excalibur} loyalty=${(fin.loyaltyRevealed || []).map((x) => x.card[0]).join("")} → ${fin.winner} (${fin.winReason}) quests=${fin.quests.map((q) => q.result ? q.result[0] : "-").join("")} broadcasts=${got}`);
 }
 (async () => {
   const t0 = Date.now();
   try {
     for (let n = FROM; n <= TO; n++) for (let g = 0; g < PER; g++) {
-      const opts = { lady: n >= 7 || g % 2 === 1, balance: g % 3 === 2, roles: { merlin: true, percival: true, morgana: true, mordred: n >= 7, oberon: n >= 10 } };
+      const lancelot = n >= 7 ? 1 + (g % 2) : 0;
+      const opts = { lady: n >= 7 || g % 2 === 1, balance: g % 3 === 2, lancelot, excalibur: g % 2 === 0, roles: { merlin: true, percival: true, morgana: true, mordred: n >= 8 && !lancelot, oberon: n >= 10 } };
       await game(n, opts);
     }
   } catch (e) { fails++; log("EXCEPTION", e.stack || e); }

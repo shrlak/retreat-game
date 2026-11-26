@@ -9,8 +9,8 @@
   K.cine = K.cine || {};         // type -> async (ctx, ev, v, K)
 
   // ---------- constants (mirror CONTRACT rules; view values win when present) ----------
-  K.GOOD_ROLES = ['merlin', 'percival', 'servant'];
-  K.EVIL_ROLES = ['assassin', 'morgana', 'mordred', 'oberon', 'minion'];
+  K.GOOD_ROLES = ['merlin', 'percival', 'servant', 'lancelotGood'];
+  K.EVIL_ROLES = ['assassin', 'morgana', 'mordred', 'oberon', 'minion', 'lancelotEvil'];
   K.OPTIONAL_ROLES = ['merlin', 'assassin', 'percival', 'morgana', 'mordred', 'oberon'];
   K.EVIL_COUNT = { 5: 2, 6: 2, 7: 3, 8: 3, 9: 3, 10: 4 };
   K.TEAM_SIZES = { 5: [2, 3, 2, 3, 3], 6: [2, 3, 4, 3, 4], 7: [2, 3, 3, 4, 4], 8: [3, 4, 4, 5, 5], 9: [3, 4, 4, 5, 5], 10: [3, 4, 4, 5, 5] };
@@ -84,7 +84,7 @@
   UI._ph = img => { img.onerror = null; failed.add(img.getAttribute('src')); img.src = K.phURL(img.dataset.ph); };
   const PH = {
     merlin: ['📜', 'good'], percival: ['🛡️', 'good'], servant: ['🕊️', 'good'],
-    assassin: ['🔍', 'evil'], morgana: ['🎭', 'evil'], mordred: ['🐺', 'evil'], oberon: ['🌫️', 'evil'], minion: ['🍎', 'evil']
+    assassin: ['🔍', 'evil'], morgana: ['🎭', 'evil'], mordred: ['🐺', 'evil'], oberon: ['🌫️', 'evil'], minion: ['🍎', 'evil'], lancelotGood: ['🧭', 'good'], lancelotEvil: ['🧭', 'evil']
   };
   const phCache = {};
   K.phURL = kind => {

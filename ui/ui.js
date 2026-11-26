@@ -12,8 +12,8 @@
   K.cine = K.cine || {};         // type -> async (ctx, ev, v, K)
 
   // ---------- constants (mirror CONTRACT rules; view values win when present) ----------
-  K.GOOD_ROLES = ['merlin', 'percival', 'servant'];
-  K.EVIL_ROLES = ['assassin', 'morgana', 'mordred', 'oberon', 'minion'];
+  K.GOOD_ROLES = ['merlin', 'percival', 'servant', 'lancelotGood'];
+  K.EVIL_ROLES = ['assassin', 'morgana', 'mordred', 'oberon', 'minion', 'lancelotEvil'];
   K.OPTIONAL_ROLES = ['merlin', 'assassin', 'percival', 'morgana', 'mordred', 'oberon'];
   K.EVIL_COUNT = { 5: 2, 6: 2, 7: 3, 8: 3, 9: 3, 10: 4 };
   K.TEAM_SIZES = { 5: [2, 3, 2, 3, 3], 6: [2, 3, 4, 3, 4], 7: [2, 3, 3, 4, 4], 8: [3, 4, 4, 5, 5], 9: [3, 4, 4, 5, 5], 10: [3, 4, 4, 5, 5] };
@@ -56,18 +56,20 @@
   let T = {};
   K.T = () => T;
   K.term = (k, d) => (T.terms && T.terms[k]) || d;
-  K.teamName = t => (T.teams && T.teams[t] && T.teams[t].name) || (t === 'evil' ? '유혹의 무리' : '빛의 일꾼들');
+  K.teamName = t => (T.teams && T.teams[t] && T.teams[t].name) || (t === 'evil' ? K.L('유혹의 무리', 'The Tempters') : K.L('빛의 일꾼들', 'Workers of Light'));
   K.teamOf = role => K.EVIL_ROLES.indexOf(role) >= 0 ? 'evil' : 'good';
   K.role = key => (T.roles && T.roles[key]) || {};
   K.roleName = key => K.role(key).name || key || '';
   K.roleDesc = key => K.role(key).desc || '';
   /* Guide text (guide/guide.js → window.GUIDE). K.G() returns the built guide or null. K.fmt fills runtime {params}. */
   let G = null;
-  K.G = () => { if (G) return G; try { if (window.GUIDE && GUIDE.build) G = GUIDE.build(T); } catch (e) { G = null; } return G; };
+  /* Language: K.guideSrc() (01-i18n.js) picks window.GUIDE or an English guide; null = parts use their own fallback text. */
+  K.G = () => { if (G) return G; try { const src = K.guideSrc ? K.guideSrc() : window.GUIDE; if (src && src.build) G = src.build(T); } catch (e) { G = null; } return G; };
+  K.setTheme = t => { T = t || {}; G = null; if (T.title) document.title = T.title; };
   K.fmt = (s, p) => { try { return window.GUIDE && GUIDE.format ? GUIDE.format(s, p || {}) : String(s).replace(/\{(\w+)(?::[^}]*)?\}/g, (m, k) => (p && p[k] != null ? p[k] : m)); } catch (e) { return s; } };
   /* K.hint(phase, key, params) -> one hint line (string) or '' */
   K.hint = (phase, key, params, idx) => { const g = K.G(); const a = g && g.phaseHints && g.phaseHints[phase] && g.phaseHints[phase][key]; if (!a) return ''; const s = Array.isArray(a) ? a[idx || 0] : a; return s ? K.fmt(s, params) : ''; };
-  K.knowText = tag => (T.knowledgeText && T.knowledgeText[tag]) || (tag === 'evil' ? K.teamName('evil') : tag === 'merlinCandidate' ? K.roleName('merlin') + '일지도' : tag);
+  K.knowText = tag => (T.knowledgeText && T.knowledgeText[tag]) || (tag === 'evil' ? K.teamName('evil') : tag === 'merlinCandidate' ? K.L(K.roleName('merlin') + '일지도', 'maybe ' + K.roleName('merlin')) : tag);
 
   // ---------- assets (with generated placeholders when a file is missing) ----------
   let assetBase = './assets/';
@@ -85,7 +87,7 @@
   UI._ph = img => { img.onerror = null; failed.add(img.getAttribute('src')); img.src = K.phURL(img.dataset.ph); };
   const PH = {
     merlin: ['📜', 'good'], percival: ['🛡️', 'good'], servant: ['🕊️', 'good'],
-    assassin: ['🔍', 'evil'], morgana: ['🎭', 'evil'], mordred: ['🐺', 'evil'], oberon: ['🌫️', 'evil'], minion: ['🍎', 'evil']
+    assassin: ['🔍', 'evil'], morgana: ['🎭', 'evil'], mordred: ['🐺', 'evil'], oberon: ['🌫️', 'evil'], minion: ['🍎', 'evil'], lancelotGood: ['🧭', 'good'], lancelotEvil: ['🧭', 'evil']
   };
   const phCache = {};
   K.phURL = kind => {
@@ -228,6 +230,7 @@
   let toastsEl;
   let lastToast = '', lastToastAt = 0;
   UI.toast = (msg, kind) => {
+    if (K.trMsg) msg = K.trMsg(msg);
     if (!toastsEl || !msg) return;
     if (msg === lastToast && Date.now() - lastToastAt < 1500) return;   // app.js also toasts api errors
     lastToast = msg; lastToastAt = Date.now();
@@ -255,7 +258,7 @@
   K.confirm = (title, body, o) => new Promise(res => {
     o = o || {}; let done = false;
     const sh = K.sheet('<div class="ux-stack" style="padding:4px 2px 6px"><h2 class="ux-h2 ux-center">' + esc(title) + '</h2>' + (body ? '<p class="ux-p ux-center">' + body + '</p>' : '') +
-      '<div class="ux-row" style="margin-top:8px"><button class="ux-btn ux-btn-ghost" data-close>' + esc(o.cancel || '취소') + '</button><button class="ux-btn ' + (o.danger ? 'ux-btn-evil' : 'ux-btn-gold') + '" data-yes>' + esc(o.ok || '확인') + '</button></div></div>',
+      '<div class="ux-row" style="margin-top:8px"><button class="ux-btn ux-btn-ghost" data-close>' + esc(o.cancel || K.L('취소', 'Cancel')) + '</button><button class="ux-btn ' + (o.danger ? 'ux-btn-evil' : 'ux-btn-gold') + '" data-yes>' + esc(o.ok || '확인') + '</button></div></div>',
       { onClose: () => { if (!done) { done = true; res(false); } } });
     sh.querySelector('[data-yes]').addEventListener('click', () => { done = true; res(true); sh.close(); });
   });
@@ -266,7 +269,7 @@
   /* K.call('vote', true) -> calls api.vote(true); shows toast on error; renders returned view. */
   K.call = async (name, ...args) => {
     if (busy.has(name)) return { ok: false, busy: true };
-    if (typeof api[name] !== 'function') { UI.toast('준비 중인 기능이에요'); return { ok: false }; }
+    if (typeof api[name] !== 'function') { UI.toast(K.L('준비 중인 기능이에요', 'Coming soon')); return { ok: false }; }
     busy.add(name); document.documentElement.classList.add('ux-busy');
     try {
       const r = await api[name](...args);
@@ -275,7 +278,7 @@
       else if (r) { netDown = 0; connCheck(); }
       else if (r && r.view) UI.render(r.view);
       return r || { ok: true };
-    } catch (e) { UI.toast('연결이 불안정해요. 다시 시도해 주세요.'); return { ok: false }; }
+    } catch (e) { UI.toast(K.L('연결이 불안정해요. 다시 시도해 주세요.', 'The connection is unstable. Please try again.')); return { ok: false }; }
     finally { busy.delete(name); if (!busy.size) document.documentElement.classList.remove('ux-busy'); }
   };
   K.busy = name => busy.has(name);
@@ -290,8 +293,8 @@
   }
 
   // ---------- shared top-bar buttons ----------
-  K.soundBtn = () => '<button class="ux-icon-btn" data-act="sound" aria-label="소리">' + (Sound.on ? '🔔' : '🔕') + '</button>';
-  K.actions.sound = (d, el) => { Sound.set(!Sound.on); el.textContent = Sound.on ? '🔔' : '🔕'; UI.toast(Sound.on ? '소리를 켰어요' : '소리를 껐어요', 'info'); };
+  K.soundBtn = () => '<button class="ux-icon-btn" data-act="sound" aria-label="' + K.L('소리', 'Sound') + '">' + (Sound.on ? '🔔' : '🔕') + '</button>';
+  K.actions.sound = (d, el) => { Sound.set(!Sound.on); el.textContent = Sound.on ? '🔔' : '🔕'; UI.toast(Sound.on ? K.L('소리를 켰어요', 'Sound on') : K.L('소리를 껐어요', 'Sound off'), 'info'); };
 
   // ---------- screen manager ----------
   let rootEl, appEl, stageEl, screenEl = null, screenName = null;
@@ -304,6 +307,8 @@
     if (v.phase === 'end') return 'end';
     return 'board';
   };
+  /* K.rebuild(): throw away the current screen and build it again (used after a language switch). */
+  K.rebuild = () => { if (!stageEl) return; const v = K.view; screenName = null; if (screenEl) { screenEl.remove(); screenEl = null; } renderScreen(v); };
   K.rerender = () => { if (screenName && K.screens[screenName] && screenEl) K.screens[screenName].update(K.view, K, screenEl); };
   function renderScreen(v) {
     const name = K.screenFor(v);
@@ -386,7 +391,7 @@
   }
   function makeCtx() {
     const ov = K.el('<div class="ux-overlay" role="dialog" aria-live="polite"><div class="inner"></div></div>');
-    const skip = K.el('<button class="ux-skip">건너뛰기 ›</button>');
+    const skip = K.el('<button class="ux-skip">' + K.L('건너뛰기', 'Skip') + ' ›</button>');
     const ctx = {
       el: ov, inner: ov.firstElementChild, skipped: false, waiters: [],
       sleep(ms) { if (ctx.skipped) return Promise.resolve(); return new Promise(r => { const t = setTimeout(done, ms); function done() { clearTimeout(t); ctx.waiters = ctx.waiters.filter(w => w !== done); r(); } ctx.waiters.push(done); }); },
@@ -432,9 +437,9 @@
   }
   function connHide() { if (connEl) { connEl.remove(); connEl = null; } }
   function connCheck() {
-    if (connForced === 'offline' || connForced === 'reconnecting') return connShow(connForced === 'offline' ? '연결이 끊겼어요. 다시 연결하는 중…' : '다시 연결하는 중…');
-    if (navigator.onLine === false) return connShow('인터넷 연결이 끊겼어요. 다시 연결하는 중…');
-    if (netDown && Date.now() - netDown < 8000) return connShow('연결이 불안정해요. 다시 연결하는 중…');
+    if (connForced === 'offline' || connForced === 'reconnecting') return connShow(connForced === 'offline' ? K.L('연결이 끊겼어요. 다시 연결하는 중…', 'Disconnected. Reconnecting…') : K.L('다시 연결하는 중…', 'Reconnecting…'));
+    if (navigator.onLine === false) return connShow(K.L('인터넷 연결이 끊겼어요. 다시 연결하는 중…', 'No internet connection. Reconnecting…'));
+    if (netDown && Date.now() - netDown < 8000) return connShow(K.L('연결이 불안정해요. 다시 연결하는 중…', 'Unstable connection. Reconnecting…'));
     connHide();
   }
   /* Optional extra (not in contract): app.js may call UI.setConnection('online'|'offline'|'reconnecting'). */
@@ -443,7 +448,7 @@
   // ---------- public API ----------
   /* UI.init(root, api, THEME, extra?) — extra may be window.GUIDE (app.js passes it) or {assetBase, guide}. */
   UI.init = (root, apiObj, theme, extra) => {
-    rootEl = root; api = apiObj || {}; T = theme || window.THEME || {};
+    rootEl = root; api = apiObj || {}; T = theme || window.THEME || {}; K.baseTheme = T;
     const opts = extra && (extra.build || extra.quick || extra.phaseHints) ? { guide: extra } : (extra || {});
     if (opts.guide && !window.GUIDE) window.GUIDE = opts.guide;
     if (opts.assetBase) assetBase = opts.assetBase.replace(/\/?$/, '/');
@@ -473,6 +478,189 @@
     if (cineBusy) return;   // the queue picks up the newest view when it ends
     pump();
   };
+})();
+
+
+/* ---- src/01-i18n.js ---- */
+/* Language layer: Korean / English.
+   K.lang ('ko' | 'en', saved per device as ux-lang), K.isEn(), K.L(ko, en) picks the string for the current language,
+   K.setLang(l) swaps the theme + guide and rebuilds the current screen. Design and animation stay identical.
+   English names: window.THEME_EN (if the main app provides it) merged over EN_THEME below, merged over the Korean THEME
+   (so art paths, colours and keys are kept). English guide: window.GUIDE_EN (same shape as window.GUIDE); without it
+   K.G() returns null in English and each part shows its own English fallback text. */
+(function () {
+  'use strict';
+  const K = window.UI._k;
+
+  const saved = K.store.get('lang', null);
+  K.lang = saved === 'en' || saved === 'ko' ? saved : 'ko';
+  K.isEn = () => K.lang === 'en';
+  K.L = (ko, en) => (K.lang === 'en' && en != null ? en : ko);
+  K.onLang = K.onLang || [];
+
+  const EN_THEME = {
+    title: 'Expedition of Light',
+    subtitle: 'A hidden-role mystery game for church retreats',
+    teams: { good: { name: 'Workers of Light', short: 'Light' }, evil: { name: 'The Tempters', short: 'Tempters' } },
+    roles: {
+      merlin: { name: 'Prophet', short: 'Prophet', desc: 'You know who the Tempters are, except the Wolf in Sheep\'s Clothing. Don\'t let them find out who you are.' },
+      percival: { name: 'Watchman', short: 'Watchman', desc: 'You see two Prophet candidates: one is the real Prophet, one is the False Prophet. Protect the real one.' },
+      servant: { name: 'Worker of Light', short: 'Worker', desc: 'You have no secret information. Talk, vote and find the Tempters so the missions succeed.' },
+      assassin: { name: 'Spy', short: 'Spy', desc: 'Even if the Workers of Light win three missions, the Tempters win if you name the Prophet at the end.' },
+      morgana: { name: 'False Prophet', short: 'False', desc: 'You look like a Prophet to the Watchman. Act like the real Prophet and confuse them.' },
+      mordred: { name: 'Wolf in Sheep\'s Clothing', short: 'Wolf', desc: 'A Tempter even the Prophet cannot see. Hide among the Workers of Light.' },
+      oberon: { name: 'Wanderer', short: 'Wanderer', desc: 'You are a Tempter, but you don\'t know the others and they don\'t know you. The Prophet can see you.' },
+      minion: { name: 'Tempter', short: 'Tempter', desc: 'You know your fellow Tempters. Quietly hinder the missions.' },
+      lancelotGood: { name: 'Pilgrim at the Crossroads', short: 'Pilgrim', desc: 'You start with the Workers of Light, but from the 3rd mission a Crossroads card can switch your side. Always play for your current side.' },
+      lancelotEvil: { name: 'Shadow at the Crossroads', short: 'Shadow', desc: 'You start with the Tempters, but from the 3rd mission a Crossroads card can switch your side. Always play for your current side.' }
+    },
+    terms: {
+      quest: 'Mission', questTeam: 'Team', leader: 'Leader',
+      success: 'Blessing', fail: 'Hindrance',
+      approve: 'Approve', reject: 'Reject',
+      lady: 'Lamp', ladyAction: 'Shine the Lamp',
+      assassinate: 'Name the Prophet', host: 'Host',
+      ready: 'Ready', notReady: 'Get ready',
+      lancelot: 'Pilgrim at the Crossroads', loyalty: 'Crossroads card', loyaltyNone: 'No change', loyaltySwitch: 'Sides switch',
+      lancelotVariant1: 'Quiet crossroads (they don\'t know each other)', lancelotVariant2: 'Known crossroads (they know each other)',
+      excalibur: 'Scroll of the Word', excaliburAction: 'Flip one card', excaliburPass: 'Don\'t flip',
+      allowRejoin: 'Allow rejoin', claimHost: 'Become host'
+    },
+    knowledgeText: { evil: 'Tempter', merlinCandidate: 'Prophet candidate', lancelot: 'The other pilgrim' },
+    winText: {
+      quests: 'The Workers of Light completed three missions',
+      assassinFailed: 'The Spy could not find the Prophet',
+      assassinHit: 'The Spy found the Prophet',
+      rejections: 'Five teams in a row were rejected',
+      fails: 'Three missions were hindered'
+    }
+  };
+  K.EN_THEME = EN_THEME;
+
+  const isObj = o => o && typeof o === 'object' && !Array.isArray(o);
+  function merge(a, b) {
+    const o = Object.assign({}, a);
+    if (!isObj(b)) return o;
+    Object.keys(b).forEach(k => { o[k] = isObj(a && a[k]) && isObj(b[k]) ? merge(a[k], b[k]) : b[k]; });
+    return o;
+  }
+  K.themeFor = l => {
+    const base = K.baseTheme || window.THEME || {};
+    if (l !== 'en') return base;
+    return merge(merge(base, EN_THEME), window.THEME_EN || {});
+  };
+  /* Which guide object K.G() builds from. */
+  K.guideSrc = () => {
+    if (K.lang !== 'en') return window.GUIDE || null;
+    if (window.GUIDE_EN && window.GUIDE_EN.build) return window.GUIDE_EN;
+    if (window.GUIDE && window.GUIDE.en && window.GUIDE.en.build) return window.GUIDE.en;
+    return null;
+  };
+  K.fmt = (s, p) => {
+    try {
+      const src = K.guideSrc();
+      if (src && src.format) return src.format(s, p || {});
+    } catch (e) { }
+    return String(s).replace(/\{(\w+)(?::[^}]*)?\}/g, (m, k) => (p && p[k] != null ? p[k] : m));
+  };
+
+  // ---------- server / network messages (Korean strings from the engine, handler and net.js) ----------
+  const MSG = {
+    '같은 이름이 이미 있어요. 다른 이름을 써 주세요': 'Someone already has that name. Please use another one',
+    '게임 중에는 나갈 수 없어요': 'You can\'t leave during a game',
+    '게임 중에는 내보낼 수 없어요': 'You can\'t remove players during a game',
+    '게임 중에는 설정을 바꿀 수 없어요': 'Settings can\'t change during a game',
+    '게임이 끝난 뒤에 할 수 있어요': 'You can do this after the game ends',
+    '그 사람은 지금 접속 중이에요': 'That player is still connected',
+    '다른 사람을 골라 주세요': 'Please pick someone else',
+    '다른 원정대원을 골라 주세요': 'Please pick another team member',
+    '다른 참가자를 골라 주세요': 'Please pick another player',
+    '대기실에서는 그냥 다시 참가하면 돼요': 'In the lobby, just join again',
+    '두루마리를 받은 사람만 쓸 수 있어요': 'Only the player holding the Scroll can use it',
+    '등불을 가진 사람만 쓸 수 있어요': 'Only the player holding the Lamp can use it',
+    '말씀 두루마리는 조장이 아닌 원정대원 한 명에게 줘야 해요': 'Give the Scroll of the Word to one team member who isn\'t the leader',
+    '방이 가득 찼어요': 'The room is full',
+    '방장만 내보낼 수 있어요': 'Only the host can remove players',
+    '방장만 넘길 수 있어요': 'Only the host can do this',
+    '방장만 다시 입장을 허용할 수 있어요': 'Only the host can allow a rejoin',
+    '방장만 새 게임을 열 수 있어요': 'Only the host can start a new game',
+    '방장만 설정을 바꿀 수 있어요': 'Only the host can change settings',
+    '방장만 시작할 수 있어요': 'Only the host can start',
+    '방장이 아직 접속해 있어요': 'The host is still connected',
+    '빛의 일꾼 특수 역할이 너무 많아요': 'Too many special roles for the Workers of Light',
+    '빛의 일꾼은 축복 카드만 낼 수 있어요': 'Workers of Light can only play Blessing cards',
+    '알 수 없는 동작이에요': 'Unknown action',
+    '없는 참가자가 있어요': 'One of those players isn\'t in the room',
+    '없는 참가자예요': 'That player isn\'t in the room',
+    '원래 폰에서 다시 열어 주세요. 폰을 바꿨다면 방장에게 \'다시 입장 허용\'을 부탁하세요': 'Please open it again on your original phone. If you changed phones, ask the host to tap "Allow rejoin"',
+    '원정대원만 카드를 낼 수 있어요': 'Only team members can play cards',
+    '이 방의 참가자가 아니에요': 'You\'re not a player in this room',
+    '이름을 입력해 주세요': 'Please enter your name',
+    '이미 등불을 가졌던 사람은 고를 수 없어요': 'You can\'t pick someone who already held the Lamp',
+    '이미 방장이에요': 'You\'re already the host',
+    '이미 시작된 게임이에요. 원래 폰에서 다시 열면 이어서 할 수 있어요': 'This game has already started. Open it again on your original phone to continue',
+    '이미 시작했어요': 'The game has already started',
+    '이미 카드를 냈어요': 'You already played a card',
+    '자기 자신은 내보낼 수 없어요': 'You can\'t remove yourself',
+    '자기 자신은 지목할 수 없어요': 'You can\'t name yourself',
+    '정탐꾼만 지목할 수 있어요': 'Only the Spy can name someone',
+    '조장만 원정대를 고를 수 있어요': 'Only the leader can choose the team',
+    '지금은 등불을 쓸 때가 아니에요': 'It\'s not time to use the Lamp',
+    '지금은 말씀 두루마리를 쓸 때가 아니에요': 'It\'s not time to use the Scroll of the Word',
+    '지금은 사명 카드를 낼 때가 아니에요': 'It\'s not time to play mission cards',
+    '지금은 원정대를 고를 때가 아니에요': 'It\'s not time to choose a team',
+    '지금은 준비를 바꿀 수 없어요': 'You can\'t change ready right now',
+    '지금은 지목할 때가 아니에요': 'It\'s not time to name someone',
+    '지금은 투표 시간이 아니에요': 'It\'s not time to vote',
+    '지금은 확인 단계가 아니에요': 'It\'s not time to confirm',
+    '찬성 또는 반대를 골라 주세요': 'Please choose Approve or Reject',
+    '파수꾼은 선지자가 있어야 넣을 수 있어요': 'The Watchman needs the Prophet in the game',
+    // handler.js / net.js
+    '방을 만들지 못했어요. 다시 시도해 주세요': 'Couldn\'t create the room. Please try again',
+    '방 코드를 입력해 주세요': 'Please enter the room code',
+    '그런 방이 없어요. 코드를 확인해 주세요': 'No room with that code. Please check it',
+    '방에서 나가졌어요. 다시 입장해 주세요': 'You were removed from the room. Please join again',
+    '동시에 너무 많은 요청이 왔어요. 다시 눌러 주세요': 'Too many taps at once. Please try again',
+    '서버 오류가 났어요. 잠시 후 다시 시도해 주세요': 'Server error. Please try again in a moment',
+    '응답을 읽지 못했어요': 'Couldn\'t read the server\'s reply',
+    '인터넷 연결을 확인해 주세요': 'Please check your internet connection',
+    '방에 들어가 있지 않아요': 'You\'re not in a room'
+  };
+  const PAT = [
+    [/^(\d+)명일 때 유혹의 무리는 (\d+)명이라 특수 역할을 줄여야 해요$/, m => 'With ' + m[1] + ' players there are only ' + m[2] + ' Tempters, so remove some special roles'],
+    [/^아직 준비 안 된 사람: (.+)$/, m => 'Not ready yet: ' + m[1]],
+    [/^이번 사명에는 (\d+)명을 골라야 해요$/, m => 'This mission needs ' + m[1] + ' players'],
+    [/^최대 (\d+)명까지예요$/, m => 'Up to ' + m[1] + ' players'],
+    [/^최소 (\d+)명이 필요해요 \(지금 (\d+)명\)$/, m => 'You need at least ' + m[1] + ' players (now ' + m[2] + ')']
+  ];
+  const norm = s => String(s).trim().replace(/[.!]+$/, '');
+  K.trMsg = msg => {
+    if (K.lang !== 'en' || typeof msg !== 'string' || !/[가-힣]/.test(msg)) return msg;
+    const n = norm(msg);
+    if (MSG[n]) return MSG[n];
+    for (const [re, f] of PAT) { const m = n.match(re); if (m) return f(m); }
+    return 'Something went wrong. Please try again';
+  };
+  K.MSG_EN = MSG;
+
+  // ---------- switching ----------
+  function apply() {
+    document.documentElement.lang = K.lang;
+    document.documentElement.classList.toggle('ux-en', K.lang === 'en');
+    K.setTheme(K.themeFor(K.lang));
+  }
+  K.setLang = l => {
+    l = l === 'en' ? 'en' : 'ko';
+    if (l === K.lang) return;
+    K.lang = l; K.store.set('lang', l);
+    apply();
+    K.onLang.forEach(f => { try { f(l); } catch (e) { console.error('[UI] onLang', e); } });
+    K.rebuild();
+  };
+  K.onInit = K.onInit || [];
+  K.onInit.unshift(() => apply());
+  K.actions = K.actions || {};
+  K.actions['lang'] = d => { K.fb && K.fb('tap'); K.setLang(d.lang); };
 })();
 
 
@@ -674,23 +862,29 @@
       const T = K.T();
       const name = K.store.get('name', '');
       const code = (K.homeOpts && K.homeOpts.code) || codeFromUrl();
-      const title = T.title || '빛의 원정대';
-      // title letters drop in one by one
-      const letters = Array.from(title).map((ch, i) => '<span style="animation-delay:' + (220 + i * 70) + 'ms">' + (ch === ' ' ? '&nbsp;' : esc(ch)) + '</span>').join('');
+      const title = T.title || K.L('빛의 원정대', 'Expedition of Light');
+      // title letters drop in one by one; words stay whole so a long English title wraps between words
+      let li = 0;
+      const step = K.isEn() ? 45 : 70;
+      const letters = title.split(' ').map(w => '<span class="w">' + Array.from(w).map(ch => '<span style="animation-delay:' + (220 + (li++) * step) + 'ms">' + esc(ch) + '</span>').join('') + '</span>').join(' ');
+      const lang = K.lang;
       const el = K.el('<section class="uxh">' +
+        '<div class="uxh-lang uxh-fade" role="group" aria-label="Language / 언어" style="animation-delay:.2s">' +
+        '<button data-act="lang" data-lang="ko" class="' + (lang === 'ko' ? 'on' : '') + '" aria-pressed="' + (lang === 'ko') + '">한국어</button>' +
+        '<button data-act="lang" data-lang="en" class="' + (lang === 'en' ? 'on' : '') + '" aria-pressed="' + (lang === 'en') + '">English</button></div>' +
         '<div class="uxh-rays" aria-hidden="true"></div>' +
         '<div class="ux-home-hero">' + K.emblem(156) +
         '<h1 class="ux-h1 uxh-title">' + letters + '</h1>' +
-        '<p class="ux-subtitle uxh-sub uxh-fade" style="animation-delay:.9s">' + esc(T.subtitle || '수련회 숨은 역할 추리 게임') + '</p>' +
+        '<p class="ux-subtitle uxh-sub uxh-fade" style="animation-delay:.9s">' + esc(T.subtitle || K.L('수련회 숨은 역할 추리 게임', 'A hidden-role mystery game for church retreats')) + '</p>' +
         '<div class="uxh-fade" style="animation-delay:1.1s">' + K.verse('home') + '</div></div>' +
         '<div class="ux-panel uxh-card" style="animation-delay:.5s"><div class="ux-stack">' +
-        '<label class="ux-field"><span class="ux-label">내 이름</span><input class="ux-input" id="uxh-name" maxlength="10" autocomplete="nickname" enterkeyhint="done" placeholder="예) 은혜" value="' + esc(name) + '"></label>' +
-        '<button class="ux-btn ux-btn-gold" data-act="h-create">🕯️ 방 만들기</button>' +
-        '<div class="ux-divider">또는 코드로 참가</div>' +
-        '<div class="ux-row" style="align-items:stretch"><input class="ux-input ux-code-input" id="uxh-code" maxlength="6" inputmode="text" autocapitalize="characters" autocomplete="off" placeholder="코드" value="' + esc(code) + '" style="flex:1.3">' +
-        '<button class="ux-btn ux-btn-ghost" data-act="h-join" style="flex:1">참가하기</button></div>' +
+        '<label class="ux-field"><span class="ux-label">' + K.L('내 이름', 'My name') + '</span><input class="ux-input" id="uxh-name" maxlength="10" autocomplete="nickname" enterkeyhint="done" placeholder="' + K.L('예) 은혜', 'e.g. Grace') + '" value="' + esc(name) + '"></label>' +
+        '<button class="ux-btn ux-btn-gold" data-act="h-create">🕯️ ' + K.L('방 만들기', 'Create a room') + '</button>' +
+        '<div class="ux-divider">' + K.L('또는 코드로 참가', 'or join with a code') + '</div>' +
+        '<div class="ux-row" style="align-items:stretch"><input class="ux-input ux-code-input" id="uxh-code" maxlength="6" inputmode="text" autocapitalize="characters" autocomplete="off" placeholder="' + K.L('코드', 'Code') + '" value="' + esc(code) + '" style="flex:1.3">' +
+        '<button class="ux-btn ux-btn-ghost" data-act="h-join" style="flex:1">' + K.L('참가하기', 'Join') + '</button></div>' +
         '</div></div>' +
-        '<button class="uxh-guide uxh-fade" data-act="cm-guide" style="animation-delay:.8s"><span class="bk">📖</span><span><b>1분 설명서</b><small>처음이라면 여기부터</small></span><span class="ar">›</span></button>' +
+        '<button class="uxh-guide uxh-fade" data-act="cm-guide" style="animation-delay:.8s"><span class="bk">📖</span><span><b>' + K.L('1분 설명서', '1-minute guide') + '</b><small>' + K.L('처음이라면 여기부터', 'New here? Start here') + '</small></span><span class="ar">›</span></button>' +
         '</section>');
       const nameIn = el.querySelector('#uxh-name'), codeIn = el.querySelector('#uxh-code');
       nameIn.addEventListener('input', () => K.store.set('name', nameIn.value.trim()));
@@ -704,7 +898,7 @@
 
   function getName() {
     const i = document.getElementById('uxh-name'); const n = i ? i.value.trim() : '';
-    if (!n) { K.toast('이름을 먼저 적어 주세요'); if (i) { K.shake(i); i.focus(); } return null; }
+    if (!n) { K.toast(K.L('이름을 먼저 적어 주세요', 'Please enter your name first')); if (i) { K.shake(i); i.focus(); } return null; }
     K.store.set('name', n); return n;
   }
   async function go(btn, fn) {
@@ -723,7 +917,7 @@
     btn = btn || document.querySelector('[data-act="h-join"]');
     const n = getName(); if (!n) return;
     const ci = document.getElementById('uxh-code'); const c = ci ? ci.value.trim().toUpperCase() : '';
-    if (c.length < 4) { K.toast('방 코드를 입력해 주세요'); if (ci) { K.shake(ci); ci.focus(); } return; }
+    if (c.length < 4) { K.toast(K.L('방 코드를 입력해 주세요', 'Please enter the room code')); if (ci) { K.shake(ci); ci.focus(); } return; }
     K.fb('pick');
     await go(btn, () => K.call('join', c, n));
   };
@@ -735,7 +929,13 @@
   -webkit-mask: radial-gradient(circle, #000 10%, transparent 62%); mask: radial-gradient(circle, #000 10%, transparent 62%);
   animation: spin 90s linear infinite; will-change: transform; }
 .uxh-title { font-size: 48px; letter-spacing: .04em; margin-top: -6px; white-space: nowrap; }
-.uxh-title span { display: inline-block; animation: uxhDrop .7s var(--ease-spring) both; }
+.uxh-title .w { display: inline-block; white-space: nowrap; }
+.uxh-title .w span { display: inline-block; animation: uxhDrop .7s var(--ease-spring) both; }
+.ux-en .uxh-title { font-size: 40px; white-space: normal; line-height: 1.08; letter-spacing: .01em; max-width: 340px; }
+.ux-en .uxh-sub { font-size: 15px; }
+.uxh-lang { align-self: flex-end; display: inline-flex; padding: 3px; border-radius: 999px; background: rgba(7,10,28,.72); border: 1px solid var(--line-strong); position: relative; z-index: 2; margin-bottom: -8px; }
+.uxh-lang button { min-height: 34px; padding: 0 14px; border-radius: 999px; font-size: 14px; font-weight: 700; color: var(--text-dim); transition: background .25s, color .25s; }
+.uxh-lang button.on { background: linear-gradient(180deg, #ffe08a, #e9b949); color: #2a1d08; box-shadow: 0 0 14px rgba(244,201,107,.45); }
 .uxh-sub { display: inline-block; padding: 6px 16px; border-radius: 999px; background: rgba(7,10,28,.72); border: 1px solid var(--line-strong); }
 @keyframes uxhDrop { from { opacity: 0; transform: translateY(-26px) scale(1.3); } to { opacity: 1; transform: none; } }
 .uxh-fade { animation: uxhFade .9s var(--ease-out) both; }

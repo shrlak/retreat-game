@@ -1,0 +1,1169 @@
+{
+  "version": 2,
+  "lang": "en",
+  "defaultNames": {
+    "title": "Fellowship of Light",
+    "good": "Workers of Light",
+    "evil": "Tempters",
+    "merlin": "Prophet",
+    "percival": "Watchman",
+    "servant": "Worker of Light",
+    "assassin": "Spy",
+    "morgana": "False Prophet",
+    "mordred": "Wolf in Sheep's Clothing",
+    "oberon": "Wanderer",
+    "minion": "Tempter",
+    "lancelotGood": "Pilgrim at the Crossroads",
+    "lancelotEvil": "Shadow at the Crossroads",
+    "quest": "Mission",
+    "leader": "Group Leader",
+    "success": "Blessing",
+    "fail": "Hindrance",
+    "approve": "Approve",
+    "reject": "Reject",
+    "lady": "Lamp",
+    "assassinate": "Prophet Hunt",
+    "excalibur": "Scroll of the Word",
+    "loyalty": "Crossroads card",
+    "loyaltyNone": "Stay",
+    "loyaltySwitch": "Switch sides",
+    "questTeam": "mission team",
+    "host": "Host",
+    "allowRejoin": "Allow rejoin",
+    "claimHost": "Take over as host"
+  },
+  "quick": {
+    "title": "1-Minute Guide",
+    "pages": [
+      {
+        "heading": "What is this game?",
+        "lines": [
+          "Some Tempters are secretly hiding among us.",
+          "The Workers of Light win by completing 3 of 5 Missions with Blessings. The Tempters win by spoiling 3 Missions with Hindrances.",
+          "Talk, vote and figure out who is who. For 5 to 10 players."
+        ]
+      },
+      {
+        "heading": "How a round works",
+        "steps": [
+          "The Group Leader picks a Mission team.",
+          "Everyone votes Approve or Reject at the same time. More than half must approve.",
+          "If approved, only team members secretly play a Blessing or Hindrance card.",
+          "Even one Hindrance card means the Mission fails.",
+          "If rejected, the next player becomes Group Leader. Five rejections in a row on one Mission and the Tempters win at once."
+        ]
+      },
+      {
+        "heading": "The roles in one line",
+        "roles": [
+          {
+            "key": "merlin",
+            "line": "Knows the Tempters from the start. Helps quietly without getting caught."
+          },
+          {
+            "key": "percival",
+            "line": "Sees two Prophet candidates. Protect the real one."
+          },
+          {
+            "key": "servant",
+            "line": "Knows nothing. Wins with sharp eyes and good reasoning."
+          },
+          {
+            "key": "assassin",
+            "line": "If the Workers of Light win, gets one last chance to find the Prophet and steal the win."
+          },
+          {
+            "key": "morgana",
+            "line": "Looks like the Prophet to the Watchman. Pretends to be the real one."
+          },
+          {
+            "key": "mordred",
+            "line": "The hidden leader that even the Prophet cannot see."
+          },
+          {
+            "key": "oberon",
+            "line": "One of the Tempters, but doesn't know the others, and they don't know them."
+          },
+          {
+            "key": "minion",
+            "line": "An ordinary member of the Tempters. Knows their teammates."
+          },
+          {
+            "key": "lancelotGood",
+            "module": "lancelot",
+            "line": "(Expansion) Starts with the Workers of Light, but a Crossroads card can switch their side."
+          },
+          {
+            "key": "lancelotEvil",
+            "module": "lancelot",
+            "line": "(Expansion) Starts with the Tempters, but a Crossroads card can switch their side."
+          }
+        ]
+      },
+      {
+        "heading": "Remember",
+        "lines": [
+          "Never show your phone screen to anyone.",
+          "You can say anything out loud. Lying in the game is just part of the fun.",
+          "The Workers of Light can only play Blessing.",
+          "Even after 3 wins for the Workers of Light, the Tempters win if the Spy finds the Prophet."
+        ]
+      }
+    ]
+  },
+  "overview": {
+    "title": "Fellowship of Light Rules",
+    "intro": "Some Tempters have slipped in among your retreat friends. Decide whom to trust as you set out on five Missions together in this hidden-role deduction game.",
+    "sections": [
+      {
+        "id": "teams",
+        "heading": "Two sides",
+        "body": [
+          "Workers of Light: there are more of them, but most don't know who the Tempters are.",
+          "Tempters: there are fewer of them, but most know exactly who their teammates are.",
+          "When the game starts, everyone secretly checks their own role card on their phone."
+        ]
+      },
+      {
+        "id": "win",
+        "heading": "How to win",
+        "body": [
+          "The Workers of Light win by completing 3 Missions. If the Prophet is in the game, they must also survive the Spy's Prophet Hunt at the end.",
+          "The Tempters win if any one of these happens:"
+        ],
+        "bullets": [
+          "3 Missions fail",
+          "A team is rejected 5 times in a row on one Mission",
+          "After 3 wins for the Workers of Light, the Spy correctly names the Prophet"
+        ]
+      },
+      {
+        "id": "round",
+        "heading": "How a round goes",
+        "steps": [
+          {
+            "title": "Propose",
+            "text": "This round's Group Leader picks exactly the required number of players for the Mission. They may include themselves."
+          },
+          {
+            "title": "Discuss",
+            "text": "Talk freely about why this team, and who seems suspicious."
+          },
+          {
+            "title": "Vote",
+            "text": "Everyone taps Approve or Reject at the same time. Who voted which way is shown to all."
+          },
+          {
+            "title": "Result",
+            "text": "If more than half approve, the team sets out. On a tie or more rejects, the Group Leader role moves to the next player."
+          },
+          {
+            "title": "Mission",
+            "text": "Only team members secretly play a Blessing or Hindrance card. The Workers of Light can only play Blessing."
+          },
+          {
+            "title": "Reveal",
+            "text": "The cards are shuffled and only the number of Hindrances is shown. Nobody knows who played what. One Hindrance is enough to fail."
+          }
+        ],
+        "after": "The next round starts with the Group Leader role passing one seat along."
+      },
+      {
+        "id": "special",
+        "heading": "Good to know",
+        "bullets": [
+          "With 7 or more players, the fourth Mission only fails if 2 Hindrances are played.",
+          "If the fifth proposal on one Mission is rejected too, the Tempters win immediately. So the fifth vote really matters.",
+          "Once a Mission goes ahead, the rejection count starts again from 0.",
+          "The Tempters may play either Blessing or Hindrance. Sometimes they play Blessing on purpose to earn trust.",
+          "Everyone can see which roles are in the game. Only who holds each role is secret."
+        ]
+      },
+      {
+        "id": "assassinate",
+        "heading": "The final twist: Prophet Hunt",
+        "body": [
+          "Completing 3 Missions is not quite the end. The Tempters talk it over, and the Spy names the one person they think is the Prophet.",
+          "If they are right, the Tempters steal the win. If they are wrong, the Workers of Light win for good. That's why the Prophet must stay hidden to the very end."
+        ]
+      },
+      {
+        "id": "lady",
+        "heading": "The Lamp (optional rule)",
+        "body": [
+          "This rule is used only if the host turns it on. Recommended for 7 or more players.",
+          "The player to the right of the first Group Leader starts with the Lamp.",
+          "After the 2nd, 3rd and 4th Missions, the Lamp holder picks one player and secretly learns their side (Workers of Light or Tempters).",
+          "The player who was checked receives the Lamp next. Anyone who has already held it cannot be picked.",
+          "Everyone sees who checked whom, but only the holder sees the answer. Whether to share it, or to share it truthfully, is up to them."
+        ]
+      },
+      {
+        "id": "lancelot",
+        "module": "lancelot",
+        "heading": "Pilgrim at the Crossroads and Shadow at the Crossroads (expansion)",
+        "body": [
+          "This expansion is used only if the host turns it on. Two pilgrims join the game, and the Shadow at the Crossroads takes one of the Tempters seats.",
+          "A deck of 5 Crossroads cards (3 Stay, 2 Switch sides) is shuffled. At the start of the 3rd, 4th and 5th Missions, one card is shown to everyone.",
+          "When a 'Switch sides' card comes up, the two pilgrims swap sides. If another one comes up, they swap back.",
+          "Mission cards, the Lamp's answer and the final result all use each pilgrim's current side. A pilgrim currently with the Workers of Light can only play Blessing."
+        ],
+        "bullets": [
+          "Quiet Crossroads: the Shadow at the Crossroads and the other Tempters don't know each other. The Prophet still sees the Shadow at the Crossroads as one of the Tempters.",
+          "Known Crossroads: the two pilgrims recognise each other, and the Shadow at the Crossroads and the other Tempters also know each other.",
+          "The Shadow at the Crossroads never carries out the Prophet Hunt."
+        ]
+      },
+      {
+        "id": "excalibur",
+        "module": "excalibur",
+        "heading": "The Scroll of the Word (expansion)",
+        "body": [
+          "When proposing a team, the Group Leader also hands the Scroll of the Word to one team member. They can't give it to themselves.",
+          "After everyone on the team has played a card, the Scroll of the Word holder may flip one other team member's card to the opposite. They can also choose not to.",
+          "Only the holder learns what the flipped card originally was. Everyone sees whose card was flipped, and by whom."
+        ]
+      },
+      {
+        "id": "balance",
+        "module": "balance",
+        "heading": "Alternate team sizes (optional)",
+        "body": [
+          "If the host turns this on, the team sizes change for 5 and 7 player games.",
+          "5 players: 3 · 2 · 3 · 2 · 3",
+          "7 players: 2 · 3 · 4 · 3 · 4 (the fourth Mission still needs 2 Hindrances)"
+        ]
+      },
+      {
+        "id": "talk",
+        "heading": "Table talk",
+        "bullets": [
+          "You can say anything out loud. Suspicion, excuses and bluffing are all part of the game.",
+          "The one thing you may not do is show your screen or look at someone else's.",
+          "Cover your screen when you vote and when you play a Mission card.",
+          "Lying in the game is just play. When it's over, smile and bless one another."
+        ]
+      }
+    ],
+    "table": {
+      "heading": "Players and teams",
+      "columns": [
+        "Players",
+        "Workers of Light",
+        "Tempters",
+        "Team size per Mission"
+      ],
+      "rows": [
+        [
+          "5",
+          "3",
+          "2",
+          "2 · 3 · 2 · 3 · 3"
+        ],
+        [
+          "6",
+          "4",
+          "2",
+          "2 · 3 · 4 · 3 · 4"
+        ],
+        [
+          "7",
+          "4",
+          "3",
+          "2 · 3 · 3 · 4* · 4"
+        ],
+        [
+          "8",
+          "5",
+          "3",
+          "3 · 4 · 4 · 5* · 5"
+        ],
+        [
+          "9",
+          "6",
+          "3",
+          "3 · 4 · 4 · 5* · 5"
+        ],
+        [
+          "10",
+          "6",
+          "4",
+          "3 · 4 · 4 · 5* · 5"
+        ]
+      ],
+      "note": "* This Mission only fails with 2 Hindrances."
+    }
+  },
+  "roles": {
+    "merlin": {
+      "team": "good",
+      "tagline": "Knows everything, but can't say it",
+      "know": [
+        "You can see most of the Tempters.",
+        "But the Wolf in Sheep's Clothing is hidden from you.",
+        "The Wanderer shows up as one of the Tempters.",
+        "You don't know which Tempters role each of them has."
+      ],
+      "goal": [
+        "Guide the Workers of Light to complete 3 Missions.",
+        "Keep the Spy from finding out who you are, right to the end."
+      ],
+      "tips": [
+        "Saying \"That person is one of the Tempters!\" makes you an instant target. Nudge people with questions and votes instead.",
+        "Now and then, act unsure or suspect the wrong person. Being too accurate gets you noticed.",
+        "Reject teams that include the Tempters, but don't always be the only one who does.",
+        "If the Watchman is in the game, they'll try to protect you. Trust them."
+      ],
+      "seenBy": "The Watchman sees you as a Prophet candidate."
+    },
+    "percival": {
+      "team": "good",
+      "tagline": "The one who protects the Prophet",
+      "know": [
+        "You can see Prophet candidates.",
+        "If the False Prophet is in the game, you see two candidates and can't tell which one is real.",
+        "If there is no False Prophet, the person you see is the real Prophet."
+      ],
+      "goal": [
+        "Work out the real Prophet and follow their hints.",
+        "Keep the Spy from finding the Prophet."
+      ],
+      "tips": [
+        "Compare which teams the two candidates approve and reject. Whoever matches the results better is more likely the real one.",
+        "Acting as if you know things can draw the Spy's attention to you instead.",
+        "Even when you're sure, never point out the real one in public. That puts the Prophet in danger."
+      ],
+      "seenBy": "Nobody sees you in any special way."
+    },
+    "servant": {
+      "team": "good",
+      "tagline": "Fights with faith and sharp eyes",
+      "know": [
+        "You have no information. That leaves you free to reason most honestly of all."
+      ],
+      "goal": [
+        "Uncover the Tempters and complete 3 Missions."
+      ],
+      "tips": [
+        "Watch the vote history. Someone who keeps approving teams that fail is suspicious.",
+        "Remember who was on teams that got a Hindrance. That narrows things down.",
+        "Ask questions whenever you're curious. How people answer tells you a lot.",
+        "At the end, acting as if you know something can confuse the Spy."
+      ],
+      "seenBy": "Nobody sees you in any special way."
+    },
+    "assassin": {
+      "team": "evil",
+      "tagline": "Holds the final move",
+      "know": [
+        "You can see your fellow Tempters.",
+        "But the Wanderer is hidden from you."
+      ],
+      "goal": [
+        "Make 3 Missions fail, or",
+        "if the Workers of Light complete 3, find and name the Prophet at the end."
+      ],
+      "tips": [
+        "All game long, watch who seems to know too much. Someone who avoids the Tempters from the very start may be the Prophet.",
+        "Playing Hindrance every time gets you caught fast. Playing Blessing early can build trust.",
+        "When you're on a team with a teammate, try to avoid both of you playing Hindrance.",
+        "Before the final pick, talk it through with your teammates."
+      ],
+      "seenBy": "The Prophet sees you as one of the Tempters."
+    },
+    "morgana": {
+      "team": "evil",
+      "tagline": "Pretends to be a person of light",
+      "know": [
+        "You can see your fellow Tempters.",
+        "But the Wanderer is hidden from you."
+      ],
+      "goal": [
+        "Fool the Watchman into believing you are the Prophet.",
+        "Make 3 Missions fail."
+      ],
+      "tips": [
+        "Share opinions with confidence, like the real Prophet would. The Watchman is trying to decide between you and the real one.",
+        "If you suspect who the real Prophet is, quietly let the Spy know."
+      ],
+      "seenBy": "The Watchman sees you as a Prophet candidate, and the Prophet sees you as one of the Tempters."
+    },
+    "mordred": {
+      "team": "evil",
+      "tagline": "The hidden leader even the Prophet can't see",
+      "know": [
+        "You can see your fellow Tempters.",
+        "But the Wanderer is hidden from you."
+      ],
+      "goal": [
+        "Win the deep trust of the Workers of Light, and make 3 Missions fail."
+      ],
+      "tips": [
+        "Even the Prophet doesn't know you. So act boldly, like one of the Workers of Light.",
+        "If someone suspects you, it's only guesswork, not something the Prophet saw. Stay calm and explain yourself.",
+        "Playing a Hindrance on an important Mission after you've earned trust hits hardest."
+      ],
+      "seenBy": "Even the Prophet can't see you. Only your fellow Tempters know you."
+    },
+    "oberon": {
+      "team": "evil",
+      "tagline": "One of the Tempters, wandering alone",
+      "know": [
+        "You can't see anyone.",
+        "The other Tempters don't know who you are either."
+      ],
+      "goal": [
+        "Make 3 Missions fail, even without knowing your teammates."
+      ],
+      "tips": [
+        "Since you don't know your teammates, watch who was on teams that got a Hindrance.",
+        "A teammate may be on your team. Two Hindrances puts suspicion on both of you, so pick your moment.",
+        "Remember that the Prophet sees you as one of the Tempters."
+      ],
+      "seenBy": "The Prophet sees you as one of the Tempters. Your fellow Tempters can't see you."
+    },
+    "minion": {
+      "team": "evil",
+      "tagline": "Quietly stirs things up",
+      "know": [
+        "You can see your fellow Tempters.",
+        "But the Wanderer is hidden from you."
+      ],
+      "goal": [
+        "Make 3 Missions fail, and help find the Prophet."
+      ],
+      "tips": [
+        "Suspect people and ask questions like one of the Workers of Light. Staying too quiet stands out.",
+        "Don't defend a suspected teammate too hard. You may get caught together.",
+        "Remember who looks like the Prophet, and tell your teammates at the final pick."
+      ],
+      "seenBy": "The Prophet sees you as one of the Tempters."
+    },
+    "lancelotGood": {
+      "team": "good",
+      "module": "lancelot",
+      "tagline": "A pilgrim standing at the crossroads",
+      "know": [
+        "Quiet Crossroads: you can't see anyone.",
+        "Known Crossroads: you can see the Shadow at the Crossroads, and they know you too."
+      ],
+      "goal": [
+        "Help your current side win. You start with the Workers of Light.",
+        "From the 3rd Mission on, a 'Switch sides' card can move you to the Tempters."
+      ],
+      "tips": [
+        "Every time a Crossroads card is turned over, check your current side again. The result uses your side at the very end.",
+        "While you're with the Workers of Light, you can only play Blessing. With the Tempters, you can play Hindrance too.",
+        "Your side may change, so don't sound too certain too early."
+      ],
+      "seenBy": "In Known Crossroads, the Shadow at the Crossroads can see you. Otherwise nobody can."
+    },
+    "lancelotEvil": {
+      "team": "evil",
+      "module": "lancelot",
+      "tagline": "A shadow falling over the crossroads",
+      "know": [
+        "Quiet Crossroads: you can't see anyone, and the other Tempters don't know you.",
+        "Known Crossroads: you can see your fellow Tempters and the Pilgrim at the Crossroads, and they know you too."
+      ],
+      "goal": [
+        "Help your current side win. You start with the Tempters.",
+        "From the 3rd Mission on, a 'Switch sides' card can move you to the Workers of Light."
+      ],
+      "tips": [
+        "The Prophet sees you as one of the Tempters from the start, and isn't told if your side changes.",
+        "If you end up with the Workers of Light, you can only play Blessing.",
+        "You never carry out the Prophet Hunt. Just share your opinion with your teammates."
+      ],
+      "seenBy": "The Prophet sees you as one of the Tempters. In Known Crossroads, your fellow Tempters and the Pilgrim at the Crossroads see you too."
+    }
+  },
+  "knowledgeLabels": {
+    "evil": "Tempters",
+    "merlinCandidate": "Prophet candidate",
+    "lancelot": "The other pilgrim",
+    "emptyGood": "You can't see anyone. Use conversation and votes to work it out.",
+    "emptyOberon": "You can't see any teammates. You can do this on your own."
+  },
+  "phaseHints": {
+    "lobby": {
+      "host": [
+        "Once everyone is in, choose the roles in Settings. You can also tap a recommended setup.",
+        "First time? Try with only the Prophet and the Spy turned on.",
+        "You can start when everyone is ready."
+      ],
+      "guest": [
+        "Share the room code with your friends.",
+        "Sit in a circle in the order people joined, so the Group Leader order is easy to follow.",
+        "Tap Ready when you're set."
+      ]
+    },
+    "reveal": {
+      "all": [
+        "Cover your screen with your hand and check your role.",
+        "Tap Confirm when you're done. The game begins once everyone has confirmed.",
+        "Keep a straight face from here on."
+      ]
+    },
+    "propose": {
+      "leader": [
+        "You are this round's Group Leader. Choose {size} players for the Mission.",
+        "Explaining your choice first makes the vote easier.",
+        "You can include yourself."
+      ],
+      "leaderExcalibur": [
+        "Give the Scroll of the Word to one team member. You can't give it to yourself."
+      ],
+      "others": [
+        "{leaderName} is choosing a team.",
+        "If you want someone on or off the team, say so now."
+      ]
+    },
+    "vote": {
+      "all": [
+        "Send this team on the Mission? Choose Approve or Reject.",
+        "All votes are revealed at once. Remember who voted which way.",
+        "More than half must Approve for the team to go."
+      ],
+      "voted": [
+        "Vote in! Waiting for the others."
+      ]
+    },
+    "voteResult": {
+      "approved": "Approve {yes}, Reject {no}. The team sets out on the Mission!",
+      "rejected": "Approve {yes}, Reject {no}. Rejected, so the next Group Leader takes over."
+    },
+    "quest": {
+      "onTeam": [
+        "Secretly choose Blessing or Hindrance.",
+        "The Workers of Light can only play Blessing.",
+        "Cover your screen when you tap."
+      ],
+      "offTeam": [
+        "The team is on the Mission.",
+        "When the result comes in, remember who was on the team."
+      ],
+      "played": [
+        "Card played. Waiting for the result."
+      ]
+    },
+    "questResult": {
+      "success": "Mission complete! {fails} Hindrance card(s).",
+      "successWithFail": "{fails} Hindrance card(s) came up, but this Mission needs 2, so it succeeds!",
+      "fail": "Mission failed. {fails} Hindrance card(s)."
+    },
+    "excalibur": {
+      "holder": [
+        "You hold the Scroll of the Word. You may flip one other team member's card to the opposite.",
+        "You can also choose not to flip anything.",
+        "If you flip a card, only you learn what it originally was."
+      ],
+      "others": [
+        "{holderName} is deciding whether to use the Scroll of the Word.",
+        "Everyone will see whose card gets flipped."
+      ],
+      "used": "{holderName} flipped {targetName}'s card.",
+      "passed": "{holderName} chose not to flip any card.",
+      "result": "{targetName}'s original card was {card}. It has now been flipped."
+    },
+    "loyalty": {
+      "none": "A Crossroads card was revealed: Stay. The pilgrims keep their sides.",
+      "switch": "A Crossroads card was revealed: Switch sides! The two pilgrims have swapped sides.",
+      "left": "Crossroads cards left: {count}",
+      "mySwitchSecret": "Your side has changed. You are now with the {team}."
+    },
+    "lady": {
+      "holder": [
+        "Shine the Lamp on one player. Only you will learn their side.",
+        "You can't pick anyone who has already held the Lamp.",
+        "Whether and how you share the result is up to you."
+      ],
+      "others": [
+        "{holderName} is shining the Lamp on someone.",
+        "Everyone can see who they pick."
+      ],
+      "result": "{targetName} is with the {team}. Only you can see this."
+    },
+    "assassin": {
+      "assassin": [
+        "The Workers of Light have completed 3 Missions. This is your last chance.",
+        "Talk with your teammates, then name the one person you think is the Prophet.",
+        "Get it right and the Tempters steal the win."
+      ],
+      "others": [
+        "The Spy is searching for the Prophet.",
+        "The Tempters may talk it over. Everyone else, keep a straight face!"
+      ]
+    },
+    "end": {
+      "good": {
+        "quests": "The Workers of Light win! They completed all 3 Missions.",
+        "assassinFailed": "The Workers of Light win! The Spy couldn't find the Prophet."
+      },
+      "evil": {
+        "fails": "The Tempters win! 3 Missions were spoiled.",
+        "rejections": "The Tempters win! A team was rejected 5 times in a row on one Mission.",
+        "assassinHit": "The Tempters steal the win! The Spy found the Prophet."
+      },
+      "switchedNote": "{name} switched sides at the crossroads and finished with the {team}.",
+      "after": [
+        "Every role has been revealed. Talk about who was who.",
+        "The suspicion ends here! Tell each other well done."
+      ]
+    }
+  },
+  "system": {
+    "offline": "{targetName} lost connection. Reopening on the same phone brings them back.",
+    "rejoinHostTip": "If they need to use a new phone, the Host can tap 'Allow rejoin'.",
+    "rejoinOpen": "{targetName}'s seat is open for 2 minutes. Join from the new phone with the same room code and the same name.",
+    "hostAway": "The Host has been away for over a minute. Anyone can tap 'Take over as host' to keep the game going.",
+    "newHost": "{targetName} is now the Host."
+  },
+  "alerts": [
+    {
+      "id": "firstQuest",
+      "when": "round == 0 && proposalNo == 1 && phase == 'propose'",
+      "text": "This is the first Mission. There's no information yet, so start light."
+    },
+    {
+      "id": "proposal4",
+      "when": "proposalNo == 4",
+      "text": "This is the 4th proposal for this Mission. One more Reject leaves only the last chance."
+    },
+    {
+      "id": "proposal5",
+      "when": "proposalNo == 5",
+      "text": "Last proposal! If this one is rejected, the Tempters win immediately."
+    },
+    {
+      "id": "twoFails",
+      "when": "quests[round].failsNeeded == 2",
+      "text": "This Mission only fails if 2 Hindrance cards are played."
+    },
+    {
+      "id": "goodMatchPoint",
+      "when": "successes == 2",
+      "text": "2 Missions complete! One more and the Prophet Hunt begins."
+    },
+    {
+      "id": "evilMatchPoint",
+      "when": "fails == 2",
+      "text": "2 Missions failed! One more failure and the Tempters win."
+    },
+    {
+      "id": "loyaltyRevealed",
+      "when": "lancelot && round >= 2 && proposalNo == 1 && phase == 'propose'",
+      "text": "A Crossroads card was revealed as this Mission began. Think again about the pilgrims' sides."
+    },
+    {
+      "id": "loyaltySoon",
+      "when": "lancelot && round == 1 && phase == 'propose'",
+      "text": "From the next Mission on, one Crossroads card is revealed at the start of each Mission."
+    },
+    {
+      "id": "excaliburOn",
+      "when": "excalibur && phase == 'propose'",
+      "text": "This team also needs someone to hold the Scroll of the Word."
+    },
+    {
+      "id": "ladyNext",
+      "when": "settings.lady && (round == 1 || round == 2 || round == 3) && phase == 'propose'",
+      "text": "When this Mission ends, the Lamp will be used."
+    }
+  ],
+  "tutorial": {
+    "title": "Your First Fellowship of Light",
+    "steps": [
+      {
+        "id": "welcome",
+        "title": "Welcome!",
+        "text": "In this game you find the Tempters hiding among you. Follow these 7 steps and you're ready to play."
+      },
+      {
+        "id": "join",
+        "phase": "lobby",
+        "title": "1. Join a room",
+        "text": "One person creates a room and shares the code. Everyone else enters the code to join. Use a name others will recognise."
+      },
+      {
+        "id": "seat",
+        "phase": "lobby",
+        "title": "2. Sit in a circle",
+        "text": "Sit in a circle in the order shown on screen. The Group Leader role goes around in this order."
+      },
+      {
+        "id": "card",
+        "phase": "reveal",
+        "title": "3. Peek at your card",
+        "text": "Cover your screen and check your role. Remember whether you're with the Workers of Light or the Tempters, and who you can see. Then act like nothing happened!"
+      },
+      {
+        "id": "propose",
+        "phase": "propose",
+        "title": "4. The Group Leader picks a team",
+        "text": "The player marked Group Leader picks who goes on the Mission. The screen shows how many are needed. Everyone else shares their opinion."
+      },
+      {
+        "id": "vote",
+        "phase": "vote",
+        "title": "5. Everyone votes",
+        "text": "Approve if the team looks trustworthy, Reject if it looks suspicious. Votes are revealed together, so watch who voted which way."
+      },
+      {
+        "id": "quest",
+        "phase": "quest",
+        "title": "6. Play a Mission card",
+        "text": "Only team members secretly play a card. The Workers of Light play only Blessing. The Tempters choose Blessing or Hindrance. One Hindrance is enough to fail."
+      },
+      {
+        "id": "repeat",
+        "title": "7. Repeat and reason",
+        "text": "There are 5 Missions. The first side to take 3 wins. Who was on which team and who voted which way are your biggest clues."
+      },
+      {
+        "id": "twist",
+        "phase": "assassin",
+        "title": "The final twist",
+        "text": "Even if the Workers of Light complete 3, the Tempters win if the Spy names the Prophet. The Prophet stays hidden, and the other Workers of Light act like the Prophet to confuse them."
+      },
+      {
+        "id": "ready",
+        "title": "All set!",
+        "text": "Mistakes are fine. The first game is practice. One round and you'll get the hang of it."
+      }
+    ],
+    "example": {
+      "heading": "A sample game (5 players)",
+      "lines": [
+        "Grace, Hope, Sky, David and Joseph start. 3 are Workers of Light and 2 are Tempters.",
+        "The first Group Leader, Grace, picks Grace and Sky. The vote passes, Approve 4 to Reject 1!",
+        "The Mission shows 0 Hindrances. The first Mission is complete.",
+        "The second Group Leader, Hope, needs 3 players and picks Hope, David and Joseph, but 3 Reject votes sink it. The Group Leader role passes to Sky.",
+        "Sky's team (Sky, Grace, Joseph) is approved, and 1 Hindrance comes up! One of those three is with the Tempters.",
+        "You collect clues like this and use them to choose the next team."
+      ]
+    }
+  },
+  "hostGuide": {
+    "title": "Fellowship of Light Host Guide",
+    "intro": "A guide to help you run a fun game in about 30 minutes at a retreat or small group, even with first-time players.",
+    "sections": [
+      {
+        "heading": "What you need",
+        "bullets": [
+          "One phone per person (Wi-Fi or mobile data)",
+          "5 to 10 players per room. With more people, split into several rooms. 7 or 8 is the sweet spot.",
+          "Seats in a circle. Being able to see each other's faces matters.",
+          "A game takes 20 to 40 minutes. Allow 40 minutes for the first one, including the explanation."
+        ]
+      },
+      {
+        "heading": "Before you start (5 minutes)",
+        "steps": [
+          "The host creates a room and reads out or shows the room code.",
+          "Once everyone is in, sit in a circle in the order shown on screen. The Group Leader role goes around in this order.",
+          "Turn on roles to fit your group size. See the recommended setups below.",
+          "Read the '3-minute explanation' below, and start once everyone taps Ready."
+        ]
+      },
+      {
+        "heading": "Recommended setups",
+        "presetsRef": true,
+        "bullets": [
+          "First game: turn on only the Prophet and the Spy. Every other seat is filled automatically as a Worker of Light or a Tempter.",
+          "Once you're comfortable: add the Watchman and the False Prophet. They keep each other in check and add a lot of fun.",
+          "7 or more players: add the Wolf in Sheep's Clothing and turn on the Lamp.",
+          "10 players: add the Wanderer too, so all 4 of the Tempters have special roles."
+        ]
+      },
+      {
+        "heading": "Expansions to try later",
+        "bullets": [
+          "Pilgrim at the Crossroads and Shadow at the Crossroads: from the 3rd Mission, Crossroads cards are revealed and the two pilgrims may swap sides. For a first try, use 'Quiet Crossroads'.",
+          "Scroll of the Word: the Group Leader hands it to a team member, who may flip one other member's card. Great with 7 or more.",
+          "Alternate team sizes: changes the team sizes in 5 and 7 player games. Nice when the same group plays several rounds.",
+          "Add only one expansion at a time. Long explanations are hard on first-time players."
+        ]
+      },
+      {
+        "heading": "3-minute explanation",
+        "script": [
+          "\"Some Tempters are secretly hiding among us. Everyone else is one of the Workers of Light.\"",
+          "\"There are 5 Missions, and the first side to take 3 wins.\"",
+          "\"Each time, the Group Leader picks a team and we all vote Approve or Reject.\"",
+          "\"An approved team secretly plays Blessing or Hindrance cards. One Hindrance and the Mission fails. The Workers of Light can only play Blessing.\"",
+          "\"The Prophet knows who the Tempters are but must not get caught. Even if the Workers of Light win, the Spy can turn it around by naming the Prophet.\"",
+          "\"You can say anything, but never show your phone screen. Ready to check your cards?\""
+        ]
+      },
+      {
+        "heading": "While you play",
+        "bullets": [
+          "If discussion drags on, set a limit of about 2 to 3 minutes per proposal.",
+          "Asking quiet players \"What do you think?\" helps everyone join in.",
+          "If suspicion piles onto one person, especially a newcomer or a younger player, lighten the mood.",
+          "Agree beforehand not to use faith statements like \"I swear to God\" as proof in the game. A game is a game, and faith is faith.",
+          "When the fifth proposal comes around, remind everyone: \"If this one is rejected, the Tempters win!\""
+        ]
+      },
+      {
+        "heading": "If something goes wrong",
+        "bullets": [
+          "A phone turned off or the app closed: reopening on the same phone returns the player to their seat and role.",
+          "Someone needs a different phone: after they've been disconnected for 15 seconds, the Host taps 'Allow rejoin'. For 2 minutes, the new phone can join with the same name.",
+          "The Host's phone went off: after a minute, a 'Take over as host' button appears for the others. Whoever taps it takes over.",
+          "One player is stuck on the card reveal: the host can tap Skip to start the game.",
+          "Someone accidentally showed their screen: treat this game as practice, play it out, then open a new game with Restart when it ends.",
+          "Rules feel confusing: the guide button is available any time, even during a game."
+        ]
+      },
+      {
+        "heading": "After the game (5-minute sharing)",
+        "bullets": [
+          "Every role is revealed. Talk about who noticed what, and when.",
+          "Laugh it off with questions like \"Why did you reject that one?\"",
+          "Say \"Sorry, and well played\" to anyone you suspected."
+        ],
+        "reflection": {
+          "heading": "Optional sharing questions",
+          "questions": [
+            "Whose words did you trust today, and why?",
+            "What helped you tell the true from the false? (See Matthew 10:16 and 1 John 4:1.)",
+            "What does it mean to trust one another in a community?"
+          ]
+        }
+      }
+    ]
+  },
+  "presets": {
+    "beginner": {
+      "label": "First game",
+      "desc": "The simplest setup, with only the Prophet and the Spy",
+      "byCount": {
+        "5": {
+          "roles": {
+            "merlin": true,
+            "assassin": true,
+            "percival": false,
+            "morgana": false,
+            "mordred": false,
+            "oberon": false
+          },
+          "lady": false,
+          "lancelot": 0,
+          "excalibur": false,
+          "balance": false
+        },
+        "6": {
+          "roles": {
+            "merlin": true,
+            "assassin": true,
+            "percival": false,
+            "morgana": false,
+            "mordred": false,
+            "oberon": false
+          },
+          "lady": false,
+          "lancelot": 0,
+          "excalibur": false,
+          "balance": false
+        },
+        "7": {
+          "roles": {
+            "merlin": true,
+            "assassin": true,
+            "percival": false,
+            "morgana": false,
+            "mordred": false,
+            "oberon": false
+          },
+          "lady": false,
+          "lancelot": 0,
+          "excalibur": false,
+          "balance": false
+        },
+        "8": {
+          "roles": {
+            "merlin": true,
+            "assassin": true,
+            "percival": false,
+            "morgana": false,
+            "mordred": false,
+            "oberon": false
+          },
+          "lady": false,
+          "lancelot": 0,
+          "excalibur": false,
+          "balance": false
+        },
+        "9": {
+          "roles": {
+            "merlin": true,
+            "assassin": true,
+            "percival": false,
+            "morgana": false,
+            "mordred": false,
+            "oberon": false
+          },
+          "lady": false,
+          "lancelot": 0,
+          "excalibur": false,
+          "balance": false
+        },
+        "10": {
+          "roles": {
+            "merlin": true,
+            "assassin": true,
+            "percival": false,
+            "morgana": false,
+            "mordred": false,
+            "oberon": false
+          },
+          "lady": false,
+          "lancelot": 0,
+          "excalibur": false,
+          "balance": false
+        }
+      }
+    },
+    "standard": {
+      "label": "Recommended",
+      "desc": "Adds the Watchman and the False Prophet to keep each other in check",
+      "byCount": {
+        "5": {
+          "roles": {
+            "merlin": true,
+            "assassin": true,
+            "percival": true,
+            "morgana": true,
+            "mordred": false,
+            "oberon": false
+          },
+          "lady": false,
+          "lancelot": 0,
+          "excalibur": false,
+          "balance": false
+        },
+        "6": {
+          "roles": {
+            "merlin": true,
+            "assassin": true,
+            "percival": true,
+            "morgana": true,
+            "mordred": false,
+            "oberon": false
+          },
+          "lady": false,
+          "lancelot": 0,
+          "excalibur": false,
+          "balance": false
+        },
+        "7": {
+          "roles": {
+            "merlin": true,
+            "assassin": true,
+            "percival": true,
+            "morgana": true,
+            "mordred": true,
+            "oberon": false
+          },
+          "lady": true,
+          "lancelot": 0,
+          "excalibur": false,
+          "balance": false
+        },
+        "8": {
+          "roles": {
+            "merlin": true,
+            "assassin": true,
+            "percival": true,
+            "morgana": true,
+            "mordred": true,
+            "oberon": false
+          },
+          "lady": true,
+          "lancelot": 0,
+          "excalibur": false,
+          "balance": false
+        },
+        "9": {
+          "roles": {
+            "merlin": true,
+            "assassin": true,
+            "percival": true,
+            "morgana": true,
+            "mordred": true,
+            "oberon": false
+          },
+          "lady": true,
+          "lancelot": 0,
+          "excalibur": false,
+          "balance": false
+        },
+        "10": {
+          "roles": {
+            "merlin": true,
+            "assassin": true,
+            "percival": true,
+            "morgana": true,
+            "mordred": true,
+            "oberon": true
+          },
+          "lady": true,
+          "lancelot": 0,
+          "excalibur": false,
+          "balance": false
+        }
+      }
+    },
+    "expansion": {
+      "label": "Try the expansions",
+      "desc": "Adds the Pilgrim at the Crossroads (Quiet Crossroads) and the Scroll of the Word",
+      "byCount": {
+        "5": {
+          "roles": {
+            "merlin": true,
+            "assassin": true,
+            "percival": false,
+            "morgana": false,
+            "mordred": false,
+            "oberon": false
+          },
+          "lady": false,
+          "lancelot": 1,
+          "excalibur": false,
+          "balance": false
+        },
+        "6": {
+          "roles": {
+            "merlin": true,
+            "assassin": true,
+            "percival": true,
+            "morgana": false,
+            "mordred": false,
+            "oberon": false
+          },
+          "lady": false,
+          "lancelot": 1,
+          "excalibur": false,
+          "balance": false
+        },
+        "7": {
+          "roles": {
+            "merlin": true,
+            "assassin": true,
+            "percival": true,
+            "morgana": true,
+            "mordred": false,
+            "oberon": false
+          },
+          "lady": true,
+          "lancelot": 1,
+          "excalibur": true,
+          "balance": false
+        },
+        "8": {
+          "roles": {
+            "merlin": true,
+            "assassin": true,
+            "percival": true,
+            "morgana": true,
+            "mordred": false,
+            "oberon": false
+          },
+          "lady": true,
+          "lancelot": 1,
+          "excalibur": true,
+          "balance": false
+        },
+        "9": {
+          "roles": {
+            "merlin": true,
+            "assassin": true,
+            "percival": true,
+            "morgana": true,
+            "mordred": false,
+            "oberon": false
+          },
+          "lady": true,
+          "lancelot": 1,
+          "excalibur": true,
+          "balance": false
+        },
+        "10": {
+          "roles": {
+            "merlin": true,
+            "assassin": true,
+            "percival": true,
+            "morgana": true,
+            "mordred": true,
+            "oberon": false
+          },
+          "lady": true,
+          "lancelot": 1,
+          "excalibur": true,
+          "balance": false
+        }
+      }
+    }
+  },
+  "glossary": [
+    {
+      "term": "Workers of Light",
+      "text": "The side of light. More players, but less information."
+    },
+    {
+      "term": "Tempters",
+      "text": "The hidden side. Fewer players, but they know each other."
+    },
+    {
+      "term": "Mission",
+      "text": "One of 5 tasks. The first side to take 3 wins."
+    },
+    {
+      "term": "Group Leader",
+      "text": "The player picking this Mission team. Passes to the next seat after each proposal."
+    },
+    {
+      "term": "Blessing / Hindrance",
+      "text": "The cards team members secretly play. The Workers of Light can only play Blessing."
+    },
+    {
+      "term": "Approve / Reject",
+      "text": "The vote on whether to send the Group Leader's team."
+    },
+    {
+      "term": "Lamp",
+      "text": "Optional rule. A lamp that secretly reveals one player's side."
+    },
+    {
+      "term": "Scroll of the Word",
+      "text": "Expansion. Lets one team member flip another member's card."
+    },
+    {
+      "term": "Crossroads card",
+      "text": "Expansion. Revealed one at a time from the 3rd Mission, and can switch the pilgrims' sides."
+    },
+    {
+      "term": "Prophet Hunt",
+      "text": "After 3 wins for the Workers of Light, the Spy's last chance to find and name the Prophet."
+    }
+  ],
+  "ui": {
+    "helpButton": "Guide",
+    "quickButton": "1-Minute Guide",
+    "fullRulesButton": "Full rules",
+    "tutorialButton": "I'm new",
+    "myRoleTipsButton": "My role tips",
+    "hostGuideButton": "Host guide",
+    "next": "Next",
+    "prev": "Back",
+    "close": "Close",
+    "done": "Got it",
+    "skipTutorial": "Skip",
+    "language": "Language",
+    "langKo": "한국어",
+    "langEn": "English",
+    "moduleTag": "Expansion"
+  }
+}

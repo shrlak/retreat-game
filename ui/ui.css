@@ -435,6 +435,7 @@ img { -webkit-user-drag: none; user-select: none; }
 }
 @media (min-height: 760px) { .ux-card { width: min(72vw, 290px); } }
 @media (max-width: 360px) { .ux-h1 { font-size: 30px; } .uxh-title { font-size: 42px !important; } .ux-code { font-size: 38px; } .ux-choice { font-size: 19px; } }
+@media (max-width: 360px) { .ux-en .uxh-title { font-size: 34px !important; } }
 
 /* readability: text over art never sits bare */
 .ux-btn-gold, .ux-input, .ux-code-input { text-shadow: none; }

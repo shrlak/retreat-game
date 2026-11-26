@@ -14,12 +14,13 @@
   "use strict";
 
   // =====================================================================
-  // Engine port, generated from server/engine.js (md5 b6030c8c54d3…): `export` dropped,
+  // Engine port, generated from server/engine.js (md5 a92b6b31a4e6…): `export` dropped,
   // `||=` rewritten for ES2020. Don't edit rules here: change server/engine.js and re-port,
   // so the mock never drifts from the server.
   // =====================================================================
   var E = (function () {
   // 빛의 원정대 — rules engine. Pure JS (ESM), no deps. Runs in Deno and Node.
+  import { errOf } from "./messages.js";
   // State is a plain JSON object. Never send it to clients: use viewFor().
 
   const MIN_PLAYERS = 5;
@@ -91,8 +92,8 @@
     return n;
   }
 
-  function err(msg) {
-    return { error: msg };
+  function err(msg, params) {
+    return errOf(msg, params);
   }
 
   /** Build the role list for n players from settings. Returns {roles} or {error}. */
@@ -114,7 +115,7 @@
       good.push("lancelotGood");
       evil.push("lancelotEvil");
     }
-    if (evil.length > evilN) return err(`${n}명일 때 유혹의 무리는 ${evilN}명이라 특수 역할을 줄여야 해요`);
+    if (evil.length > evilN) return err("tooManyEvilSpecials", { n, evil: evilN });
     if (good.length > n - evilN) return err("빛의 일꾼 특수 역할이 너무 많아요");
     while (good.length < n - evilN) good.push("servant");
     while (evil.length < evilN) evil.push("minion");
@@ -427,10 +428,10 @@
           if (!isHost) return err("방장만 시작할 수 있어요");
           if (state.phase !== "lobby") return err("이미 시작했어요");
           const n = state.players.length;
-          if (n < MIN_PLAYERS) return err(`최소 ${MIN_PLAYERS}명이 필요해요 (지금 ${n}명)`);
-          if (n > MAX_PLAYERS) return err(`최대 ${MAX_PLAYERS}명까지예요`);
+          if (n < MIN_PLAYERS) return err("minPlayers", { min: MIN_PLAYERS, n });
+          if (n > MAX_PLAYERS) return err("maxPlayers", { max: MAX_PLAYERS });
           const notReady = state.players.filter((p) => p.id !== state.hostId && !p.ready);
-          if (notReady.length) return err(`아직 준비 안 된 사람: ${notReady.map((p) => p.name).join(", ")}`);
+          if (notReady.length) return err("notAllReady", { names: notReady.map((p) => p.name).join(", ") });
           return startGame(state, rng);
         }
         case "ack": {
@@ -449,7 +450,7 @@
           if (leaderId(state) !== me.id) return err("조장만 원정대를 고를 수 있어요");
           const team = Array.isArray(msg.team) ? [...new Set(msg.team)] : [];
           const size = g.quests[g.round].size;
-          if (team.length !== size) return err(`이번 사명에는 ${size}명을 골라야 해요`);
+          if (team.length !== size) return err("teamSize", { size });
           if (!team.every((id) => P(state, id))) return err("없는 참가자가 있어요");
           let excaliburTo = null;
           if (g.excalibur) {
@@ -633,6 +634,9 @@
         me,
         rolesInGame: preview && preview.roles ? preview.roles.slice().sort() : null,
         setupError: preview && preview.error ? preview.error : null,
+        setupErrorKey: preview && preview.error ? preview.errorKey : null,
+        setupErrorParams: preview && preview.error ? preview.errorParams : null,
+        setupErrorEn: preview && preview.error ? preview.errorEn : null,
         round: 0,
         proposalNo: 1,
         leaderId: null,
@@ -821,7 +825,11 @@
     var v = E.viewFor(S.state, pid, Date.now());
     return v.me.knowledge.filter(function (k) { return k.tag === "evil"; }).map(function (k) { return k.id; });
   }
-  function isEvil(pid) { return E.teamOf(roleOf(pid)) === "evil"; }
+  function isEvil(pid) {
+    var g = S.state && S.state.game, r = roleOf(pid);
+    if (g && g.allegiance && g.allegiance[pid] && (r === "lancelotGood" || r === "lancelotEvil")) return g.allegiance[pid] === "evil";
+    return E.teamOf(r) === "evil";
+  }
 
   function pickTeam(pid, pol) {
     var st = S.state, g = st.game, q = g.quests[g.round], size = q.size;
@@ -901,7 +909,10 @@
       case "reveal":
         return g.acked[pid] ? null : { action: "ack" };
       case "propose":
-        return leaderOf() === pid ? { action: "propose", team: pickTeam(pid, pol) } : null;
+        if (leaderOf() !== pid) return null;
+        var tm = pickTeam(pid, pol), pr = { action: "propose", team: tm };
+        if (g.excalibur) { var others = tm.filter(function (id) { return id !== pid; }); if (!others.length) { tm[tm.length - 1] = st.players.filter(function (p) { return tm.indexOf(p.id) < 0 && p.id !== pid; })[0].id; others = tm.filter(function (id) { return id !== pid; }); } pr.excaliburTo = pick(others.map(function (id) { return { id: id }; })).id; }
+        return pr;
       case "vote":
         return pid in g.votes ? null : { action: "vote", approve: voteChoice(pid, pol) };
       case "quest":
@@ -911,6 +922,12 @@
         if (g.ladyHolderId !== pid) return null;
         var c = st.players.filter(function (p) { return p.id !== pid && g.ladyUsedBy.indexOf(p.id) < 0; });
         return c.length ? { action: "lady", targetId: pick(c).id } : null;
+      }
+      case "excalibur": {
+        if (!g.proposal || g.proposal.excaliburTo !== pid) return null;
+        var mates = g.proposal.team.filter(function (id) { return id !== pid; });
+        if (!mates.length || S.rng() < 0.35) return { action: "excalibur" };
+        return { action: "excalibur", targetId: pick(mates.map(function (id) { return { id: id }; })).id };
       }
       case "assassin":
         return g.assassinId === pid ? { action: "assassinate", targetId: assassinPick(pid, pol) } : null;
