@@ -57,7 +57,7 @@ export async function playGame(transport, opts = {}) {
   let r = await act(host, "settings", { settings: { roles, lady, maxPlayers: 10, ...(lancelot ? { lancelot } : {}), ...(excalibur ? { excalibur } : {}), ...(balance ? { balance } : {}) } });
   if (!r.ok) { bad("API", "settings refused", r.error); return { findings, log, tag }; }
   const eff = r.view.settings.roles;
-  for (const k of Object.keys(roles)) if (!!eff[k] !== !!roles[k]) { roles = { ...roles, ...eff }; break; }
+  for (const k of new Set([...Object.keys(roles), ...Object.keys(eff)])) if (!!eff[k] !== !!roles[k]) { roles = { ...roles, ...eff }; break; }
   // start before ready must be refused
   r = await act(host, "start");
   if (r.ok) bad("LOBBY", "start allowed while players not ready");
