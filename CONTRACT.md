@@ -58,7 +58,11 @@ window.THEME = {
 - Vote: all players vote approve/reject simultaneously; majority (strictly more than half) approves.
 - Quest: team members play secretly; good can only play success.
 - Lady (등불), optional: holder starts at the player right of first leader. After quests 2,3,4 resolve (and game not over), holder inspects one player who hasn't held it; holder privately learns that player's team; token passes to them.
-- Lancelot module (`settings.lancelot`: 0 off, 1 = 조용한 갈림길, 2 = 알려진 갈림길): adds `lancelotGood` + `lancelotEvil` (the evil one takes one evil slot). Loyalty deck of 5 (3 `none`, 2 `switch`) shuffled at start; at the start of rounds 3, 4, 5 (index 2–4) one card is turned face up (`view.loyaltyRevealed`); each `switch` swaps both pilgrims' current sides. Quest cards, the lamp's answer and the final win all use the CURRENT side (`me.team`; `me.startTeam` = side at start). Variant 1: evil pilgrim and the evil team don't know each other; the seer still sees the evil pilgrim. Variant 2: the two pilgrims see each other (tag `lancelot`), and the evil team sees the evil pilgrim (tag `evil`).
+- Lancelot module, as in the official rulebook (`settings.lancelot`: 0 off, 1/2/3 = official variant 1/2/3): adds `lancelotGood` + `lancelotEvil` (the evil one takes one evil slot). Quest cards, the lamp's answer and the final win all use the CURRENT side (`me.team`; `me.startTeam` = side at start).
+  - Night (all variants): Evil Lancelot keeps his eyes closed and shows a thumb, so the evil team (not Oberon) sees him (tag `evil`) and he sees no one. The seer also sees him. The two Lancelots know each other (tag `lancelot`) only in variant 3.
+  - Variant 1: Loyalty deck of 5 (3 `none`, 2 `switch`) shuffled at start; at the start of rounds 3, 4, 5 (index 2–4) one card is turned face up (`view.loyaltyRevealed`); each `switch` swaps both Lancelots' sides.
+  - Variant 2: 7 cards (5 `none`, 2 `switch`) shuffled, 5 dealt face up at start (`view.loyaltyPlan`, card i = round i). Card i takes effect at the start of round i (round index 0 at game start) and is then listed in `loyaltyRevealed`. Lancelots must play for their current side: current evil Lancelot only Hindrance (`lancelotMustFail`), current good Lancelot only Blessing (`lancelotMustSucceed`).
+  - Variant 3: no Loyalty cards, no switching.
 - Excalibur module (`settings.excalibur`): the leader's `propose` also names `excaliburTo` (a team member, not the leader). After all quest cards are in, phase `excalibur`: the holder either flips one other member's card (`excalibur {targetId}`) or passes (`excalibur {}`); only the holder learns the original card (`me.excaliburResults`). Who used it on whom is public (`lastQuest.excalibur`).
 - 3 successes → if merlin in game: assassination phase (assassin picks; hitting merlin → evil wins) else good wins. 3 fails → evil wins.
 
@@ -87,7 +91,7 @@ Response: `{ok:true, view, playerId?, token?, code?}` or `{ok:false, error:"한�
 | `restart` | — | host, phase `end` → back to lobby (same players, ready reset) |
 | `leave` | — | lobby only |
 
-`settings`: `{ roles: {percival, morgana, mordred, oberon, assassin, merlin: bool}, lady: bool, balance: bool, lancelot: 0|1|2, excalibur: bool, maxPlayers: 5..10 }`. `balance` = alternate team sizes: 5p [3,2,3,2,3], 7p [2,3,4,3,4].
+`settings`: `{ roles: {percival, morgana, mordred, oberon, assassin, merlin: bool}, lady: bool, balance: bool, lancelot: 0|1|2|3, excalibur: bool, maxPlayers: 5..10 }`. `balance` = alternate team sizes: 5p [3,2,3,2,3], 7p [2,3,4,3,4].
 
 ## View (what a client receives — only its own secrets)
 ```js
@@ -101,7 +105,7 @@ Response: `{ok:true, view, playerId?, token?, code?}` or `{ok:false, error:"한�
   // moment has passed, jump to the matching point in the animation (or skip it).
   phaseSeq, phaseStartedAt, prevPhase, transitionMs, serverNow, serverOffsetMs,
   rejoinOpenFor: id|null, hostAway: bool,
-  lancelot: 0|1|2, loyaltyRevealed: [{round, card:"none"|"switch"}], loyaltyLeft,
+  lancelot: 0|1|2|3, loyaltyRevealed: [{round, card:"none"|"switch"}], loyaltyLeft, loyaltyPlan: [5 cards]|null (variant 2),
   excalibur: bool, lastExcalibur: {round, holderId, targetId|null}|null,
   finalTeams: {id: "good"|"evil"} | null,   // at end: each player's side at the finish
   me: { id, name, isHost, ready, seat,

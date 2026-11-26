@@ -76,7 +76,7 @@
           h("label", { style: "display:block" }, h("input", { type: "checkbox", "data-setting": "balance", checked: s.balance, on: { change: (e) => api.settings({ balance: e.target.checked }) } }), "밸런스 모드"),
           h("label", { style: "display:block" }, h("input", { type: "checkbox", "data-setting": "excalibur", checked: s.excalibur, on: { change: (e) => api.settings({ excalibur: e.target.checked }) } }), T.terms.excalibur),
           h("label", { style: "display:block" }, T.terms.lancelot + " ", h("select", { "data-setting": "lancelot", on: { change: (e) => api.settings({ lancelot: +e.target.value }) } },
-            [["0", "끄기"], ["1", T.terms.lancelotVariant1], ["2", T.terms.lancelotVariant2]].map(([v, l]) => h("option", { value: v, selected: String(s.lancelot || 0) === v }, l))))));
+            [["0", "끄기"], ["1", T.terms.lancelotVariant1], ["2", T.terms.lancelotVariant2], ["3", T.terms.lancelotVariant3]].map(([v, l]) => h("option", { value: v, selected: String(s.lancelot || 0) === v }, l))))));
         root.append(btn("게임 시작", () => api.start(), { "data-testid": "start" }));
       } else {
         root.append(btn(m.ready ? "준비 취소" : T.terms.ready, () => api.ready(!m.ready), { "data-testid": "ready" }));
@@ -115,7 +115,7 @@
     } else if (v.phase === "quest") {
       root.append(h("p", {}, "원정대: " + v.proposal.team.map(name).join(", ")));
       if (v.proposal.team.includes(m.id) && !m.myQuestPlayed)
-        root.append(btn(T.terms.success, () => api.quest(true), { "data-testid": "success" }), m.team === "evil" ? btn(T.terms.fail, () => api.quest(false), { "data-testid": "fail" }) : null);
+        root.append(v.lancelot === 2 && /lancelot/.test(m.role) && m.team === "evil" ? null : btn(T.terms.success, () => api.quest(true), { "data-testid": "success" }), m.team === "evil" ? btn(T.terms.fail, () => api.quest(false), { "data-testid": "fail" }) : null);
       else root.append(h("p", {}, `카드 낸 사람 ${v.questPlayedIds.length}/${v.proposal.team.length}`));
     } else if (v.phase === "excalibur") {
       const holder = v.proposal.excaliburTo;
