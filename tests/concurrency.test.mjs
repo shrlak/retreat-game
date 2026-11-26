@@ -14,11 +14,12 @@ async function roomOf(t, n) {
 }
 const A = (t, code, p, action, x = {}) => t.call({ action, code, playerId: p.id, token: p.token, ...x });
 
+for (const [label, latency] of [["random DB latency 5–40ms", [5, 40]], ["steady DB latency 30–34ms (worst case)", [30, 34]]])
 for (const n of [5, 8, 10]) {
-  test(`${n} phones join, ready, ack and vote at the same instant — nobody gets an error`, async () => {
+  test(`${n} phones join, ready, ack and vote at the same instant — nobody gets an error (${label})`, async () => {
     let errors = [];
-    for (let seed = 1; seed <= 20; seed++) {
-      const t = occTransport({ seed });
+    for (let seed = 1; seed <= 40; seed++) {
+      const t = occTransport({ seed, latency });
       const r = await roomOf(t, n);
       errors.push(...r.joinErrors.map((e) => `join: ${e}`));
       if (r.ps.length < n) continue;
@@ -31,11 +32,14 @@ for (const n of [5, 8, 10]) {
       const v = (await A(t, r.code, host, "state")).view;
       const leader = r.ps.find((p) => p.id === v.leaderId);
       await A(t, r.code, leader, "propose", { team: r.ps.slice(0, v.quests[0].size).map((p) => p.id) });
+      // votes land while every phone is also polling `state`
+      const polls = r.ps.map((p) => A(t, r.code, p, "state"));
       for (const x of await Promise.all(r.ps.map((p) => A(t, r.code, p, "vote", { approve: true })))) if (!x.ok) errors.push(`vote: ${x.error}`);
+      await Promise.all(polls);
       const after = (await A(t, r.code, host, "state")).view;
       if (after.phase !== "quest") errors.push(`after simultaneous votes phase=${after.phase} (votes lost, ${after.votedIds.length}/${n} recorded)`);
     }
     const uniq = [...new Set(errors)];
-    assert.equal(errors.length, 0, `${errors.length} failed taps over 20 rooms, e.g.: ${uniq.slice(0, 4).join(" | ")}`);
+    assert.equal(errors.length, 0, `${errors.length} failed taps over 40 rooms, e.g.: ${uniq.slice(0, 4).join(" | ")}`);
   });
 }

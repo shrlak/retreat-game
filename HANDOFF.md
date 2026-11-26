@@ -31,7 +31,7 @@ Phone-based online hidden-role game in the style of the classic team-quest deduc
 - Role names: church-retreat names in `web/config.js` (Spencer asked for church-themed names; current set is a first pick).
 - Hosting: Supabase (free, in existing project "health-dashboard") + GitHub Pages. Cloudflare not possible from the cloud session (connector can't deploy Workers).
 
-## Snapshot (2026-11-26 09:04 UTC)
+## Snapshot (2026-11-26 09:05 UTC)
 ```
 CLAUDE.md
 CONTRACT.md
@@ -68,6 +68,7 @@ assets/icons/help.svg
 assets/icons/home.svg
 assets/icons/info.svg
 assets/icons/lamp.svg
+assets/icons/olive-branch.svg
 assets/icons/play.svg
 assets/icons/refresh.svg
 assets/icons/scroll.svg
@@ -121,12 +122,14 @@ server/index.ts
 sync.sh
 tests/RULES_CHECKLIST.md
 tests/concurrency.test.mjs
+tests/e2e.html
 tests/engine.rules.test.mjs
 tests/lib/harness.mjs
 tests/lib/oracle.mjs
 tests/lib/transport-http.mjs
 tests/lib/transport-local.mjs
 tests/lib/transport-occ.mjs
+tests/live.html
 tests/mutation-check.mjs
 tests/perf.mjs
 tests/run-matrix.mjs
@@ -135,6 +138,8 @@ ui/dev.html
 ui/dev/mock.js
 ui/dev/theme-fallback.js
 ui/src/00-core.js
+ui/src/10-common.js
+ui/src/20-home.js
 ui/src/KIT.md
 ui/ui.css
 web/app.js

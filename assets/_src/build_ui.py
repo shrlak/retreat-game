@@ -48,6 +48,46 @@ def star_path(cx=12, cy=12.4, ro=9.6, ri=4.3):
     return '<path d="M' + " L".join(f"{x:.2f},{y:.2f}" for x, y in pts) + 'Z"/>'
 
 
+def wifi_off():
+    cx, cy = 12, 19.4
+    out = []
+    for r in (14.5, 9.8, 5.2):
+        a0, a1 = math.radians(-90 - 48), math.radians(-90 + 48)
+        # gap where the arc crosses the slash y = x
+        # solve (x-12)^2+(x-19.4)^2=r^2
+        A, B, Cc = 2, -2 * (cx + cy), cx * cx + cy * cy - r * r
+        disc = B * B - 4 * A * Cc
+        if disc <= 0:
+            segs = [(a0, a1)]
+        else:
+            xg = (-B - math.sqrt(disc)) / (2 * A)
+            ag = math.atan2(xg - cy, xg - cx)
+            gap = 2.3 / r
+            segs = [(a0, ag - gap), (ag + gap, a1)]
+        for s0, s1 in segs:
+            if s1 - s0 < 0.05:
+                continue
+            x0, y0 = cx + r * math.cos(s0), cy + r * math.sin(s0)
+            x1, y1 = cx + r * math.cos(s1), cy + r * math.sin(s1)
+            out.append(f'<path d="M{x0:.2f} {y0:.2f}A{r} {r} 0 0 1 {x1:.2f} {y1:.2f}"/>')
+    out.append('<path d="M12 19.6h.01"/><path d="M3 3l18 18"/>')
+    return "".join(out)
+
+
+def olive_branch():
+    def leaf(bx, by, tx, ty, w=2.3):
+        mx, my = (bx + tx) / 2, (by + ty) / 2
+        dx, dy = tx - bx, ty - by
+        L = math.hypot(dx, dy)
+        nx, ny = -dy / L * w, dx / L * w
+        return (f'<path d="M{bx:.2f} {by:.2f}Q{mx+nx:.2f} {my+ny:.2f} {tx:.2f} {ty:.2f}'
+                f'Q{mx-nx:.2f} {my-ny:.2f} {bx:.2f} {by:.2f}z"/>')
+    return ('<path d="M4 21C8.5 17 13 12 17.5 5.5"/>'
+            + leaf(8.2, 17.4, 3.6, 12.2) + leaf(10.4, 15.1, 16.6, 16.4)
+            + leaf(13.2, 11.6, 9.8, 5.6) + leaf(15.2, 8.8, 20.8, 9.6)
+            + leaf(17.5, 5.5, 19.6, 1.8, 1.6))
+
+
 ICONS = {
     "users": '<circle cx="9" cy="8" r="3.6"/><path d="M2.5 20c0-3.6 2.9-6.2 6.5-6.2s6.5 2.6 6.5 6.2"/>'
              '<path d="M15.5 4.6a3.5 3.5 0 0 1 0 6.8"/><path d="M18 14.2c2.1.8 3.5 2.9 3.5 5.8"/>',
@@ -82,15 +122,15 @@ ICONS = {
     "home": '<path d="M3 11.2 12 3.6l9 7.6"/><path d="M5.5 9.4v9.6A1.5 1.5 0 0 0 7 20.5h10a1.5 1.5 0 0 0 1.5-1.5V9.4"/>'
             '<path d="M10 20.5v-5.5h4v5.5"/>',
     "help": '<circle cx="12" cy="12" r="9.5"/><path d="M9.3 9.3a2.8 2.8 0 0 1 5.5.8c0 1.9-2.8 2.4-2.8 4.1"/><path d="M12 17.4h.01"/>',
-    "wifi-off": '<path d="M2 8.6a15 15 0 0 1 4.3-2.7M10 4.9A15 15 0 0 1 22 8.6"/>'
-                '<path d="M5.3 12.2a10 10 0 0 1 3.6-2.2M15.3 10.1a10 10 0 0 1 3.4 2.1"/>'
-                '<path d="M8.6 15.7a5 5 0 0 1 6.8 0"/><path d="M12 19.6h.01"/><path d="M3 3l18 18"/>',
+    "wifi-off": wifi_off(),
     "clock": '<circle cx="12" cy="12" r="9.5"/><path d="M12 6.8V12l3.6 2.2"/>',
     "dove": '<path d="M2.5 14.2c3.4.7 6-.5 7.6-2.7 1-1.4 2.1-3.4 3.9-4.3a3 3 0 0 1 4.2 2.2l3.3.8-3.2 1.3c-.4 4.3-3.8 7.4-8.3 7.4H5.6l2.6-2.4C5.6 16.4 3.6 15.6 2.5 14.2z"/>'
             '<path d="M10.6 11.1C10.2 7.6 8.4 4.8 5.2 3.4c-.6 3.3.3 6.4 2.6 8.6"/>',
-    "sheep": '<path d="M5.2 9.2a2.4 2.4 0 0 1 3.9-1.6 2.6 2.6 0 0 1 4.5-.2 2.4 2.4 0 0 1 3.4 1.9 2.4 2.4 0 0 1-.2 4.6 2.4 2.4 0 0 1-3.6 1.9 2.6 2.6 0 0 1-4.3.2 2.4 2.4 0 0 1-3.7-1.8 2.5 2.5 0 0 1 0-5z"/>'
-             '<path d="M16.8 9.8c.6-1.5 1.8-2.3 3.1-2.1 1.4.3 2 1.6 1.7 3.1-.3 1.4-1.4 2.3-2.7 2.2"/>'
-             '<path d="M8 16.4v3.6M13.5 16.6v3.4"/>',
+    "sheep": '<path d="M4.6 9.4a2.4 2.4 0 0 1 3.9-1.7 2.6 2.6 0 0 1 4.4-.3 2.4 2.4 0 0 1 3.2 1.2"/>'
+             '<path d="M15.2 15.4a2.4 2.4 0 0 1-3.4 1.2 2.6 2.6 0 0 1-4.3.2 2.4 2.4 0 0 1-3.6-1.8 2.5 2.5 0 0 1 .7-5.6"/>'
+             '<ellipse cx="18.6" cy="12.4" rx="2.9" ry="3.6" transform="rotate(-18 18.6 12.4)"/>'
+             '<path d="M15.6 10.2l-2-.9"/><path d="M7.6 16.8v3.4M12.8 16.8v3.4"/>',
+    "olive-branch": olive_branch(),
 }
 
 

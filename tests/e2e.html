@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>E2E bots</title>
+<style>body{font:13px monospace;background:#111;color:#ddd;padding:10px}#sum{font-size:16px;color:#7f7}</style></head>
+<body>
+<div id="sum">running…</div>
+<pre id="out"></pre>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="../web/config.js"></script>
+<script>
+// Live end-to-end test: bots play full games against the deployed function. ?games=6&from=5&to=10
+const B = window.BACKEND;
+const q = new URLSearchParams(location.search);
+const FROM = +(q.get("from") || 5), TO = +(q.get("to") || 10), PER = +(q.get("games") || 1);
+const out = document.getElementById("out"), sum = document.getElementById("sum");
+const log = (...a) => { out.textContent += a.join(" ") + "\n"; };
+const EVIL = ["assassin", "morgana", "mordred", "oberon", "minion"];
+let fails = 0, games = 0, calls = 0, broadcasts = 0;
+const check = (c, msg) => { if (!c) { fails++; log("FAIL:", msg); } };
+async function call(body) {
+  calls++;
+  const r = await fetch(B.fnUrl, { method: "POST", headers: { "content-type": "application/json", apikey: B.anonKey }, body: JSON.stringify(body) });
+  return r.json();
+}
+const rnd = (a) => a[Math.floor(Math.random() * a.length)];
+async function game(n, opts) {
+  const host = await call({ action: "create", name: "봇0" });
+  check(host.ok, "create " + JSON.stringify(host));
+  const code = host.code;
+  // realtime listener
+  let got = 0;
+  const rt = window.supabase.createClient(B.supabaseUrl, B.anonKey);
+  const ch = rt.channel("mist:" + code);
+  await new Promise((res) => { ch.on("broadcast", { event: "update" }, () => { got++; }).subscribe((s) => s === "SUBSCRIBED" && res()); setTimeout(res, 4000); });
+  const bots = [{ ...host, name: "봇0" }];
+  for (let i = 1; i < n; i++) {
+    const j = await call({ action: "join", code: code.toLowerCase(), name: "봇" + i });
+    check(j.ok, "join " + j.error);
+    bots.push({ ...j, name: "봇" + i });
+  }
+  const dup = await call({ action: "join", code, name: "봇1" });
+  check(!dup.ok, "duplicate name allowed");
+  const A = (b, action, p = {}) => call({ action, code, playerId: b.playerId, token: b.token, ...p });
+  const set = await A(bots[0], "settings", { settings: opts });
+  check(set.ok, "settings " + set.error);
+  const early = await A(bots[0], "start");
+  check(!early.ok, "start before ready should fail");
+  const notHost = await A(bots[1], "start");
+  check(!notHost.ok, "non-host start");
+  await Promise.all(bots.slice(1).map((b) => A(b, "ready", { ready: true })));
+  const st = await A(bots[0], "start");
+  check(st.ok && st.view.phase === "reveal", "start " + (st.error || st.view.phase));
+  // each bot sees only own role
+  let views = await Promise.all(bots.map((b) => A(b, "state")));
+  const role = {};
+  views.forEach((v, i) => {
+    role[bots[i].playerId] = v.view.me.role;
+    check(v.view.revealed === null, "revealed before end");
+    check(!JSON.stringify(v.view).includes("roleOf") && !JSON.stringify(v.view).includes("token"), "leak in view");
+  });
+  // knowledge truth checks
+  views.forEach((v, i) => {
+    const me = v.view.me;
+    for (const k of me.knowledge) {
+      const r = role[k.id];
+      if (me.role === "merlin") check(EVIL.includes(r) && r !== "mordred", "merlin sees " + r);
+      if (me.role === "percival") check(r === "merlin" || r === "morgana", "percival sees " + r);
+      if (EVIL.includes(me.role)) check(EVIL.includes(r) && r !== "oberon" && me.role !== "oberon", "evil sees " + r);
+    }
+  });
+  const counts = { 5: 2, 6: 2, 7: 3, 8: 3, 9: 3, 10: 4 };
+  check(Object.values(role).filter((r) => EVIL.includes(r)).length === counts[n], "evil count");
+  await Promise.all(bots.map((b) => A(b, "ack")));
+  const byId = Object.fromEntries(bots.map((b) => [b.playerId, b]));
+  let v = (await A(bots[0], "state")).view, guard = 0;
+  while (v.phase !== "end" && guard++ < 120) {
+    if (v.phase === "propose") {
+      const L = byId[v.leaderId];
+      const wrong = await A(bots.find((b) => b.playerId !== v.leaderId), "propose", { team: [] });
+      check(!wrong.ok, "non-leader propose");
+      const team = bots.map((b) => b.playerId).sort(() => Math.random() - 0.5).slice(0, v.quests[v.round].size);
+      const r = await A(L, "propose", { team });
+      check(r.ok, "propose " + r.error);
+    } else if (v.phase === "vote") {
+      await Promise.all(bots.map((b) => A(b, "vote", { approve: Math.random() < 0.65 })));
+    } else if (v.phase === "quest") {
+      const team = v.proposal.team;
+      const goodFail = team.find((id) => !EVIL.includes(role[id]));
+      if (goodFail) { const r = await A(byId[goodFail], "quest", { success: false }); check(!r.ok, "good played fail"); }
+      await Promise.all(team.map((id) => A(byId[id], "quest", { success: !(EVIL.includes(role[id]) && Math.random() < 0.6) })));
+    } else if (v.phase === "lady") {
+      const h = byId[v.ladyHolderId];
+      const t = rnd(bots.filter((b) => !v.ladyUsedBy.includes(b.playerId)));
+      const r = await A(h, "lady", { targetId: t.playerId });
+      check(r.ok, "lady " + r.error);
+      const res = r.view.me.ladyResults.at(-1);
+      check(res && res.team === (EVIL.includes(role[t.playerId]) ? "evil" : "good"), "lady result wrong");
+      const other = await A(t, "state");
+      check(!other.view.me.ladyResults.some((x) => x.targetId === t.playerId), "lady result leaked to target");
+    } else if (v.phase === "assassin") {
+      const a = byId[v.assassinId];
+      check(EVIL.includes(role[a.playerId]), "assassin is evil");
+      const t = rnd(bots.filter((b) => b.playerId !== a.playerId && !EVIL.includes(role[b.playerId])));
+      const r = await A(a, "assassinate", { targetId: t.playerId });
+      check(r.ok, "assassinate " + r.error);
+    }
+    v = (await A(bots[0], "state")).view;
+  }
+  check(v.phase === "end", "game did not end");
+  const fin = (await A(bots[1], "state")).view;
+  check(fin.revealed && Object.entries(fin.revealed).every(([id, r]) => role[id] === r), "revealed mismatch");
+  // the rule: quest 4 needs 2 fails for 7+
+  check(fin.quests[3].failsNeeded === (n >= 7 ? 2 : 1), "fails needed q4");
+  const re = await A(bots[0], "restart");
+  check(re.ok && re.view.phase === "lobby", "restart");
+  await new Promise((r) => setTimeout(r, 1200));
+  check(got > 0, "no realtime broadcast received");
+  broadcasts += got;
+  rt.removeChannel(ch);
+  games++;
+  log(`n=${n} ${JSON.stringify(opts.roles)} lady=${opts.lady} → ${fin.winner} (${fin.winReason}) quests=${fin.quests.map((q) => q.result ? q.result[0] : "-").join("")} broadcasts=${got}`);
+}
+(async () => {
+  const t0 = Date.now();
+  try {
+    for (let n = FROM; n <= TO; n++) for (let g = 0; g < PER; g++) {
+      const opts = { lady: n >= 7 || g % 2 === 1, balance: g % 3 === 2, roles: { merlin: true, percival: true, morgana: true, mordred: n >= 7, oberon: n >= 10 } };
+      await game(n, opts);
+    }
+  } catch (e) { fails++; log("EXCEPTION", e.stack || e); }
+  sum.textContent = `DONE games=${games} fails=${fails} calls=${calls} broadcasts=${broadcasts} time=${((Date.now() - t0) / 1000).toFixed(1)}s`;
+  sum.style.color = fails ? "#f77" : "#7f7";
+})();
+</script>
+</body></html>
