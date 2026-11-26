@@ -22,14 +22,14 @@ The Tempters win if any one of these happens:
 
 ## How a round goes
 
-1. **Propose**: This round's Group Leader picks exactly the required number of players for the Mission. They may include themselves.
+1. **Propose**: This round's Leader picks exactly the required number of players for the Mission. They may include themselves.
 2. **Discuss**: Talk freely about why this team, and who seems suspicious.
 3. **Vote**: Everyone taps Approve or Reject at the same time. Who voted which way is shown to all.
-4. **Result**: If more than half approve, the team sets out. On a tie or more rejects, the Group Leader role moves to the next player.
+4. **Result**: If more than half approve, the team sets out. On a tie or more rejects, the Leader role moves to the next player.
 5. **Mission**: Only team members secretly play a Blessing or Hindrance card. The Workers of Light can only play Blessing.
 6. **Reveal**: The cards are shuffled and only the number of Hindrances is shown. Nobody knows who played what. One Hindrance is enough to fail.
 
-The next round starts with the Group Leader role passing one seat along.
+The next round starts with the Leader role passing one seat along.
 
 ## Good to know
 
@@ -49,7 +49,7 @@ If they are right, the Tempters steal the win. If they are wrong, the Workers of
 
 This rule is used only if the host turns it on. Recommended for 7 or more players.
 
-The player to the right of the first Group Leader starts with the Lamp.
+The player to the right of the first Leader starts with the Lamp.
 
 After the 2nd, 3rd and 4th Missions, the Lamp holder picks one player and secretly learns their side (Workers of Light or Tempters).
 
@@ -73,7 +73,7 @@ Mission cards, the Lamp's answer and the final result all use each Lancelot's cu
 
 ## The Scroll of the Word (expansion)
 
-When proposing a team, the Group Leader also hands the Scroll of the Word to one team member. They can't give it to themselves.
+When proposing a team, the Leader also hands the Scroll of the Word to one team member. They can't give it to themselves.
 
 After everyone on the team has played a card, the Scroll of the Word holder may flip one other team member's card to the opposite. They can also choose not to.
 
@@ -304,9 +304,9 @@ _A Lancelot in shadow, standing at a crossroads_
 - **Workers of Light**: The side of light. More players, but less information.
 - **Tempters**: The hidden side. Fewer players, but they know each other.
 - **Mission**: One of 5 tasks. The first side to take 3 wins.
-- **Group Leader**: The player picking this Mission team. Passes to the next seat after each proposal.
+- **Leader**: The player picking this Mission team. Passes to the next seat after each proposal.
 - **Blessing / Hindrance**: The cards team members secretly play. The Workers of Light can only play Blessing.
-- **Approve / Reject**: The vote on whether to send the Group Leader's team.
+- **Approve / Reject**: The vote on whether to send the Leader's team.
 - **Lamp**: Optional rule. A lamp that secretly reveals one player's side.
 - **Scroll of the Word**: Expansion. Lets one team member flip another member's card.
 - **Crossroads card**: Expansion. Revealed one at a time from the 3rd Mission, and can switch the Lancelots' sides.

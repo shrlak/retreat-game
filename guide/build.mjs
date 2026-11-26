@@ -62,6 +62,8 @@ function namesFromTheme(theme, defaults, lang) {
   if (t.teams) {
     if (t.teams.good && t.teams.good.name) n.good = t.teams.good.name;
     if (t.teams.evil && t.teams.evil.name) n.evil = t.teams.evil.name;
+    // English text already writes "the {good}" / "the {evil}", so drop a leading "The " from team names.
+    if (lang === "en") { n.good = String(n.good).replace(/^the\s+/i, ""); n.evil = String(n.evil).replace(/^the\s+/i, ""); }
   }
   if (t.roles) for (var r in t.roles) if (t.roles[r] && t.roles[r].name) n[r] = t.roles[r].name;
   if (t.terms) for (var x in t.terms) if (typeof t.terms[x] === "string" && x !== "excaliburEn" && x !== "lancelotEn") n[x] = t.terms[x];

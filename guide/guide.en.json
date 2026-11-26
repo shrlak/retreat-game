@@ -17,7 +17,7 @@
     "lancelotEvil": "Evil Lancelot",
     "lancelot": "Lancelot",
     "quest": "Mission",
-    "leader": "Group Leader",
+    "leader": "Leader",
     "success": "Blessing",
     "fail": "Hindrance",
     "approve": "Approve",
@@ -47,11 +47,11 @@
       {
         "heading": "How a round works",
         "steps": [
-          "The Group Leader picks a Mission team.",
+          "The Leader picks a Mission team.",
           "Everyone votes Approve or Reject at the same time. More than half must approve.",
           "If approved, only team members secretly play a Blessing or Hindrance card.",
           "Even one Hindrance card means the Mission fails.",
-          "If rejected, the next player becomes Group Leader. Five rejections in a row on one Mission and the Tempters win at once."
+          "If rejected, the next player becomes Leader. Five rejections in a row on one Mission and the Tempters win at once."
         ]
       },
       {
@@ -144,7 +144,7 @@
         "steps": [
           {
             "title": "Propose",
-            "text": "This round's Group Leader picks exactly the required number of players for the Mission. They may include themselves."
+            "text": "This round's Leader picks exactly the required number of players for the Mission. They may include themselves."
           },
           {
             "title": "Discuss",
@@ -156,7 +156,7 @@
           },
           {
             "title": "Result",
-            "text": "If more than half approve, the team sets out. On a tie or more rejects, the Group Leader role moves to the next player."
+            "text": "If more than half approve, the team sets out. On a tie or more rejects, the Leader role moves to the next player."
           },
           {
             "title": "Mission",
@@ -167,7 +167,7 @@
             "text": "The cards are shuffled and only the number of Hindrances is shown. Nobody knows who played what. One Hindrance is enough to fail."
           }
         ],
-        "after": "The next round starts with the Group Leader role passing one seat along."
+        "after": "The next round starts with the Leader role passing one seat along."
       },
       {
         "id": "special",
@@ -193,7 +193,7 @@
         "heading": "The Lamp (optional rule)",
         "body": [
           "This rule is used only if the host turns it on. Recommended for 7 or more players.",
-          "The player to the right of the first Group Leader starts with the Lamp.",
+          "The player to the right of the first Leader starts with the Lamp.",
           "After the 2nd, 3rd and 4th Missions, the Lamp holder picks one player and secretly learns their side (Workers of Light or Tempters).",
           "The player who was checked receives the Lamp next. Anyone who has already held it cannot be picked.",
           "Everyone sees who checked whom, but only the holder sees the answer. Whether to share it, or to share it truthfully, is up to them."
@@ -220,7 +220,7 @@
         "module": "excalibur",
         "heading": "The Scroll of the Word (expansion)",
         "body": [
-          "When proposing a team, the Group Leader also hands the Scroll of the Word to one team member. They can't give it to themselves.",
+          "When proposing a team, the Leader also hands the Scroll of the Word to one team member. They can't give it to themselves.",
           "After everyone on the team has played a card, the Scroll of the Word holder may flip one other team member's card to the opposite. They can also choose not to.",
           "Only the holder learns what the flipped card originally was. Everyone sees whose card was flipped, and by whom."
         ]
@@ -495,7 +495,7 @@
       ],
       "guest": [
         "Share the room code with your friends.",
-        "Sit in a circle in the order people joined, so the Group Leader order is easy to follow.",
+        "Sit in a circle in the order people joined, so the Leader order is easy to follow.",
         "Tap Ready when you're set."
       ]
     },
@@ -508,7 +508,7 @@
     },
     "propose": {
       "leader": [
-        "You are this round's Group Leader. Choose {size} players for the Mission.",
+        "You are this round's Leader. Choose {size} players for the Mission.",
         "Explaining your choice first makes the vote easier.",
         "You can include yourself."
       ],
@@ -532,7 +532,7 @@
     },
     "voteResult": {
       "approved": "Approve {yes}, Reject {no}. The team sets out on the Mission!",
-      "rejected": "Approve {yes}, Reject {no}. Rejected, so the next Group Leader takes over."
+      "rejected": "Approve {yes}, Reject {no}. Rejected, so the next Leader takes over."
     },
     "quest": {
       "onTeam": [
@@ -690,7 +690,7 @@
         "id": "seat",
         "phase": "lobby",
         "title": "2. Sit in a circle",
-        "text": "Sit in a circle in the order shown on screen. The Group Leader role goes around in this order."
+        "text": "Sit in a circle in the order shown on screen. The Leader role goes around in this order."
       },
       {
         "id": "card",
@@ -701,8 +701,8 @@
       {
         "id": "propose",
         "phase": "propose",
-        "title": "4. The Group Leader picks a team",
-        "text": "The player marked Group Leader picks who goes on the Mission. The screen shows how many are needed. Everyone else shares their opinion."
+        "title": "4. The Leader picks a team",
+        "text": "The player marked Leader picks who goes on the Mission. The screen shows how many are needed. Everyone else shares their opinion."
       },
       {
         "id": "vote",
@@ -737,9 +737,9 @@
       "heading": "A sample game (5 players)",
       "lines": [
         "Grace, Hope, Sky, David and Joseph start. 3 are Workers of Light and 2 are Tempters.",
-        "The first Group Leader, Grace, picks Grace and Sky. The vote passes, Approve 4 to Reject 1!",
+        "The first Leader, Grace, picks Grace and Sky. The vote passes, Approve 4 to Reject 1!",
         "The Mission shows 0 Hindrances. The first Mission is complete.",
-        "The second Group Leader, Hope, needs 3 players and picks Hope, David and Joseph, but 3 Reject votes sink it. The Group Leader role passes to Sky.",
+        "The second Leader, Hope, needs 3 players and picks Hope, David and Joseph, but 3 Reject votes sink it. The Leader role passes to Sky.",
         "Sky's team (Sky, Grace, Joseph) is approved, and 1 Hindrance comes up! One of those three is with the Tempters.",
         "You collect clues like this and use them to choose the next team."
       ]
@@ -762,7 +762,7 @@
         "heading": "Before you start (5 minutes)",
         "steps": [
           "The host creates a room and reads out or shows the room code.",
-          "Once everyone is in, sit in a circle in the order shown on screen. The Group Leader role goes around in this order.",
+          "Once everyone is in, sit in a circle in the order shown on screen. The Leader role goes around in this order.",
           "Turn on roles to fit your group size. See the recommended setups below.",
           "Read the '3-minute explanation' below, and start once everyone taps Ready."
         ]
@@ -781,7 +781,7 @@
         "heading": "Expansions to try later",
         "bullets": [
           "Good Lancelot and Evil Lancelot: from the 3rd Mission, Crossroads cards are revealed and the two Lancelots may swap sides. For a first try, use 'Quiet Crossroads'.",
-          "Scroll of the Word: the Group Leader hands it to a team member, who may flip one other member's card. Great with 7 or more.",
+          "Scroll of the Word: the Leader hands it to a team member, who may flip one other member's card. Great with 7 or more.",
           "Alternate team sizes: changes the team sizes in 5 and 7 player games. Nice when the same group plays several rounds.",
           "Add only one expansion at a time. Long explanations are hard on first-time players."
         ]
@@ -791,7 +791,7 @@
         "script": [
           "\"Some Tempters are secretly hiding among us. Everyone else is one of the Workers of Light.\"",
           "\"There are 5 Missions, and the first side to take 3 wins.\"",
-          "\"Each time, the Group Leader picks a team and we all vote Approve or Reject.\"",
+          "\"Each time, the Leader picks a team and we all vote Approve or Reject.\"",
           "\"An approved team secretly plays Blessing or Hindrance cards. One Hindrance and the Mission fails. The Workers of Light can only play Blessing.\"",
           "\"The Prophet knows who the Tempters are but must not get caught. Even if the Workers of Light win, the Spy can turn it around by naming the Prophet.\"",
           "\"You can say anything, but never show your phone screen. Ready to check your cards?\""
@@ -1122,7 +1122,7 @@
       "text": "One of 5 tasks. The first side to take 3 wins."
     },
     {
-      "term": "Group Leader",
+      "term": "Leader",
       "text": "The player picking this Mission team. Passes to the next seat after each proposal."
     },
     {
@@ -1131,7 +1131,7 @@
     },
     {
       "term": "Approve / Reject",
-      "text": "The vote on whether to send the Group Leader's team."
+      "text": "The vote on whether to send the Leader's team."
     },
     {
       "term": "Lamp",

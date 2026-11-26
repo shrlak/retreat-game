@@ -20,7 +20,7 @@ export const DEFAULT_NAMES = {
   lancelotEvil: "Evil Lancelot",
   lancelot: "Lancelot",
   quest: "Mission",
-  leader: "Group Leader",
+  leader: "Leader",
   success: "Blessing",
   fail: "Hindrance",
   approve: "Approve",

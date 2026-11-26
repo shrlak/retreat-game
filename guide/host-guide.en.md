@@ -12,7 +12,7 @@ A guide to help you run a fun game in about 30 minutes at a retreat or small gro
 ## Before you start (5 minutes)
 
 1. The host creates a room and reads out or shows the room code.
-2. Once everyone is in, sit in a circle in the order shown on screen. The Group Leader role goes around in this order.
+2. Once everyone is in, sit in a circle in the order shown on screen. The Leader role goes around in this order.
 3. Turn on roles to fit your group size. See the recommended setups below.
 4. Read the '3-minute explanation' below, and start once everyone taps Ready.
 
@@ -48,7 +48,7 @@ A guide to help you run a fun game in about 30 minutes at a retreat or small gro
 ## Expansions to try later
 
 - Good Lancelot and Evil Lancelot: from the 3rd Mission, Crossroads cards are revealed and the two Lancelots may swap sides. For a first try, use 'Quiet Crossroads'.
-- Scroll of the Word: the Group Leader hands it to a team member, who may flip one other member's card. Great with 7 or more.
+- Scroll of the Word: the Leader hands it to a team member, who may flip one other member's card. Great with 7 or more.
 - Alternate team sizes: changes the team sizes in 5 and 7 player games. Nice when the same group plays several rounds.
 - Add only one expansion at a time. Long explanations are hard on first-time players.
 
@@ -58,7 +58,7 @@ A guide to help you run a fun game in about 30 minutes at a retreat or small gro
 >
 > "There are 5 Missions, and the first side to take 3 wins."
 >
-> "Each time, the Group Leader picks a team and we all vote Approve or Reject."
+> "Each time, the Leader picks a team and we all vote Approve or Reject."
 >
 > "An approved team secretly plays Blessing or Hindrance cards. One Hindrance and the Mission fails. The Workers of Light can only play Blessing."
 >
@@ -105,11 +105,11 @@ A guide to help you run a fun game in about 30 minutes at a retreat or small gro
 
 ### How a round works
 
-1. The Group Leader picks a Mission team.
+1. The Leader picks a Mission team.
 2. Everyone votes Approve or Reject at the same time. More than half must approve.
 3. If approved, only team members secretly play a Blessing or Hindrance card.
 4. Even one Hindrance card means the Mission fails.
-5. If rejected, the next player becomes Group Leader. Five rejections in a row on one Mission and the Tempters win at once.
+5. If rejected, the next player becomes Leader. Five rejections in a row on one Mission and the Tempters win at once.
 
 ### The roles in one line
 
